@@ -1,7 +1,10 @@
 package com.roome.global.jwt.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.roome.domain.user.entity.User;
+import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.jwt.dto.JwtToken;
+import com.roome.global.jwt.exception.UserNotFoundException;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,6 +21,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserRepository userRepository; // TODO: 추후 Redis 사용
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -31,6 +35,13 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         refreshTokenCookie.setSecure(true);
         refreshTokenCookie.setPath("/");
         response.addCookie(refreshTokenCookie);
+
+        // TODO: 추후 Redis 사용
+        String userId = authentication.getName();
+        User user = userRepository.findByProviderId(userId)
+                .orElseThrow(() -> new UserNotFoundException());
+        user.updateRefreshToken(token.getRefreshToken());
+        userRepository.save(user);
 
         // Access Token을 헤더에 추가
         response.addHeader("Authorization", "Bearer " + token.getAccessToken());

@@ -49,7 +49,7 @@ public class SecurityConfig {
                         .successHandler(oAuth2SuccessHandler)
                         .failureHandler(oAuth2FailureHandler))
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/", "/login/**", "/oauth2/**").permitAll()
+                        .requestMatchers("/", "/login/**", "/oauth2/**", "/api/auth/**").permitAll()
                         .anyRequest().authenticated());
 
         http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
