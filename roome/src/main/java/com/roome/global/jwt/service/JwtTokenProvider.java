@@ -1,6 +1,7 @@
 package com.roome.global.jwt.service;
 
 import com.roome.global.jwt.dto.JwtToken;
+import com.roome.global.jwt.exception.*;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -21,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.stream.Collectors;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -42,6 +44,10 @@ public class JwtTokenProvider {
 
     // User 정보로 Access Token 생성
     public JwtToken createToken(Authentication authentication) {
+
+        if (authentication == null || authentication.getName() == null) {
+            throw new InvalidJwtTokenException();
+        }
 
         // 권한 가져오기
         String authorities = authentication.getAuthorities().stream()
@@ -77,9 +83,7 @@ public class JwtTokenProvider {
         // Jwt 토큰 복호화
         Claims claims = parseClaims(accessToken);
 
-        if (claims.get("auth") == null) {
-            throw new RuntimeException("해당 토큰에는 권한 정보가 포함되어 있지 않습니다.");
-        }
+        if (claims.get("auth") == null) { throw new MissingAuthorityException(); }
 
         // 클레임에서 권한 정보 가져오기
         Collection<? extends GrantedAuthority> authorities = Arrays.stream(claims.get("auth").toString().split(","))
@@ -100,13 +104,13 @@ public class JwtTokenProvider {
                     .parseClaimsJws(token);
             return true;
         } catch (SecurityException | MalformedJwtException e) {
-            log.info("서명이 올바르지 않거나 변조된 JWT 토큰입니다.", e);
+            log.warn("[JWT 검증 실패] 잘못된 서명: {}", token);
         } catch (ExpiredJwtException e) {
-            log.info("만료된 JWT 토큰입니다.", e);
+            log.warn("[JWT 만료] 만료된 토큰: {}", token);
         } catch (UnsupportedJwtException e) {
-            log.info("지원되지 않는 형식의 JWT 토큰입니다.", e);
+            log.warn("[JWT 검증 실패] 지원되지 않는 토큰 형식: {}", token);
         } catch (IllegalArgumentException e) {
-            log.info("JWT 토큰이 유효하지 않거나, 입력값이 비어 있습니다.", e);
+            log.warn("[JWT 검증 실패] 잘못된 JWT 입력: {}", token);
         }
         return false;
     }
