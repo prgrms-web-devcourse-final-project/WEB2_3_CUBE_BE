@@ -1,15 +1,27 @@
 package com.roome.domain.oauth2.dto;
 
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+
 import java.util.Map;
 
 public class KakaoResponse implements OAuth2Response {
 
     private final Map<String, Object> attributes;
-    private final Map<String, Object> properties;
+    private final Map<String, Object> kakaoAccount;
+    private final Map<String, Object> profile;
 
     public KakaoResponse(Map<String, Object> attributes) {
         this.attributes = attributes;
-        this.properties = (Map<String, Object>) attributes.get("properties");
+
+        this.kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
+        if (this.kakaoAccount == null) {
+            throw new OAuth2AuthenticationException("카카오 계정 정보가 없습니다.");
+        }
+
+        this.profile = (Map<String, Object>) kakaoAccount.get("profile");
+        if (this.profile == null) {
+            throw new OAuth2AuthenticationException("카카오 프로필 정보가 없습니다.");
+        }
     }
 
     @Override
@@ -19,16 +31,22 @@ public class KakaoResponse implements OAuth2Response {
 
     @Override
     public String getProviderId() {
-        return attributes.get("id").toString();
+        Object id = attributes.get("id");
+        if (id == null) {
+            throw new OAuth2AuthenticationException("카카오 ID가 없습니다.");
+        }
+        return id.toString();
     }
 
     @Override
     public String getName() {
-        return properties.get("nickname").toString();
+        Object nickname = profile.get("nickname");
+        return nickname != null ? nickname.toString() : "Unknown";
     }
 
     @Override
     public String getProfileImageUrl() {
-        return attributes.get("profile_image").toString();
+        Object profileImage = profile.get("profile_image_url");
+        return profileImage != null ? profileImage.toString() : null;
     }
 }
