@@ -42,4 +42,10 @@ public class MyBookReviewService {
         );
         return MyBookReviewResponse.from(myBookReview);
     }
+
+    public MyBookReviewResponse read(Long myBookId) {
+        return MyBookReviewResponse.from(
+                myBookReviewRepository.findByMyBookId(myBookId).orElseThrow()
+        );
+    }
 }
