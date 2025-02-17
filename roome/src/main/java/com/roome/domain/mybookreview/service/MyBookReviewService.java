@@ -66,4 +66,14 @@ public class MyBookReviewService {
         );
         return MyBookReviewResponse.from(review);
     }
+
+    @Transactional
+    public void delete(Long userId, Long myBookReviewId) {
+        MyBookReview review = myBookReviewRepository.findById(myBookReviewId).orElseThrow();
+        if (!review.isWrittenBy(userId)) {
+            throw new IllegalArgumentException();
+        }
+
+        myBookReviewRepository.delete(review);
+    }
 }

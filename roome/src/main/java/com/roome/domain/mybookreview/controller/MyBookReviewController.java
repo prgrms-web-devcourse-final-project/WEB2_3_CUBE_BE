@@ -39,4 +39,12 @@ public class MyBookReviewController {
         MyBookReviewResponse response =  myBookReviewService.update(userId, myBookReviewId, request);
         return ResponseEntity.ok(response);
     }
+
+    @DeleteMapping("/api/mybooks-review/{myBookReviewId}")
+    public void delete(
+            @PathVariable("myBookReviewId") Long myBookReviewId
+    ) {
+        Long userId = 1L;
+        myBookReviewService.delete(userId, myBookReviewId);
+    }
 }
