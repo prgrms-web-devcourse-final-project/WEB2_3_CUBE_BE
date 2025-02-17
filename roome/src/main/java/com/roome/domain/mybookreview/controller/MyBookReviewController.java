@@ -2,6 +2,7 @@ package com.roome.domain.mybookreview.controller;
 
 import com.roome.domain.mybookreview.service.MyBookReviewService;
 import com.roome.domain.mybookreview.service.request.MyBookReviewCreateRequest;
+import com.roome.domain.mybookreview.service.request.MyBookReviewUpdateRequest;
 import com.roome.domain.mybookreview.service.response.MyBookReviewResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,16 @@ public class MyBookReviewController {
     @GetMapping("/api/mybooks-review/{myBookReviewId}")
     public ResponseEntity<MyBookReviewResponse> read(@PathVariable("myBookReviewId") Long myBookReviewId) {
         MyBookReviewResponse response = myBookReviewService.read(myBookReviewId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/api/mybooks-review/{myBookReviewId}")
+    public ResponseEntity<MyBookReviewResponse> update(
+            @PathVariable("myBookReviewId") Long myBookReviewId,
+            @RequestBody MyBookReviewUpdateRequest request
+    ) {
+        Long userId = 1L;
+        MyBookReviewResponse response =  myBookReviewService.update(userId, myBookReviewId, request);
         return ResponseEntity.ok(response);
     }
 }

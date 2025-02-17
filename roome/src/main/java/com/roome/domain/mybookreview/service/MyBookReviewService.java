@@ -5,6 +5,7 @@ import com.roome.domain.mybook.entity.repository.MyBookRepository;
 import com.roome.domain.mybookreview.entity.MyBookReview;
 import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
 import com.roome.domain.mybookreview.service.request.MyBookReviewCreateRequest;
+import com.roome.domain.mybookreview.service.request.MyBookReviewUpdateRequest;
 import com.roome.domain.mybookreview.service.response.MyBookReviewResponse;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
@@ -47,5 +48,22 @@ public class MyBookReviewService {
         return MyBookReviewResponse.from(
                 myBookReviewRepository.findByMyBookId(myBookId).orElseThrow()
         );
+    }
+
+    @Transactional
+    public MyBookReviewResponse update(Long userId, Long myBookReviewId, MyBookReviewUpdateRequest request) {
+        MyBookReview review = myBookReviewRepository.findById(myBookReviewId).orElseThrow();
+        if (!review.isWrittenBy(userId)) {
+            throw new IllegalArgumentException();
+        }
+
+        review.update(
+                request.title(),
+                request.quote(),
+                request.takeaway(),
+                request.freeFormText(),
+                request.coverColor()
+        );
+        return MyBookReviewResponse.from(review);
     }
 }
