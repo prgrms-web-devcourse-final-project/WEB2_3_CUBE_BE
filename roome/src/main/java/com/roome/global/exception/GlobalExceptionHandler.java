@@ -12,7 +12,7 @@ public class GlobalExceptionHandler {
   // 비즈니스 관련 예러 처리
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ErrorResponse> handleCustomException(BusinessException e) {
-    ErrorCode error = e.getErrorCodes();
+    ErrorCode error = e.getErrorCode();
     return ResponseEntity
         .status(error.getStatus())
         .body(new ErrorResponse(error.getMessage(), error.getStatus().toString()));
