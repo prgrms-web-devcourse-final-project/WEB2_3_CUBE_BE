@@ -2,6 +2,7 @@ package com.roome.domain.mybookreview.service;
 
 import com.roome.domain.mybook.entity.MyBook;
 import com.roome.domain.mybook.entity.repository.MyBookRepository;
+import com.roome.domain.mybook.exception.DoNotHavePermissionToMyBookException;
 import com.roome.domain.mybookreview.entity.MyBookReview;
 import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
 import com.roome.domain.mybookreview.exception.DoNotHavePermissionToReviewException;
@@ -28,7 +29,7 @@ public class MyBookReviewService {
         User user = userRepository.findById(userId).orElseThrow();
         MyBook myBook = myBookRepository.findById(myBookId).orElseThrow();
         if (!myBook.isRegisteredBy(userId)) {
-            throw new IllegalArgumentException();
+            throw new DoNotHavePermissionToMyBookException();
         }
 
         MyBookReview myBookReview = myBookReviewRepository.save(
