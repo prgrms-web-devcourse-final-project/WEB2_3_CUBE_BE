@@ -5,10 +5,7 @@ import com.roome.domain.mybookreview.service.request.MyBookReviewCreateRequest;
 import com.roome.domain.mybookreview.service.response.MyBookReviewResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,7 +19,13 @@ public class MyBookReviewController {
             @RequestBody MyBookReviewCreateRequest request
     ) {
         Long userId = 1L;
-        MyBookReviewResponse response =  myBookReviewService.create(userId, myBookId, request);
+        MyBookReviewResponse response = myBookReviewService.create(userId, myBookId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/api/mybooks-review/{myBookReviewId}")
+    public ResponseEntity<MyBookReviewResponse> read(@PathVariable("myBookReviewId") Long myBookReviewId) {
+        MyBookReviewResponse response = myBookReviewService.read(myBookReviewId);
         return ResponseEntity.ok(response);
     }
 }
