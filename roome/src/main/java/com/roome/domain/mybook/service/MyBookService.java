@@ -7,6 +7,7 @@ import com.roome.domain.mybook.entity.MyBookCount;
 import com.roome.domain.mybook.entity.repository.MyBookCountRepository;
 import com.roome.domain.mybook.entity.repository.MyBookRepository;
 import com.roome.domain.mybook.service.request.MyBookCreateRequest;
+import com.roome.domain.mybook.service.response.MyBooksResponse;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
@@ -14,6 +15,8 @@ import com.roome.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
@@ -48,5 +51,18 @@ public class MyBookService {
         if (result == 0) {
             myBookCountRepository.save(MyBookCount.init(room));
         }
+    }
+
+    public MyBooksResponse readAll(Long roomId, Long pageSize, Long lastMyBookId) {
+        List<MyBook> myBooks = lastMyBookId == null ?
+                myBookRepository.findAll(roomId, pageSize) :
+                myBookRepository.findAll(roomId, pageSize, lastMyBookId);
+        return MyBooksResponse.of(myBooks, count(roomId));
+    }
+
+    private Long count(Long roomId) {
+        return myBookCountRepository.findByRoomId(roomId)
+                .map(MyBookCount::getCount)
+                .orElse(0L);
     }
 }
