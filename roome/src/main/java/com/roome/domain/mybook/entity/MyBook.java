@@ -36,4 +36,8 @@ public class MyBook {
         myBook.book = book;
         return myBook;
     }
+
+    public boolean isRegisteredBy(Long userId) {
+        return user != null && user.getId().equals(userId);
+    }
 }
