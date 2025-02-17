@@ -24,11 +24,22 @@ public class MyBookController {
     }
 
     @GetMapping("/api/mybooks")
-    public MyBooksResponse readAll(
+    public ResponseEntity<MyBooksResponse> readAll(
             @RequestParam("roomId") Long roomId,
             @RequestParam("pageSize") Long pageSize,
             @RequestParam(value = "lastMyBookId", required = false) Long lastMyBookId
     ) {
-        return myBookService.readAll(roomId, pageSize, lastMyBookId);
+        MyBooksResponse response = myBookService.readAll(roomId, pageSize, lastMyBookId);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/api/mybooks")
+    public ResponseEntity<Void> delete(
+            @RequestParam("roomId") Long roomId,
+            @RequestParam String myBookIds
+    ) {
+        Long userId = 1L;
+        myBookService.delete(userId, roomId, myBookIds);
+        return ResponseEntity.noContent().build();
     }
 }
