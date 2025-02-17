@@ -4,6 +4,7 @@ import com.roome.domain.mybook.entity.MyBook;
 import com.roome.domain.mybook.entity.repository.MyBookRepository;
 import com.roome.domain.mybookreview.entity.MyBookReview;
 import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
+import com.roome.domain.mybookreview.exception.DoNotHavePermissionToReviewException;
 import com.roome.domain.mybookreview.service.request.MyBookReviewCreateRequest;
 import com.roome.domain.mybookreview.service.request.MyBookReviewUpdateRequest;
 import com.roome.domain.mybookreview.service.response.MyBookReviewResponse;
@@ -52,9 +53,9 @@ public class MyBookReviewService {
 
     @Transactional
     public MyBookReviewResponse update(Long userId, Long myBookReviewId, MyBookReviewUpdateRequest request) {
-        MyBookReview review = myBookReviewRepository.findById(myBookReviewId).orElseThrow();
+        MyBookReview review = myBookReviewRepository.getById(myBookReviewId);
         if (!review.isWrittenBy(userId)) {
-            throw new IllegalArgumentException();
+            throw new DoNotHavePermissionToReviewException();
         }
 
         review.update(
@@ -69,9 +70,9 @@ public class MyBookReviewService {
 
     @Transactional
     public void delete(Long userId, Long myBookReviewId) {
-        MyBookReview review = myBookReviewRepository.findById(myBookReviewId).orElseThrow();
+        MyBookReview review = myBookReviewRepository.getById(myBookReviewId);
         if (!review.isWrittenBy(userId)) {
-            throw new IllegalArgumentException();
+            throw new DoNotHavePermissionToReviewException();
         }
 
         myBookReviewRepository.delete(review);
