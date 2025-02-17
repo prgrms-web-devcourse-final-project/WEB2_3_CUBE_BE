@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static com.roome.global.util.StringUtil.convertStringToList;
+
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -58,6 +60,14 @@ public class MyBookService {
                 myBookRepository.findAll(roomId, pageSize) :
                 myBookRepository.findAll(roomId, pageSize, lastMyBookId);
         return MyBooksResponse.of(myBooks, count(roomId));
+    }
+
+    @Transactional
+    public void delete(Long userId, Long roomId, String myBookIds) {
+        User user = userRepository.findById(userId).orElseThrow();
+        List<String> ids = convertStringToList(myBookIds);
+        myBookRepository.deleteAllIn(ids);
+        myBookCountRepository.decrease(roomId, ids.size());
     }
 
     private Long count(Long roomId) {

@@ -19,5 +19,17 @@ public interface MyBookCountRepository extends JpaRepository<MyBookCount, Long> 
     )
     int increase(@Param("roomId") Long roomId);
 
+    @Modifying(clearAutomatically = true)
+    @Query(
+            value = """
+                    update my_book_count set count = count - :count where room_id = :roomId
+                    """,
+            nativeQuery = true
+    )
+    int decrease(
+            @Param("roomId") Long roomId,
+            @Param("count") int count
+    );
+
     Optional<MyBookCount> findByRoomId(@Param("roomId") Long roomId);
 }

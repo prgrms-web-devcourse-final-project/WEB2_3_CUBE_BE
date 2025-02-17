@@ -2,6 +2,7 @@ package com.roome.domain.mybook.entity.repository;
 
 import com.roome.domain.mybook.entity.MyBook;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -37,4 +38,12 @@ public interface MyBookRepository extends JpaRepository<MyBook, Long> {
             @Param("limit") Long limit,
             @Param("lastMyBookId") Long lastMyBookId
     );
+
+    @Modifying
+    @Query(
+            value = """
+                    delete from MyBook mb where mb.id in(:ids)
+                    """
+    )
+    void deleteAllIn(List<String> ids);
 }
