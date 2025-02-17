@@ -3,7 +3,6 @@ package com.roome.domain.mybook.service.request;
 import java.time.LocalDate;
 
 public record MyBookCreateRequest(
-        Long id,
         Long isbn,
         String title,
         String author,
