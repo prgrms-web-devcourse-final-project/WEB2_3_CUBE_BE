@@ -70,7 +70,7 @@ public class MyBookService {
 
     @Transactional
     public void delete(Long userId, Long roomId, String myBookIds) {
-        Room room = roomRepository.getById(userId);
+        Room room = roomRepository.getById(roomId);
         validateRoomOwner(room, userId);
 
         List<String> ids = convertStringToList(myBookIds);
