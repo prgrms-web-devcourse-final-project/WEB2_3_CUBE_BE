@@ -3,6 +3,7 @@ package com.roome.domain.auth.service;
 import com.roome.domain.auth.dto.oauth2.OAuth2Provider;
 import com.roome.domain.auth.dto.oauth2.OAuth2Response;
 import com.roome.domain.auth.dto.response.LoginResponse;
+import com.roome.domain.auth.exception.OAuth2AuthenticationProcessingException;
 import com.roome.domain.room.service.RoomService;
 import com.roome.domain.user.entity.Provider;
 import com.roome.domain.user.entity.Status;
@@ -12,6 +13,7 @@ import com.roome.global.jwt.dto.JwtToken;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientProperties;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ public class OAuth2LoginService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RoomService roomService;
     private final RestTemplate restTemplate;
+    private final OAuth2ClientProperties oauth2ClientProperties;
 
     public LoginResponse login(OAuth2Provider provider, String authorizationCode) {
 
@@ -40,7 +43,6 @@ public class OAuth2LoginService {
         OAuth2Response oAuth2Response = fetchUserProfile(provider, accessToken);
 
         User user = updateOrCreateUser(oAuth2Response);
-
 
         // 첫 로그인 시 방 자동 생성
         if (user.getLastLogin() == null) {
@@ -66,11 +68,27 @@ public class OAuth2LoginService {
     }
 
     private String fetchAccessToken(OAuth2Provider provider, String authorizationCode) {
+        var registration = oauth2ClientProperties.getRegistration().get(provider.getRegistrationId());
+
+        Map<String, String> params = Map.of(
+                "grant_type", "authorization_code",
+                "client_id", registration.getClientId(),
+                "client_secret", registration.getClientSecret(),
+                "code", authorizationCode,
+                "redirect_uri", registration.getRedirectUri()
+        );
+
         Map<String, Object> response = restTemplate.postForObject(
                 provider.getTokenUri(),
-                provider.getTokenRequest(authorizationCode),
+                params,
                 Map.class
         );
+
+        if (response == null || !response.containsKey("access_token")) {
+            log.error("Failed to fetch access token from {}: Response={}", provider.getTokenUri(), response);
+            throw new OAuth2AuthenticationProcessingException();
+        }
+
         return (String) response.get("access_token");
     }
 
@@ -86,6 +104,7 @@ public class OAuth2LoginService {
         return userRepository.findByProviderId(response.getProviderId())
                 .map(user -> {
                     user.updateProfile(response.getName(), response.getProfileImageUrl(), user.getBio());
+                    user.updateLastLogin();
                     return user;
                 })
                 .orElseGet(() -> userRepository.save(

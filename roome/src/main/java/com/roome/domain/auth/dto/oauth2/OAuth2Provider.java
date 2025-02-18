@@ -34,16 +34,6 @@ public enum OAuth2Provider {
         throw new InvalidProviderException();
     }
 
-    public Map<String, String> getTokenRequest(String authorizationCode) {
-        return Map.of(
-                "grant_type", "authorization_code",
-                "client_id", googleClientId,
-                "client_secret", googleClientSecret,
-                "code", authorizationCode,
-                "redirect_uri", googleRedirectUri
-        );
-    }
-
     public String getUserInfoUri(String accessToken) {
         return userInfoUri + "?access_token=" + accessToken;
     }
