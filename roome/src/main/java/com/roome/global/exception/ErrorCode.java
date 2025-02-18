@@ -25,12 +25,14 @@ public enum ErrorCode {
 
   // Room 관련 예외
   ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 방을 찾을 수 없습니다."),
+  USER_DO_NOT_HAVE_PERMISSION_TO_ROOM(HttpStatus.BAD_REQUEST, "방에 대한 권한이 없는 사용자입니다."),
 
   // MyBookReview 관련 예외
   MY_BOOK_REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "서평을 찾을 수 없습니다."),
   USER_DO_NOT_HAVE_PERMISSION_TO_REVIEW(HttpStatus.BAD_REQUEST, "서평에 대한 권한이 없는 사용자입니다."),
 
   // MyBook 관련 예외
+  MY_BOOK_NOT_FOUND(HttpStatus.NOT_FOUND, "등록 도서를 찾을 수 없습니다."),
   USER_DO_NOT_HAVE_PERMISSION_TO_MY_BOOK(HttpStatus.BAD_REQUEST, "등록 도서에 대한 권한이 없는 사용자입니다.")
 
   ;

@@ -37,4 +37,8 @@ public class Room {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
+
+    public boolean isCreatedBy(Long userId) {
+        return user != null && user.getId().equals(userId);
+    }
 }
