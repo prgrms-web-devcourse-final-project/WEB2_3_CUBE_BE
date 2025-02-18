@@ -41,13 +41,11 @@ public class OAuth2LoginService {
 
         User user = updateOrCreateUser(oAuth2Response);
 
-/*
 
         // 첫 로그인 시 방 자동 생성
         if (user.getLastLogin() == null) {
-            roomService.createRoom(user);
+            roomService.createRoom(user.getId());
         }
-*/
 
         // Authentication 객체 생성 후 JWT 발급
         Authentication authentication = new UsernamePasswordAuthenticationToken(user.getProviderId(), null);
@@ -61,7 +59,7 @@ public class OAuth2LoginService {
                         .userId(user.getId())
                         .nickname(user.getNickname())
                         .email(user.getEmail())
-//                        .roomId(roomService.getRoomIdByUserId(user.getId()))
+                        .roomId(roomService.getRoomByUserId(user.getId()).getRoomId())
                         .profileImage(user.getProfileImage())
                         .build())
                 .build();
