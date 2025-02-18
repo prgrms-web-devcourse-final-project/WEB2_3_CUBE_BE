@@ -31,7 +31,7 @@ public class MyBookReview {
     @JoinColumn(name = "my_book_id")
     private MyBook myBook;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
