@@ -1,7 +1,7 @@
-package com.roome.domain.oauth2.service;
+package com.roome.domain.auth.service;
 
-import com.roome.domain.oauth2.dto.OAuth2Response;
-import com.roome.domain.oauth2.dto.OAuth2UserPrincipal;
+import com.roome.domain.auth.dto.oauth2.OAuth2Response;
+import com.roome.domain.auth.security.OAuth2UserPrincipal;
 import com.roome.domain.user.entity.Provider;
 import com.roome.domain.user.entity.Status;
 import com.roome.domain.user.entity.User;

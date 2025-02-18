@@ -1,9 +1,9 @@
 package com.roome.global.config;
 
+import com.roome.domain.auth.service.CustomOAuth2UserService;
 import com.roome.global.jwt.filter.JwtAuthenticationFilter;
 import com.roome.global.jwt.handler.OAuth2FailureHandler;
 import com.roome.global.jwt.handler.OAuth2SuccessHandler;
-import com.roome.domain.oauth2.service.CustomOAuth2UserService;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -34,27 +34,42 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
         http
+
+                // CSRF 보호 비활성화
                 .csrf((auth) -> auth.disable())
-                .formLogin((auth) -> auth.disable())
+
+                // 폼 로그인, HTTP 기본 인증 비활성화
+                .formLogin((form) -> form.disable())
                 .httpBasic((auth) -> auth.disable())
                 .sessionManagement((session) -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // OAuth2 로그인 설정
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(endpoint -> endpoint
+                                .baseUri("/api/auth/login")
                                 .authorizationRequestRepository(authorizationRequestRepository()))
+                        .redirectionEndpoint(redirection -> redirection
+                                .baseUri("/login/oauth2/code/*"))
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)
                         .failureHandler(oAuth2FailureHandler))
+
+                // 접근 제어 설정
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/", "/login/**", "/oauth2/**", "/api/auth/**").permitAll()
+                        .requestMatchers(
+                                "/",
+                                "/login/oauth2/code/*",
+                                "/oauth2/authorization/*",
+                                "/api/auth/**",
+                                "/error"
+                        ).permitAll()
                         .anyRequest().authenticated());
 
         http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
-                UsernamePasswordAuthenticationFilter.class
-        );
+                UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

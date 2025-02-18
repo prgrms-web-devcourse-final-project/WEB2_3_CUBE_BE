@@ -1,7 +1,9 @@
 package com.roome.global.jwt.controller;
 
 import com.roome.global.jwt.dto.JwtToken;
+import com.roome.global.jwt.exception.InvalidRefreshTokenException;
 import com.roome.global.jwt.helper.TokenResponseHelper;
+import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.jwt.service.TokenService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +20,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-public class AuthController {
+public class ReissueController {
 
     private final TokenService tokenService;
+    private final JwtTokenProvider jwtTokenProvider;
     private final TokenResponseHelper tokenResponseHelper;
 
     @PostMapping("/reissue-token")
@@ -28,6 +31,11 @@ public class AuthController {
             @CookieValue("refresh_token") String refreshToken,
             HttpServletResponse response
     ) {
+
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new InvalidRefreshTokenException();
+        }
+
         JwtToken newToken = tokenService.reissueToken(refreshToken);
         tokenResponseHelper.setTokenResponse(response, newToken);
 

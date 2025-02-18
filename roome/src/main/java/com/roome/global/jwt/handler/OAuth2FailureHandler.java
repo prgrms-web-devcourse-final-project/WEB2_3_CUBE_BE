@@ -1,10 +1,10 @@
 package com.roome.global.jwt.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.roome.domain.oauth2.exception.AuthenticationFailedException;
-import com.roome.domain.oauth2.exception.DisabledAccountException;
-import com.roome.domain.oauth2.exception.InvalidLoginException;
-import com.roome.domain.oauth2.exception.Oauth2AuthenticationErrorException;
+import com.roome.domain.auth.exception.AuthenticationFailedException;
+import com.roome.domain.auth.exception.DisabledAccountException;
+import com.roome.domain.auth.exception.InvalidLoginException;
+import com.roome.domain.auth.exception.OAuth2AuthenticationProcessingException;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -56,7 +56,7 @@ public class OAuth2FailureHandler implements AuthenticationFailureHandler {
     // 커스텀 예외
     private BusinessException convertToBusinessException(AuthenticationException exception) {
         if (exception instanceof OAuth2AuthenticationException) {
-            return new Oauth2AuthenticationErrorException();
+            return new OAuth2AuthenticationProcessingException();
         } else if (exception instanceof BadCredentialsException) {
             return new InvalidLoginException();
         } else if (exception instanceof DisabledException) {

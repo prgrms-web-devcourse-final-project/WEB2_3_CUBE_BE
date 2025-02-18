@@ -1,4 +1,4 @@
-package com.roome.domain.oauth2.dto;
+package com.roome.domain.auth.dto.oauth2;
 
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 
