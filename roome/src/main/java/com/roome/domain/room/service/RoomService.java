@@ -3,6 +3,8 @@ package com.roome.domain.room.service;
 import com.roome.domain.room.dto.RoomResponseDto;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.repository.RoomRepository;
+import com.roome.domain.user.entity.User;
+import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import com.roome.global.exception.ErrorResponse;
@@ -16,10 +18,14 @@ import org.springframework.stereotype.Service;
 public class RoomService {
 
     private final RoomRepository roomRepository;
+    private final UserRepository userRepository;
 
     public RoomResponseDto createRoom(Long userId){
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
         Room newRoom = Room.builder()
-                .userId(userId)
+                .user(user)
                 .theme("basic")
                 .build();
 

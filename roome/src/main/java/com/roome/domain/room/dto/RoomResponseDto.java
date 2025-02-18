@@ -22,7 +22,7 @@ public class RoomResponseDto {
     public static RoomResponseDto from(Room room) {
         return RoomResponseDto.builder()
                 .roomId(room.getId())
-                .userId(room.getUserId())
+                .userId(room.getUser().getId())
                 .theme(room.getTheme())
                 .createdAt(room.getCreatedAt())
                 .furnitures(room.getFurnitures().stream()

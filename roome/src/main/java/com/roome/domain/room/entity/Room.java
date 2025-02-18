@@ -1,6 +1,7 @@
 package com.roome.domain.room.entity;
 
 import com.roome.domain.furniture.entity.Furniture;
+import com.roome.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,8 +20,9 @@ public class Room {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    private User user;
 
     @Column(nullable = false)
     private String theme;
