@@ -1,6 +1,5 @@
 package com.roome.domain.mate.entity;
 
-import com.roome.domain.user.entity.User;
 import com.roome.global.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
