@@ -61,6 +61,12 @@ public class MyBookService {
         return MyBookResponse.from(myBook);
     }
 
+    public MyBookResponse read(Long myBookId) {
+        return MyBookResponse.from(
+                myBookRepository.getById(myBookId)
+        );
+    }
+
     public MyBooksResponse readAll(Long roomId, Long pageSize, Long lastMyBookId) {
         List<MyBook> myBooks = lastMyBookId == null ?
                 myBookRepository.findAll(roomId, pageSize) :

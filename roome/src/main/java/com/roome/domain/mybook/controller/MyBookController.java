@@ -30,6 +30,12 @@ public class MyBookController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/api/mybooks/{myBookId}")
+    public ResponseEntity<MyBookResponse> read(@PathVariable Long myBookId) {
+        MyBookResponse response =  myBookService.read(myBookId);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/api/mybooks")
     public ResponseEntity<MyBooksResponse> readAll(
             @RequestParam("roomId") Long roomId,
