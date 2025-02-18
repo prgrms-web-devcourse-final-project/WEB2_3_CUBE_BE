@@ -1,4 +1,4 @@
-package com.roome.domain.oauth2.exception;
+package com.roome.domain.auth.exception;
 
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;

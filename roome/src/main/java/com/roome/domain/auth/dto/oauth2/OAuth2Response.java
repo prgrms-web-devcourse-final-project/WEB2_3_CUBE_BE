@@ -1,4 +1,4 @@
-package com.roome.domain.oauth2.dto;
+package com.roome.domain.auth.dto.oauth2;
 
 public interface OAuth2Response {
 

@@ -1,9 +1,9 @@
-package com.roome.domain.oauth2.dto;
+package com.roome.domain.auth.security;
 
+import com.roome.domain.auth.dto.oauth2.OAuth2Response;
 import com.roome.domain.user.entity.User;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
@@ -15,13 +15,11 @@ import java.util.Map;
 public class OAuth2UserPrincipal implements OAuth2User, UserDetails {
     private final User user;
     private final OAuth2Response oAuth2Response;
-    private final Collection<? extends GrantedAuthority> authorities;
     private final Map<String, Object> attributes;
 
     public OAuth2UserPrincipal(User user, OAuth2Response oAuth2Response) {
         this.user = user;
         this.oAuth2Response = oAuth2Response;
-        this.authorities = Collections.singleton(new SimpleGrantedAuthority("ROLE_USER"));
         this.attributes = Collections.singletonMap("user", oAuth2Response);
     }
 
@@ -32,7 +30,7 @@ public class OAuth2UserPrincipal implements OAuth2User, UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return authorities;
+        return Collections.emptySet();
     }
 
     @Override
@@ -47,7 +45,7 @@ public class OAuth2UserPrincipal implements OAuth2User, UserDetails {
 
     @Override
     public String getUsername() {
-        return user.getProviderId();
+        return String.valueOf(user.getId());
     }
 
     @Override

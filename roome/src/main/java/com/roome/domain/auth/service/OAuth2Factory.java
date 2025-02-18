@@ -1,7 +1,7 @@
-package com.roome.domain.oauth2.service;
+package com.roome.domain.auth.service;
 
-import com.roome.domain.oauth2.dto.*;
-import com.roome.domain.oauth2.exception.UnsupportedOAuth2ProviderException;
+import com.roome.domain.auth.dto.oauth2.*;
+import com.roome.domain.auth.exception.InvalidProviderException;
 
 import java.util.Map;
 
@@ -15,7 +15,7 @@ public class OAuth2Factory {
         } else if (OAuth2Provider.KAKAO.getRegistrationId().equals(registrationId)) {
             return new KakaoResponse(attributes);
         } else {
-            throw new UnsupportedOAuth2ProviderException();
+            throw new InvalidProviderException();
         }
     }
 }
