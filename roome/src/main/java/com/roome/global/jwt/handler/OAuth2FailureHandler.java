@@ -41,8 +41,8 @@ public class OAuth2FailureHandler implements AuthenticationFailureHandler {
             response.setCharacterEncoding("utf-8");
 
             ErrorResponse errorResponse = new ErrorResponse(
-                    businessException.getErrorCode().getMessage(),
-                    businessException.getErrorCode().getStatus().toString()
+                businessException.getErrorCode().getMessage(),
+                businessException.getErrorCode().getStatus().value()
             );
 
             response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
