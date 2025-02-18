@@ -1,6 +1,7 @@
 package com.roome.domain.room.controller;
 
 import com.roome.domain.room.dto.RoomResponseDto;
+import com.roome.domain.room.dto.UpdateRoomThemeRequestDto;
 import com.roome.domain.room.service.RoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -35,8 +36,8 @@ public class RoomController {
     @PutMapping("/{roomId}")
     public RoomResponseDto updateRoomTheme(
             @PathVariable Long roomId,
-            @RequestBody String newTheme
-    ) {
-        return roomService.updateRoomTheme(roomId, newTheme);
+            @RequestBody UpdateRoomThemeRequestDto requestDto
+            ) {
+        return roomService.updateRoomTheme(roomId, requestDto.getThemeName());
     }
 }
