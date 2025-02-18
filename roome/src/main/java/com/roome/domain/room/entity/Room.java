@@ -42,4 +42,9 @@ public class Room {
     public void updateTheme(RoomTheme theme) {
         this.theme = theme;
     }
+  
+    public boolean isCreatedBy(Long userId) {
+        return user != null && user.getId().equals(userId);
+
+    }
 }

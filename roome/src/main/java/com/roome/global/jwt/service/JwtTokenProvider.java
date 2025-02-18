@@ -1,6 +1,7 @@
 package com.roome.global.jwt.service;
 
 import com.roome.global.jwt.dto.JwtToken;
+import com.roome.global.jwt.exception.InvalidJwtTokenException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -39,17 +40,18 @@ public class JwtTokenProvider {
     public JwtToken createToken(Authentication authentication) {
 
         long now = (new Date()).getTime();
+        String userId = authentication.getName();
 
         // Access Token 생성
         String accessToken = Jwts.builder()
-                .setSubject(authentication.getName())
+                .setSubject(userId)
                 .setExpiration(new Date(now + ACCESS_TOKEN_EXPIRE_TIME))
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
 
         // Refresh Token 생성
         String refreshToken = Jwts.builder()
-                .setSubject(authentication.getName())
+                .setSubject(userId)
                 .setExpiration(new Date(now + REFRESH_TOKEN_EXPIRE_TIME))
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
@@ -95,7 +97,8 @@ public class JwtTokenProvider {
                     .parseClaimsJws(accessToken)
                     .getBody();
         } catch (ExpiredJwtException e) {
-            return e.getClaims();
+            log.warn("[JWT 만료] 만료된 토큰 접근 시도: {}", accessToken);
+            throw new InvalidJwtTokenException();
         }
     }
 }
