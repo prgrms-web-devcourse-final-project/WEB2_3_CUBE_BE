@@ -6,6 +6,7 @@ import com.roome.domain.mybook.exception.DoNotHavePermissionToMyBookException;
 import com.roome.domain.mybookreview.entity.MyBookReview;
 import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
 import com.roome.domain.mybookreview.exception.DoNotHavePermissionToReviewException;
+import com.roome.domain.mybookreview.exception.MyBookReviewNotFoundException;
 import com.roome.domain.mybookreview.service.request.MyBookReviewCreateRequest;
 import com.roome.domain.mybookreview.service.request.MyBookReviewUpdateRequest;
 import com.roome.domain.mybookreview.service.response.MyBookReviewResponse;
@@ -26,11 +27,9 @@ public class MyBookReviewService {
 
     @Transactional
     public MyBookReviewResponse create(Long userId, Long myBookId, MyBookReviewCreateRequest request) {
-        User user = userRepository.findById(userId).orElseThrow();
-        MyBook myBook = myBookRepository.findById(myBookId).orElseThrow();
-        if (!myBook.isRegisteredBy(userId)) {
-            throw new DoNotHavePermissionToMyBookException();
-        }
+        User user = userRepository.getById(userId);
+        MyBook myBook = myBookRepository.getById(myBookId);
+        validateMyBookOwner(myBook, userId);
 
         MyBookReview myBookReview = myBookReviewRepository.save(
                 MyBookReview.create(
@@ -48,16 +47,14 @@ public class MyBookReviewService {
 
     public MyBookReviewResponse read(Long myBookId) {
         return MyBookReviewResponse.from(
-                myBookReviewRepository.findByMyBookId(myBookId).orElseThrow()
+                myBookReviewRepository.findByMyBookId(myBookId).orElseThrow(MyBookReviewNotFoundException::new)
         );
     }
 
     @Transactional
     public MyBookReviewResponse update(Long userId, Long myBookReviewId, MyBookReviewUpdateRequest request) {
         MyBookReview review = myBookReviewRepository.getById(myBookReviewId);
-        if (!review.isWrittenBy(userId)) {
-            throw new DoNotHavePermissionToReviewException();
-        }
+        validateReviewOwner(review, userId);
 
         review.update(
                 request.title(),
@@ -72,10 +69,20 @@ public class MyBookReviewService {
     @Transactional
     public void delete(Long userId, Long myBookReviewId) {
         MyBookReview review = myBookReviewRepository.getById(myBookReviewId);
+        validateReviewOwner(review, userId);
+
+        myBookReviewRepository.delete(review);
+    }
+
+    private void validateMyBookOwner(MyBook myBook, Long userId) {
+        if (!myBook.isRegisteredBy(userId)) {
+            throw new DoNotHavePermissionToMyBookException();
+        }
+    }
+
+    private void validateReviewOwner(MyBookReview review, Long userId) {
         if (!review.isWrittenBy(userId)) {
             throw new DoNotHavePermissionToReviewException();
         }
-
-        myBookReviewRepository.delete(review);
     }
 }
