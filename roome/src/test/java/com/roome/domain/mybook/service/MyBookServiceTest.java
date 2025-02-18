@@ -6,6 +6,7 @@ import com.roome.domain.mybook.entity.MyBook;
 import com.roome.domain.mybook.entity.MyBookCount;
 import com.roome.domain.mybook.entity.repository.MyBookCountRepository;
 import com.roome.domain.mybook.entity.repository.MyBookRepository;
+import com.roome.domain.mybook.exception.MyBookNotFoundException;
 import com.roome.domain.mybook.service.MyBookService;
 import com.roome.domain.mybook.service.request.MyBookCreateRequest;
 import com.roome.domain.mybook.service.response.MyBookResponse;
@@ -123,6 +124,54 @@ class MyBookServiceTest {
         assertThatThrownBy(() -> myBookService.create(user2.getId(), room.getId(), request))
                 .isInstanceOf(DoNotHavePermissionToRoomException.class)
                 .hasMessage("방에 대한 권한이 없는 사용자입니다.");
+    }
+
+    @DisplayName("등록한 도서의 상세 정보를 조회할 수 있다.")
+    @Test
+    void read() {
+
+        // given
+        User user = createUser("user@gmail.com", "user", "provId1");
+        userRepository.save(user);
+
+        Room room = createRoom(user);
+        roomRepository.save(room);
+
+        Book book1 = createBook(1L, "book1");
+        bookRepository.save(book1);
+
+        MyBook myBook1 = createMyBook(room, book1, user);
+        myBookRepository.save(myBook1);
+
+        // when
+        MyBookResponse response = myBookService.read(myBook1.getId());
+
+        // then
+        assertThat(response.id()).isEqualTo(myBook1.getId());
+        assertThat(response.title()).isEqualTo(myBook1.getBook().getTitle());
+    }
+
+    @DisplayName("등록되지 않은 도서의 상세 정보를 조회하는 경우 예외가 발생한다.")
+    @Test
+    void readWhenIsNotRegisteredBook() {
+
+        // given
+        User user = createUser("user@gmail.com", "user", "provId1");
+        userRepository.save(user);
+
+        Room room = createRoom(user);
+        roomRepository.save(room);
+
+        Book book1 = createBook(1L, "book1");
+        bookRepository.save(book1);
+
+        MyBook myBook1 = createMyBook(room, book1, user);
+        myBookRepository.save(myBook1);
+
+        // when // then
+        assertThatThrownBy(() -> myBookService.read(0L))
+                .isInstanceOf(MyBookNotFoundException.class)
+                .hasMessage("등록 도서를 찾을 수 없습니다.");
     }
 
     @DisplayName("사용자가 등록한 도서 목록을 최신 등록일 순으로 페이징 해서 조회할 수 있다. 첫 번째 페이지 조회.")
