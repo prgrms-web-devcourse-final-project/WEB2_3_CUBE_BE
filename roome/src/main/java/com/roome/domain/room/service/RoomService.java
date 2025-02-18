@@ -51,9 +51,13 @@ public class RoomService {
     }
 
     @Transactional
-    public RoomResponseDto updateRoomTheme(Long roomId, String newTheme){
+    public RoomResponseDto updateRoomTheme(Long userId, Long roomId, String newTheme){
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+
+        if(!room.getUser().getId().equals(userId)){
+            throw new BusinessException(ErrorCode.ROOM_ACCESS_DENIED);
+        }
 
         RoomTheme theme = RoomTheme.fromString(newTheme);
         room.updateTheme(theme);

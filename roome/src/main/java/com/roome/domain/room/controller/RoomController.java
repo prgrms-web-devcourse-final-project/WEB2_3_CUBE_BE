@@ -35,9 +35,10 @@ public class RoomController {
     @PreAuthorize("isAuthenticated()")
     @PutMapping("/{roomId}")
     public RoomResponseDto updateRoomTheme(
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long roomId,
             @RequestBody UpdateRoomThemeRequestDto requestDto
             ) {
-        return roomService.updateRoomTheme(roomId, requestDto.getThemeName());
+        return roomService.updateRoomTheme(userId, roomId, requestDto.getThemeName());
     }
 }
