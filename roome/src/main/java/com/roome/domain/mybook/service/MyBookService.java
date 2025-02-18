@@ -7,8 +7,10 @@ import com.roome.domain.mybook.entity.MyBookCount;
 import com.roome.domain.mybook.entity.repository.MyBookCountRepository;
 import com.roome.domain.mybook.entity.repository.MyBookRepository;
 import com.roome.domain.mybook.service.request.MyBookCreateRequest;
+import com.roome.domain.mybook.service.response.MyBookResponse;
 import com.roome.domain.mybook.service.response.MyBooksResponse;
 import com.roome.domain.room.entity.Room;
+import com.roome.domain.room.exception.DoNotHavePermissionToRoomException;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
@@ -32,9 +34,11 @@ public class MyBookService {
     private final UserRepository userRepository;
 
     @Transactional
-    public void create(Long userId, Long roomId, MyBookCreateRequest request) {
-        User user = userRepository.findById(userId).orElseThrow();
-        Room room = roomRepository.findById(roomId).orElseThrow();
+    public MyBookResponse create(Long userId, Long roomId, MyBookCreateRequest request) {
+        User user = userRepository.getById(userId);
+        Room room = roomRepository.getById(roomId);
+        validateRoomOwner(room, userId);
+
         Book book = bookRepository.save(
                 Book.create(
                         request.isbn(),
@@ -48,11 +52,13 @@ public class MyBookService {
                 )
         );
 
-        myBookRepository.save(MyBook.create(user, room, book));
+        MyBook myBook = myBookRepository.save(MyBook.create(user, room, book));
         int result = myBookCountRepository.increase(roomId);
         if (result == 0) {
             myBookCountRepository.save(MyBookCount.init(room));
         }
+
+        return MyBookResponse.from(myBook);
     }
 
     public MyBooksResponse readAll(Long roomId, Long pageSize, Long lastMyBookId) {
@@ -64,10 +70,18 @@ public class MyBookService {
 
     @Transactional
     public void delete(Long userId, Long roomId, String myBookIds) {
-        User user = userRepository.findById(userId).orElseThrow();
+        Room room = roomRepository.getById(userId);
+        validateRoomOwner(room, userId);
+
         List<String> ids = convertStringToList(myBookIds);
         myBookRepository.deleteAllIn(ids);
         myBookCountRepository.decrease(roomId, ids.size());
+    }
+
+    private void validateRoomOwner(Room room, Long userId) {
+        if (!room.isCreatedBy(userId)) {
+            throw new DoNotHavePermissionToRoomException();
+        }
     }
 
     private Long count(Long roomId) {

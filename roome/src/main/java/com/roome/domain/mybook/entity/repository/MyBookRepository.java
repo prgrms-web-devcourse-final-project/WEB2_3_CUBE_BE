@@ -1,6 +1,7 @@
 package com.roome.domain.mybook.entity.repository;
 
 import com.roome.domain.mybook.entity.MyBook;
+import com.roome.domain.mybook.exception.MyBookNotFoundException;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -9,6 +10,11 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface MyBookRepository extends JpaRepository<MyBook, Long> {
+
+    default MyBook getById(Long id) {
+        return findById(id)
+                .orElseThrow(MyBookNotFoundException::new);
+    }
 
     @Query(
             value = """
