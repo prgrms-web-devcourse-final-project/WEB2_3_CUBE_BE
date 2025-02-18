@@ -32,6 +32,8 @@ public enum ErrorCode {
   ALREADY_HOUSEMATE(HttpStatus.BAD_REQUEST, "이미 하우스메이트로 추가된 사용자입니다."),
   //하우스 메이트 삭제 시 발생 예외
   NOT_HOUSEMATE(HttpStatus.BAD_REQUEST, "하우스메이트로 추가되지 않은 사용자입니다."),
+  //서버 에러
+  INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 에러가 발생했습니다.")
   ;
 
 

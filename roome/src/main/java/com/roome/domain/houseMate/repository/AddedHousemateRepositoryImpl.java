@@ -1,16 +1,16 @@
-package com.roome.domain.mate.repository;
+package com.roome.domain.houseMate.repository;
 
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.roome.domain.mate.dto.HousemateInfo;
+import com.roome.domain.houseMate.dto.HousemateInfo;
 import com.roome.domain.user.entity.QUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
 
-import static com.roome.domain.mate.entity.QAddedHousemate.addedHousemate;
+import static com.roome.domain.houseMate.entity.QAddedHousemate.addedHousemate;
 
 @RequiredArgsConstructor
 public class AddedHousemateRepositoryImpl implements AddedHousemateRepositoryCustom {

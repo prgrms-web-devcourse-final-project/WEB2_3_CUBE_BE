@@ -1,6 +1,6 @@
-package com.roome.domain.mate.repository;
+package com.roome.domain.houseMate.repository;
 
-import com.roome.domain.mate.dto.HousemateInfo;
+import com.roome.domain.houseMate.dto.HousemateInfo;
 
 import java.util.List;
 

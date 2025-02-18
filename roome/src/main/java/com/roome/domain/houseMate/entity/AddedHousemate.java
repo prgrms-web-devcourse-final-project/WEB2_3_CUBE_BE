@@ -1,4 +1,4 @@
-package com.roome.domain.mate.entity;
+package com.roome.domain.houseMate.entity;
 
 import com.roome.global.entity.BaseTimeEntity;
 import jakarta.persistence.*;

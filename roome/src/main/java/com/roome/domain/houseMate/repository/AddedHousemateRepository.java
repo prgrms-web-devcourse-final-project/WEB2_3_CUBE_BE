@@ -1,6 +1,6 @@
-package com.roome.domain.mate.repository;
+package com.roome.domain.houseMate.repository;
 
-import com.roome.domain.mate.entity.AddedHousemate;
+import com.roome.domain.houseMate.entity.AddedHousemate;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AddedHousemateRepository extends JpaRepository<AddedHousemate, Long>, AddedHousemateRepositoryCustom {

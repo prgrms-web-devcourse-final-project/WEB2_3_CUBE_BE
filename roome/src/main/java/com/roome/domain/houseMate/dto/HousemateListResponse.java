@@ -1,4 +1,4 @@
-package com.roome.domain.mate.dto;
+package com.roome.domain.houseMate.dto;
 
 import lombok.Builder;
 import lombok.Getter;

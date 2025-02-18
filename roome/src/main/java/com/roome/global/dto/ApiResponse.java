@@ -1,5 +1,6 @@
 package com.roome.global.dto;
 
+import com.roome.global.response.SuccessCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,11 @@ public class ApiResponse<T> {
     // 성공 응답 (httpStatus 코드 종류 다양하게 할 시 사용)
     public static <T> ApiResponse<T> success(HttpStatus httpStatus, String message, T data) {
         return new ApiResponse<>(true, httpStatus.value(), message, data);
+    }
+
+    // SuccessCode를 사용하는 성공 응답
+    public static <T> ApiResponse<T> success(SuccessCode successCode, T data) {
+        return new ApiResponse<>(true, successCode.getStatus().value(), successCode.getMessage(), data);
     }
 
     // 에러 응답
