@@ -15,7 +15,7 @@ public class GlobalExceptionHandler {
     ErrorCode error = e.getErrorCode();
     return ResponseEntity
         .status(error.getStatus())
-        .body(new ErrorResponse(error.getMessage(), error.getStatus().toString()));
+        .body(new ErrorResponse(error.getMessage(), error.getStatus().value()));
   }
 
   // DB 관련 예외 처리
@@ -23,7 +23,6 @@ public class GlobalExceptionHandler {
   protected ResponseEntity<ErrorResponse> handleDataAccessException(DataAccessException e) {
     return ResponseEntity
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .body(new ErrorResponse("데이터베이스 오류가 발생했습니다."
-            , HttpStatus.INTERNAL_SERVER_ERROR.toString()));
+        .body(new ErrorResponse("데이터베이스 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR.value()));
   }
 }
