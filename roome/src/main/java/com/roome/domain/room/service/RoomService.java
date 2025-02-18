@@ -39,4 +39,11 @@ public class RoomService {
 
         return RoomResponseDto.from(room);
     }
+
+    public RoomResponseDto getRoomByUserId(Long userId){
+        Room room = roomRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+
+        return RoomResponseDto.from(room);
+    }
 }
