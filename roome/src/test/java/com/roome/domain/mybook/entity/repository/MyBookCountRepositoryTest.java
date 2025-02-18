@@ -1,4 +1,4 @@
-package com.roome.mybook.entity.repository;
+package com.roome.domain.mybook.entity.repository;
 
 import com.roome.domain.mybook.entity.MyBookCount;
 import com.roome.domain.mybook.entity.repository.MyBookCountRepository;

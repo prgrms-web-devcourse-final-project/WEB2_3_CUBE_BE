@@ -1,4 +1,4 @@
-package com.roome.mybook.service;
+package com.roome.domain.mybook.service;
 
 import com.roome.domain.book.entity.Book;
 import com.roome.domain.book.entity.repository.BookRepository;

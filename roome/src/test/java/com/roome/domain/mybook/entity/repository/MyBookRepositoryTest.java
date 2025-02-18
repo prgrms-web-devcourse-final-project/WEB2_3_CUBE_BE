@@ -1,4 +1,4 @@
-package com.roome.mybook.entity.repository;
+package com.roome.domain.mybook.entity.repository;
 
 import com.roome.domain.book.entity.Book;
 import com.roome.domain.book.entity.repository.BookRepository;
