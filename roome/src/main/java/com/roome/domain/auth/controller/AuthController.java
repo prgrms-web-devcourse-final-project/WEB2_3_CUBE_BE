@@ -4,6 +4,7 @@ import com.roome.domain.auth.dto.oauth2.OAuth2Provider;
 import com.roome.domain.auth.dto.request.LoginRequest;
 import com.roome.domain.auth.dto.response.LoginResponse;
 import com.roome.domain.auth.exception.InvalidProviderException;
+import com.roome.domain.auth.exception.MissingAuthorizationCodeException;
 import com.roome.domain.auth.exception.OAuth2AuthenticationProcessingException;
 import com.roome.domain.auth.service.OAuth2LoginService;
 import com.roome.global.jwt.dto.JwtToken;
@@ -31,19 +32,34 @@ public class AuthController {
 
         try {
 
-        OAuth2Provider oAuth2Provider = OAuth2Provider.from(provider);
+            if (request.getCode() == null || request.getCode().trim().isEmpty()) {
+                log.error("[로그인 실패] 요청에 authorization code가 없음 (provider: {})", provider);
+                throw new MissingAuthorizationCodeException();
+            }
 
-        // 로그인 처리
-        LoginResponse loginResponse = oAuth2LoginService.login(oAuth2Provider, request.getCode());
+            OAuth2Provider oAuth2Provider = OAuth2Provider.from(provider);
 
-        // JWT 발급 후 응답 헤더와 쿠키 설정
-        JwtToken jwtToken = new JwtToken(loginResponse.getAccessToken(), loginResponse.getRefreshToken(), "Bearer");
-        tokenResponseHelper.setTokenResponse(response, jwtToken);
+            // 로그인 처리
+            LoginResponse loginResponse = oAuth2LoginService.login(oAuth2Provider, request.getCode());
 
-        return ResponseEntity.ok(loginResponse);
+            if (loginResponse == null) {
+                log.error("[로그인 실패] 로그인 응답이 null임 (provider: {})", provider);
+                throw new OAuth2AuthenticationProcessingException();
+            }
 
+            // JWT 발급 후 응답 헤더와 쿠키 설정
+            tokenResponseHelper.setTokenResponse(response, new JwtToken(
+                    loginResponse.getAccessToken(),
+                    loginResponse.getRefreshToken(),
+                    "Bearer"
+            ));
+
+            return ResponseEntity.ok(loginResponse);
         } catch (InvalidProviderException e) {
-            log.error("Invalid provider: {}", provider, e);
+            log.error("[로그인 실패] 잘못된 provider 요청 (provider: {})", provider, e);
+            throw e;
+        } catch (OAuth2AuthenticationProcessingException e) {
+            log.error("[로그인 실패] OAuth2 처리 중 오류 발생 (provider: {})", provider, e);
             throw e;
         } catch (Exception e) {
             log.error("Login failed for provider: {}", provider, e);
