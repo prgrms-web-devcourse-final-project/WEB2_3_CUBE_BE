@@ -3,7 +3,6 @@ package com.roome.domain.room.entity;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import lombok.Getter;
-import java.util.Arrays;
 
 @Getter
 public enum RoomTheme {

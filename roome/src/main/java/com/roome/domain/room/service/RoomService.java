@@ -19,8 +19,6 @@ public class RoomService {
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
 
-    private static final String DEFAULT_THEME = "basic";
-
     @Transactional
     public RoomResponseDto createRoom(Long userId){
         User user = userRepository.findById(userId)
