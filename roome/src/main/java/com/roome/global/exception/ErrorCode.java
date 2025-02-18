@@ -9,9 +9,9 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
 
   // OAuth2 로그인 관련 예외
-  UNSUPPORTED_OAUTH2_PROVIDER(HttpStatus.BAD_REQUEST, "지원하지 않는 로그인 방식입니다."),
+  INVALID_PROVIDER(HttpStatus.BAD_REQUEST, "지원하지 않는 로그인 방식입니다."),
   AUTHENTICATION_FAILED(HttpStatus.UNAUTHORIZED, "인증에 실패했습니다."),
-  OAUTH2_AUTHENTICATION_ERROR(HttpStatus.UNAUTHORIZED, "소셜 로그인 인증 중 오류가 발생했습니다."),
+  OAUTH2_AUTHENTICATION_PROCESSING(HttpStatus.UNAUTHORIZED, "소셜 로그인 처리 중 오류가 발생했습니다."),
   INVALID_LOGIN(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 일치하지 않습니다."),
   DISABLED_ACCOUNT(HttpStatus.FORBIDDEN, "비활성화된 계정입니다."),
 
