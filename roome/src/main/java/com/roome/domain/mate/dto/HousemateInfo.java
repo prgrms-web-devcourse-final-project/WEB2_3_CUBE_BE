@@ -4,8 +4,6 @@ import com.roome.domain.user.entity.Status;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
-
 @Getter
 public class HousemateInfo {
     private Long userId;

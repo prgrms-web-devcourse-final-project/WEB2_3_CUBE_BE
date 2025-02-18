@@ -2,7 +2,6 @@ package com.roome.domain.mate.repository;
 
 import com.roome.domain.mate.dto.HousemateInfo;
 
-import java.awt.print.Pageable;
 import java.util.List;
 
 public interface AddedHousemateRepositoryCustom {
