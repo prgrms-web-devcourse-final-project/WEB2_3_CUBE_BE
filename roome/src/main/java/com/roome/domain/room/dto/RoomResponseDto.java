@@ -23,7 +23,7 @@ public class RoomResponseDto {
         return RoomResponseDto.builder()
                 .roomId(room.getId())
                 .userId(room.getUser().getId())
-                .theme(room.getTheme())
+                .theme(room.getTheme().getThemeName())
                 .createdAt(room.getCreatedAt())
                 .furnitures(room.getFurnitures().stream()
                         .map(FurnitureResponseDto::from)
