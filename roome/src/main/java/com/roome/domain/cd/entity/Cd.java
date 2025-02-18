@@ -37,7 +37,8 @@ public class Cd extends BaseEntity {
   @Column(nullable = false)
   private int duration; // 영상 길이 (초 단위)
 
-  public Cd(String title, String artist, String album, String genre, String coverUrl, String youtubeVideoId, int duration) {
+  public Cd(String title, String artist, String album, String genre, String coverUrl,
+      String youtubeVideoId, int duration) {
     this.title = title;
     this.artist = artist;
     this.album = album;
