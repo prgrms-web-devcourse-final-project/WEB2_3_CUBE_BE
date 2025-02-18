@@ -14,11 +14,12 @@ public enum ErrorCode {
   OAUTH2_AUTHENTICATION_PROCESSING(HttpStatus.UNAUTHORIZED, "소셜 로그인 처리 중 오류가 발생했습니다."),
   INVALID_LOGIN(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 일치하지 않습니다."),
   DISABLED_ACCOUNT(HttpStatus.FORBIDDEN, "비활성화된 계정입니다."),
+  MISSING_AUTHORIZATION_CODE(HttpStatus.BAD_REQUEST, "로그인 요청에는 authorization code가 필요합니다."),
 
   // JWT 관련 예외
   INVALID_JWT_TOKEN(HttpStatus.BAD_REQUEST, "JWT 토큰이 유효하지 않거나, 입력값이 비어 있습니다."),
   INVALID_REFRESH_TOKEN(HttpStatus.BAD_REQUEST, "Refresh 토큰이 유효하지 않거나, 입력값이 비어 있습니다."),
-  MISSING_AUTHORITY(HttpStatus.UNAUTHORIZED, "해당 토큰에는 권한 정보가 포함되어 있지 않습니다."),
+  MISSING_AUTHORITY(HttpStatus.BAD_REQUEST, "해당 토큰에는 권한 정보가 포함되어 있지 않습니다."),
 
   // User 관련 예외
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),

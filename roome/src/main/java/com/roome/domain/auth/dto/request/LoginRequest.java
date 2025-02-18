@@ -8,4 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class LoginRequest {
     private String code;
+
+    public LoginRequest(String code) {
+        this.code = code;
+    }
 }
