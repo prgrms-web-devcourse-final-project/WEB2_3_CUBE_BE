@@ -29,19 +29,7 @@ public class MyBookReviewService {
         MyBook myBook = myBookRepository.getById(myBookId);
         myBook.validateOwner(userId);
 
-        MyBookReview myBookReview = myBookReviewRepository.save(
-                MyBookReview.create(
-                        request.title(),
-                        request.quote(),
-                        request.takeaway(),
-                        request.motivate(),
-                        request.topic(),
-                        request.freeFormText(),
-                        request.coverColor(),
-                        myBook,
-                        user
-                )
-        );
+        MyBookReview myBookReview = myBookReviewRepository.save(request.toEntity());
         return MyBookReviewResponse.from(myBookReview);
     }
 
@@ -57,15 +45,7 @@ public class MyBookReviewService {
         MyBookReview review = myBookReviewRepository.getById(myBookReviewId);
         review.validateOwner(userId);
 
-        review.update(
-                request.title(),
-                request.quote(),
-                request.takeaway(),
-                request.motivate(),
-                request.topic(),
-                request.freeFormText(),
-                request.coverColor()
-        );
+        review.update(request.toEntity());
         return MyBookReviewResponse.from(review);
     }
 

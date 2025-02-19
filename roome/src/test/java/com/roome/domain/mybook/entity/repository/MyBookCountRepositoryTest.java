@@ -1,7 +1,6 @@
 package com.roome.domain.mybook.entity.repository;
 
 import com.roome.domain.mybook.entity.MyBookCount;
-import com.roome.domain.mybook.entity.repository.MyBookCountRepository;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.entity.RoomTheme;
 import com.roome.domain.room.repository.RoomRepository;

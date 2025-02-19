@@ -40,28 +40,14 @@ public class MyBookReview {
     @JoinColumn(name = "user_id")
     private User user;
 
-    public static MyBookReview create(String title, String quote, String takeaway, String motivate, String topic, String freeFormText, String coverColor, MyBook myBook, User user) {
-        MyBookReview myBookReview = new MyBookReview();
-        myBookReview.title = title;
-        myBookReview.quote = quote;
-        myBookReview.takeaway = takeaway;
-        myBookReview.motivate = motivate;
-        myBookReview.topic = topic;
-        myBookReview.freeFormText = freeFormText;
-        myBookReview.coverColor = CoverColor.valueOf(coverColor);
-        myBookReview.myBook = myBook;
-        myBookReview.user = user;
-        return myBookReview;
-    }
-
-    public void update(String title, String quote, String takeaway, String motivate, String topic, String freeFormText, String coverColor) {
-        this.title = title;
-        this.quote = quote;
-        this.takeaway = takeaway;
-        this.motivate= motivate;
-        this.topic = topic;
-        this.freeFormText = freeFormText;
-        this.coverColor = CoverColor.valueOf(coverColor);
+    public void update(MyBookReview myBookReview) {
+        this.title = myBookReview.getTitle();
+        this.quote = myBookReview.getQuote();
+        this.takeaway = myBookReview.getTakeaway();
+        this.motivate= myBookReview.getMotivate();
+        this.topic = myBookReview.getTopic();
+        this.freeFormText = myBookReview.getFreeFormText();
+        this.coverColor = myBookReview.getCoverColor();
     }
 
     public void validateOwner(Long userId) {
