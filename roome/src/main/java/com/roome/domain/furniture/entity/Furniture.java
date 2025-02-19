@@ -50,15 +50,6 @@ public class Furniture {
     }
 
     public int getMaxCapacity(){
-        switch(level){
-            case 1:
-                return 5;
-            case 2:
-                return 10;
-            case 3:
-                return 15;
-            default:
-                throw new IllegalStateException("유효하지 않은 가구 레벨입니다.");
-        }
+        return FurnitureCapacity.getCapacity(furnitureType, level);
     }
 }
