@@ -23,7 +23,6 @@ public class TokenService {
     public JwtToken reissueToken(String refreshToken) {
         validateRefreshToken(refreshToken);
         User user = findUserByRefreshToken(refreshToken);
-        verifyRefreshTokenMatch(refreshToken, user);
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(user.getId().toString(), null);
         return jwtTokenProvider.createToken(authentication);
@@ -42,11 +41,5 @@ public class TokenService {
 
         return userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
-    }
-
-    private void verifyRefreshTokenMatch(String refreshToken, User user) {
-        if (!refreshToken.equals(user.getRefreshToken())) {
-            throw new InvalidRefreshTokenException();
-        }
     }
 }
