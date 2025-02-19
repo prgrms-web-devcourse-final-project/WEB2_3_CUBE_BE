@@ -39,7 +39,7 @@ public class MyBook {
     }
 
     public void validateOwner(Long userId) {
-        if (user == null || user.getId().equals(userId)) {
+        if (user == null || !user.getId().equals(userId)) {
             throw new MyBookAuthorizationException();
         }
     }
