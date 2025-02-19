@@ -5,7 +5,6 @@ import com.roome.domain.mybook.entity.repository.MyBookRepository;
 import com.roome.domain.mybook.exception.DoNotHavePermissionToMyBookException;
 import com.roome.domain.mybookreview.entity.MyBookReview;
 import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
-import com.roome.domain.mybookreview.exception.DoNotHavePermissionToReviewException;
 import com.roome.domain.mybookreview.exception.MyBookReviewNotFoundException;
 import com.roome.domain.mybookreview.service.request.MyBookReviewCreateRequest;
 import com.roome.domain.mybookreview.service.request.MyBookReviewUpdateRequest;
@@ -49,14 +48,15 @@ public class MyBookReviewService {
 
     public MyBookReviewResponse read(Long myBookId) {
         return MyBookReviewResponse.from(
-                myBookReviewRepository.findByMyBookId(myBookId).orElseThrow(MyBookReviewNotFoundException::new)
+                myBookReviewRepository.findByMyBookId(myBookId)
+                        .orElseThrow(MyBookReviewNotFoundException::new)
         );
     }
 
     @Transactional
     public MyBookReviewResponse update(Long userId, Long myBookReviewId, MyBookReviewUpdateRequest request) {
         MyBookReview review = myBookReviewRepository.getById(myBookReviewId);
-        validateReviewOwner(review, userId);
+        review.validateOwner(userId);
 
         review.update(
                 request.title(),
@@ -73,7 +73,7 @@ public class MyBookReviewService {
     @Transactional
     public void delete(Long userId, Long myBookReviewId) {
         MyBookReview review = myBookReviewRepository.getById(myBookReviewId);
-        validateReviewOwner(review, userId);
+        review.validateOwner(userId);
 
         myBookReviewRepository.delete(review);
     }
@@ -81,12 +81,6 @@ public class MyBookReviewService {
     private void validateMyBookOwner(MyBook myBook, Long userId) {
         if (!myBook.isRegisteredBy(userId)) {
             throw new DoNotHavePermissionToMyBookException();
-        }
-    }
-
-    private void validateReviewOwner(MyBookReview review, Long userId) {
-        if (!review.isWrittenBy(userId)) {
-            throw new DoNotHavePermissionToReviewException();
         }
     }
 }
