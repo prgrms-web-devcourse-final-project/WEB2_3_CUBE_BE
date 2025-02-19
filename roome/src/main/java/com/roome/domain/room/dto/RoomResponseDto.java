@@ -18,8 +18,10 @@ public class RoomResponseDto {
     private String theme;
     private LocalDateTime createdAt;
     private List<FurnitureResponseDto> furnitures;
+    private StorageLimitsDto storageLimits;
+    private UserStorageDto userStorage;
 
-    public static RoomResponseDto from(Room room) {
+    public static RoomResponseDto from(Room room, int savedMusic, int savedBooks, int writtenReviews, int writtenMusicLogs) {
         return RoomResponseDto.builder()
                 .roomId(room.getId())
                 .userId(room.getUser().getId())
@@ -28,6 +30,8 @@ public class RoomResponseDto {
                 .furnitures(room.getFurnitures().stream()
                         .map(FurnitureResponseDto::from)
                         .collect(Collectors.toList()))
+                .storageLimits(StorageLimitsDto.from(room))
+                .userStorage(UserStorageDto.from(savedMusic, savedBooks, writtenReviews, writtenMusicLogs))
                 .build();
     }
 }

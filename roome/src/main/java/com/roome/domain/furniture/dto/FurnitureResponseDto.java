@@ -9,13 +9,15 @@ import lombok.Getter;
 public class FurnitureResponseDto {
     private String furnitureType;
     private Boolean isVisible;
-    private Integer level;
+    private int level;
+    private int maxCapacity;
 
     public static FurnitureResponseDto from(Furniture furniture) {
         return FurnitureResponseDto.builder()
                 .furnitureType(furniture.getFurnitureType().name())
                 .isVisible(furniture.getIsVisible())
                 .level(furniture.getLevel())
+                .maxCapacity(furniture.getMaxCapacity())
                 .build();
     }
 }
