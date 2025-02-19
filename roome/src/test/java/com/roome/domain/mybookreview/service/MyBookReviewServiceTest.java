@@ -334,7 +334,6 @@ class MyBookReviewServiceTest {
                 .publisher("publisher1")
                 .publishedDate(LocalDate.of(2025, 1, 1))
                 .imageUrl("url")
-                .category("category")
                 .page(100L)
                 .build();
     }
