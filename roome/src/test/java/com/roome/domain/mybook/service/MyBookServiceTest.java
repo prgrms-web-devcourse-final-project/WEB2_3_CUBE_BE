@@ -70,6 +70,8 @@ class MyBookServiceTest {
         Book book = createBook(1L, "book");
         bookRepository.save(book);
 
+        List<String> genreNames = List.of("IT", "웹");
+
         MyBookCreateRequest request = new MyBookCreateRequest(
                 book.getIsbn(),
                 book.getTitle(),
@@ -77,7 +79,7 @@ class MyBookServiceTest {
                 book.getPublisher(),
                 book.getPublishedDate(),
                 book.getImageUrl(),
-                book.getCategory(),
+                genreNames,
                 book.getPage()
         );
 
@@ -85,7 +87,11 @@ class MyBookServiceTest {
         MyBookResponse myBookResponse = myBookService.create(user.getId(), room.getId(), request);
 
         // then
-        assertThat(myBookResponse.title()).isEqualTo(book.getTitle());
+        MyBook myBook = myBookRepository.findById(myBookResponse.id()).orElseThrow();
+        assertThat(myBook.getBook().getTitle()).isEqualTo(book.getTitle());
+        assertThat(myBook.getBook().getBookGenres()).hasSize(2)
+                .extracting("genre.name")
+                .containsExactlyInAnyOrder("IT", "웹");
 
         Long count = myBookCountRepository.findByRoomId(room.getId())
                 .map(MyBookCount::getCount)
@@ -115,7 +121,7 @@ class MyBookServiceTest {
                 book.getPublisher(),
                 book.getPublishedDate(),
                 book.getImageUrl(),
-                book.getCategory(),
+                List.of(),
                 book.getPage()
         );
 
@@ -360,7 +366,6 @@ class MyBookServiceTest {
                 .publisher("publisher1")
                 .publishedDate(LocalDate.of(2025, 1, 1))
                 .imageUrl("url")
-                .category("category")
                 .page(100L)
                 .build();
     }

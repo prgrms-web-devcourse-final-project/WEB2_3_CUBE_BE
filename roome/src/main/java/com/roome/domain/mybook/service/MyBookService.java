@@ -1,7 +1,10 @@
 package com.roome.domain.mybook.service;
 
 import com.roome.domain.book.entity.Book;
+import com.roome.domain.book.entity.BookGenre;
+import com.roome.domain.book.entity.Genre;
 import com.roome.domain.book.entity.repository.BookRepository;
+import com.roome.domain.book.entity.repository.GenreRepository;
 import com.roome.domain.mybook.entity.MyBook;
 import com.roome.domain.mybook.entity.MyBookCount;
 import com.roome.domain.mybook.entity.repository.MyBookCountRepository;
@@ -31,6 +34,7 @@ public class MyBookService {
     private final BookRepository bookRepository;
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
+    private final GenreRepository genreRepository;
 
     @Transactional
     public MyBookResponse create(Long userId, Long roomId, MyBookCreateRequest request) {
@@ -38,18 +42,9 @@ public class MyBookService {
         Room room = roomRepository.getById(roomId);
         room.validateOwner(userId);
 
-        Book book = bookRepository.save(
-                Book.create(
-                        request.isbn(),
-                        request.title(),
-                        request.author(),
-                        request.publisher(),
-                        request.publishedDate(),
-                        request.imageUrl(),
-                        request.category(),
-                        request.page()
-                )
-        );
+        Book book = request.toBookEntity();
+        addGenres(book, request.genreNames());
+        bookRepository.save(book);
 
         MyBook myBook = myBookRepository.save(MyBook.create(user, room, book));
         int result = myBookCountRepository.increase(roomId);
@@ -87,5 +82,25 @@ public class MyBookService {
         return myBookCountRepository.findByRoomId(roomId)
                 .map(MyBookCount::getCount)
                 .orElse(0L);
+    }
+
+    private void addGenres(Book book, List<String> genreNames) {
+        List<Genre> genres = findGenresFrom(genreNames);
+        for (Genre genre : genres) {
+            book.addBookGenre(
+                    BookGenre.builder().book(book).genre(genre).build()
+            );
+        }
+    }
+
+    private List<Genre> findGenresFrom(List<String> genreNames) {
+        return genreNames.stream()
+                .map(genreName -> genreRepository.findByName(genreName)
+                        .orElseGet(() -> {
+                            Genre genre = Genre.create(genreName);
+                            genreRepository.save(genre);
+                            return genre;
+                        })
+                ).toList();
     }
 }
