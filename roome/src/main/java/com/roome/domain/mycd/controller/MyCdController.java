@@ -1,6 +1,7 @@
 package com.roome.domain.mycd.controller;
 
-import com.roome.domain.mycd.dto.MyCdRequest;
+import com.roome.domain.mycd.dto.MyCdCreateRequest;
+import com.roome.domain.mycd.dto.MyCdListResponse;
 import com.roome.domain.mycd.dto.MyCdResponse;
 import com.roome.domain.mycd.service.MyCdService;
 import com.roome.global.jwt.service.JwtTokenProvider;
@@ -11,8 +12,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -26,10 +29,25 @@ public class MyCdController {
   @PostMapping("/api/mycd")
   public ResponseEntity<MyCdResponse> addMyCd(
       HttpServletRequest request,
-      @RequestBody @Valid MyCdRequest myCdRequest) {
-    Long userId = getUserIdFrom(request);  // ✅ MyBookController처럼 직접 토큰에서 userId 추출
+      @RequestBody @Valid MyCdCreateRequest myCdRequest) {
+    Long userId = getUserIdFrom(request);
     MyCdResponse response = myCdService.addCdToMyList(userId, myCdRequest.getCdId());
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
+  }
+
+  @GetMapping("/api/mycd")
+  public ResponseEntity<MyCdListResponse> getMyCdList(
+      HttpServletRequest request,
+      @RequestParam(value = "userId", required = false) Long userId
+  ) {
+    Long authUserId = getUserIdFrom(request);
+
+    // 요청한 userId가 없으면 본인의 CD 목록 조회
+    if (userId == null) {
+      userId = authUserId;
+    }
+
+    return ResponseEntity.ok(myCdService.getMyCdList(userId));
   }
 
   private Long getUserIdFrom(HttpServletRequest request) {
