@@ -28,6 +28,7 @@ public class HousemateController {
             @RequestParam(required = false) String nickname) {
 
         Long UserId = housemateService.findUserIdByUserId(principal.getName());
+
         HousemateListResponse response = housemateService.getFollowerList(
                 UserId, cursor, limit, nickname);
 
@@ -54,6 +55,7 @@ public class HousemateController {
             @PathVariable Long targetId) {
 
         Long UserId = housemateService.findUserIdByUserId(principal.getName());
+        System.out.println(UserId);
         housemateService.addHousemate(UserId, targetId);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
