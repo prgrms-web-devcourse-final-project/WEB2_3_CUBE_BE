@@ -36,6 +36,8 @@ public class MyBookReviewService {
                         request.title(),
                         request.quote(),
                         request.takeaway(),
+                        request.motivate(),
+                        request.topic(),
                         request.freeFormText(),
                         request.coverColor(),
                         myBook,
@@ -60,6 +62,8 @@ public class MyBookReviewService {
                 request.title(),
                 request.quote(),
                 request.takeaway(),
+                request.motivate(),
+                request.topic(),
                 request.freeFormText(),
                 request.coverColor()
         );

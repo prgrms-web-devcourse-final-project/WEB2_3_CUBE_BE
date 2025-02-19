@@ -19,7 +19,6 @@ import com.roome.domain.user.entity.Provider;
 import com.roome.domain.user.entity.Status;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +32,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 @ActiveProfiles("test")
 @Transactional
@@ -63,7 +61,7 @@ class MyBookReviewServiceTest {
     void create() {
 
         // given
-        User user = createUser("user@gmail.com","user", "provId1");
+        User user = createUser("user@gmail.com", "user", "provId1");
         userRepository.save(user);
 
         Room room = createRoom(user);
@@ -79,6 +77,8 @@ class MyBookReviewServiceTest {
                 "title",
                 "quote",
                 "takeaway",
+                "motivate",
+                "topic",
                 "freeFormText",
                 "BLUE"
         );
@@ -95,8 +95,8 @@ class MyBookReviewServiceTest {
     void createWhoIsNotOwnerOfBook() {
 
         // given
-        User user1 = createUser("user1@gmail.com","user1", "provId1");
-        User user2 = createUser("user2@gmail.com","user2", "provId2");
+        User user1 = createUser("user1@gmail.com", "user1", "provId1");
+        User user2 = createUser("user2@gmail.com", "user2", "provId2");
         userRepository.saveAll(List.of(user1, user2));
 
         Room room = createRoom(user1);
@@ -112,6 +112,8 @@ class MyBookReviewServiceTest {
                 "title",
                 "quote",
                 "takeaway",
+                "motivate",
+                "topic",
                 "freeFormText",
                 "BLUE"
         );
@@ -127,7 +129,7 @@ class MyBookReviewServiceTest {
     void read() {
 
         // given
-        User user = createUser("user@gmail.com","user", "provId1");
+        User user = createUser("user@gmail.com", "user", "provId1");
         userRepository.save(user);
 
         Room room = createRoom(user);
@@ -154,7 +156,7 @@ class MyBookReviewServiceTest {
     void readReviewIsEmpty() {
 
         // given
-        User user = createUser("user@gmail.com","user", "provId1");
+        User user = createUser("user@gmail.com", "user", "provId1");
         userRepository.save(user);
 
         Room room = createRoom(user);
@@ -177,7 +179,7 @@ class MyBookReviewServiceTest {
     void update() {
 
         // given
-        User user = createUser("user@gmail.com","user", "provId1");
+        User user = createUser("user@gmail.com", "user", "provId1");
         userRepository.save(user);
 
         Room room = createRoom(user);
@@ -196,6 +198,8 @@ class MyBookReviewServiceTest {
                 "new-title",
                 "quote",
                 "takeaway",
+                "motivate",
+                "topic",
                 "freeFormText",
                 "BLUE"
         );
@@ -212,8 +216,8 @@ class MyBookReviewServiceTest {
     void updateWhoIsNotOwnerOfBook() {
 
         // given
-        User user1 = createUser("user1@gmail.com","user1", "provId1");
-        User user2 = createUser("user2@gmail.com","user2", "provId2");
+        User user1 = createUser("user1@gmail.com", "user1", "provId1");
+        User user2 = createUser("user2@gmail.com", "user2", "provId2");
         userRepository.saveAll(List.of(user1, user2));
 
         Room room = createRoom(user1);
@@ -232,6 +236,8 @@ class MyBookReviewServiceTest {
                 "new-title",
                 "quote",
                 "takeaway",
+                "motivate",
+                "topic",
                 "freeFormText",
                 "BLUE"
         );
@@ -247,7 +253,7 @@ class MyBookReviewServiceTest {
     void delete() {
 
         // given
-        User user = createUser("user@gmail.com","user", "provId1");
+        User user = createUser("user@gmail.com", "user", "provId1");
         userRepository.save(user);
 
         Room room = createRoom(user);
@@ -275,8 +281,8 @@ class MyBookReviewServiceTest {
     void deleteWhoIsNotOwnerOfBook() {
 
         // given
-        User user1 = createUser("user1@gmail.com","user1", "provId1");
-        User user2 = createUser("user2@gmail.com","user2", "provId2");
+        User user1 = createUser("user1@gmail.com", "user1", "provId1");
+        User user2 = createUser("user2@gmail.com", "user2", "provId2");
         userRepository.saveAll(List.of(user1, user2));
 
         Room room = createRoom(user1);
@@ -346,6 +352,8 @@ class MyBookReviewServiceTest {
                 .title(title)
                 .quote("quote")
                 .takeaway("takeaway")
+                .motivate("motivate")
+                .topic("topic")
                 .freeFormText("freeFormText")
                 .user(user)
                 .myBook(myBook)

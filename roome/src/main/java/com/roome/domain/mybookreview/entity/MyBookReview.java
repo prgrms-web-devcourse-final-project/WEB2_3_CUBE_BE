@@ -22,6 +22,10 @@ public class MyBookReview {
 
     private String takeaway;
 
+    private String motivate;
+
+    private String topic;
+
     private String freeFormText;
 
     @Enumerated(EnumType.STRING)
@@ -35,11 +39,13 @@ public class MyBookReview {
     @JoinColumn(name = "user_id")
     private User user;
 
-    public static MyBookReview create(String title, String quote, String takeaway, String freeFormText, String coverColor, MyBook myBook, User user) {
+    public static MyBookReview create(String title, String quote, String takeaway, String motivate, String topic, String freeFormText, String coverColor, MyBook myBook, User user) {
         MyBookReview myBookReview = new MyBookReview();
         myBookReview.title = title;
         myBookReview.quote = quote;
         myBookReview.takeaway = takeaway;
+        myBookReview.motivate = motivate;
+        myBookReview.topic = topic;
         myBookReview.freeFormText = freeFormText;
         myBookReview.coverColor = CoverColor.valueOf(coverColor);
         myBookReview.myBook = myBook;
@@ -47,10 +53,12 @@ public class MyBookReview {
         return myBookReview;
     }
 
-    public void update(String title, String quote, String takeaway, String freeFormText, String coverColor) {
+    public void update(String title, String quote, String takeaway, String motivate, String topic, String freeFormText, String coverColor) {
         this.title = title;
         this.quote = quote;
         this.takeaway = takeaway;
+        this.motivate= motivate;
+        this.topic = topic;
         this.freeFormText = freeFormText;
         this.coverColor = CoverColor.valueOf(coverColor);
     }
