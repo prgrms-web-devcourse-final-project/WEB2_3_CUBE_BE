@@ -177,4 +177,15 @@ class AuthControllerTest {
         // Verify JWT Token 설정이 정상적으로 호출되었는지 확인
         verify(tokenResponseHelper, times(1)).setTokenResponse(any(HttpServletResponse.class), eq(mockJwtToken));
     }
+
+    @Test
+    @DisplayName("로그아웃 성공")
+    void logoutSuccess() throws Exception {
+        // when
+        mockMvc.perform(post("/api/auth/logout"))
+                .andExpect(status().isOk());
+
+        // then
+        verify(tokenResponseHelper).removeTokenResponse(any(HttpServletResponse.class));
+    }
 }
