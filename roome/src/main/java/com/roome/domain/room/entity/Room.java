@@ -43,7 +43,7 @@ public class Room {
                 .sum();
     }
 
-    public int getMaxBook(){
+    public int getMaxBooks(){
         return furnitures.stream()
                 .filter(f -> f.getFurnitureType() == FurnitureType.BOOKSHELF)
                 .mapToInt(Furniture::getMaxCapacity)
