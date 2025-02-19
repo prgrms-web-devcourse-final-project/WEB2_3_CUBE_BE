@@ -25,8 +25,12 @@ public class OAuth2UserPrincipal implements OAuth2User, UserDetails {
 
     @Override
     public Map<String, Object> getAttributes() {
-        return attributes;
+        return Map.of(
+                "user", oAuth2Response,
+                "email", user.getEmail()
+        );
     }
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -36,6 +40,10 @@ public class OAuth2UserPrincipal implements OAuth2User, UserDetails {
     @Override
     public String getName() {
         return user.getName();
+    }
+
+    public String getEmail() {
+        return user.getEmail();
     }
 
     @Override

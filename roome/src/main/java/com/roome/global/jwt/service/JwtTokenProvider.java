@@ -1,5 +1,6 @@
 package com.roome.global.jwt.service;
 
+import com.roome.domain.auth.security.OAuth2UserPrincipal;
 import com.roome.global.jwt.dto.JwtToken;
 import com.roome.global.jwt.exception.InvalidJwtTokenException;
 import io.jsonwebtoken.*;
@@ -22,10 +23,15 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class JwtTokenProvider {
 
-    private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 30;                 // TODO: 재발급 테스트 후 수정
+    private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 30;
     private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 14; // 14일
 
     private SecretKey secretKey;
+
+    // 테스트를 위한 setter
+    public void setSecretKey(SecretKey secretKey) {
+        this.secretKey = secretKey;
+    }
 
     @Value("${spring.jwt.secret}")
     private String secret;
@@ -38,18 +44,22 @@ public class JwtTokenProvider {
 
     // User 정보로 Access Token 생성
     public JwtToken createToken(Authentication authentication) {
-
         long now = (new Date()).getTime();
         String userId = authentication.getName();
+        String email = null;
 
-        // Access Token 생성
+        // OAuth2UserPrincipal에서 email 추출
+        if (authentication.getPrincipal() instanceof OAuth2UserPrincipal) {
+            email = ((OAuth2UserPrincipal) authentication.getPrincipal()).getEmail();
+        }
+
         String accessToken = Jwts.builder()
                 .setSubject(userId)
+                .claim("email", email)
                 .setExpiration(new Date(now + ACCESS_TOKEN_EXPIRE_TIME))
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
 
-        // Refresh Token 생성
         String refreshToken = Jwts.builder()
                 .setSubject(userId)
                 .setExpiration(new Date(now + REFRESH_TOKEN_EXPIRE_TIME))
@@ -62,6 +72,7 @@ public class JwtTokenProvider {
                 .refreshToken(refreshToken)
                 .build();
     }
+
 
     public Authentication getAuthentication(String accessToken) {
         Claims claims = parseClaims(accessToken);
@@ -100,5 +111,10 @@ public class JwtTokenProvider {
             log.warn("[JWT 만료] 만료된 토큰 접근 시도: {}", accessToken);
             throw new InvalidJwtTokenException();
         }
+    }
+
+    public String getEmailFromToken(String token) {
+        Claims claims = parseClaims(token);
+        return claims.get("email", String.class);
     }
 }

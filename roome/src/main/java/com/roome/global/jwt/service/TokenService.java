@@ -12,6 +12,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -24,7 +26,10 @@ public class TokenService {
         validateRefreshToken(refreshToken);
         User user = findUserByRefreshToken(refreshToken);
 
-        Authentication authentication = new UsernamePasswordAuthenticationToken(user.getId().toString(), null);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                user.getId().toString(), null, Collections.emptyList()
+        );
+
         return jwtTokenProvider.createToken(authentication);
     }
 

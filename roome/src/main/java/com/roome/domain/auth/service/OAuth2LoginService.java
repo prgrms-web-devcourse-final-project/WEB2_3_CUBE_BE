@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Collections;
 import java.util.Map;
 
 @Slf4j
@@ -35,36 +36,42 @@ public class OAuth2LoginService {
     private final OAuth2ClientProperties oauth2ClientProperties;
 
     public LoginResponse login(OAuth2Provider provider, String authorizationCode) {
+        try {
+            // OAuth2 Access Token 요청
+            String accessToken = fetchAccessToken(provider, authorizationCode);
 
-        // OAuth2 Access Token 요청
-        String accessToken = fetchAccessToken(provider, authorizationCode);
+            // Access Token을 이용하여 사용자 정보 요청
+            OAuth2Response oAuth2Response = fetchUserProfile(provider, accessToken);
 
-        // Access Token을 이용하여 사용자 정보 요청
-        OAuth2Response oAuth2Response = fetchUserProfile(provider, accessToken);
+            User user = updateOrCreateUser(oAuth2Response);
 
-        User user = updateOrCreateUser(oAuth2Response);
+            // 첫 로그인 시 방 자동 생성
+            if (user.getLastLogin() == null) {
+                roomService.createRoom(user.getId());
+            }
 
-        // 첫 로그인 시 방 자동 생성
-        if (user.getLastLogin() == null) {
-            roomService.createRoom(user.getId());
+            // Authentication 객체 생성 후 JWT 발급
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                    user.getId().toString(), null, Collections.emptyList()
+            );
+            JwtToken jwtToken = jwtTokenProvider.createToken(authentication);
+
+            return LoginResponse.builder()
+                    .accessToken(jwtToken.getAccessToken())
+                    .refreshToken(jwtToken.getRefreshToken())
+                    .expiresIn(3600L)
+                    .user(LoginResponse.UserInfo.builder()
+                            .userId(user.getId())
+                            .nickname(user.getNickname())
+                            .email(user.getEmail())
+                            .roomId(roomService.getRoomByUserId(user.getId()).getRoomId())
+                            .profileImage(user.getProfileImage())
+                            .build())
+                    .build();
+        } catch (Exception e) {
+            log.error("OAuth2 로그인 처리 중 오류 발생: ", e);
+            throw new OAuth2AuthenticationProcessingException();
         }
-
-        // Authentication 객체 생성 후 JWT 발급
-        Authentication authentication = new UsernamePasswordAuthenticationToken(user.getId().toString(), null);
-        JwtToken jwtToken = jwtTokenProvider.createToken(authentication);
-
-        return LoginResponse.builder()
-                .accessToken(jwtToken.getAccessToken())
-                .refreshToken(jwtToken.getRefreshToken())
-                .expiresIn(3600L)
-                .user(LoginResponse.UserInfo.builder()
-                        .userId(user.getId())
-                        .nickname(user.getNickname())
-                        .email(user.getEmail())
-                        .roomId(roomService.getRoomByUserId(user.getId()).getRoomId())
-                        .profileImage(user.getProfileImage())
-                        .build())
-                .build();
     }
 
     private String fetchAccessToken(OAuth2Provider provider, String authorizationCode) {
@@ -111,6 +118,7 @@ public class OAuth2LoginService {
                         User.builder()
                                 .name(response.getName())
                                 .nickname(response.getName())
+                                .email(response.getEmail())
                                 .profileImage(response.getProfileImageUrl())
                                 .provider(Provider.valueOf(response.getProvider().name()))
                                 .providerId(response.getProviderId())
