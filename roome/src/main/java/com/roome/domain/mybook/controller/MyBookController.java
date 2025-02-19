@@ -25,7 +25,8 @@ public class MyBookController {
             @RequestParam("roomId") Long roomId,
             @RequestBody MyBookCreateRequest request
     ) {
-        Long userId = getUserIdFrom(httpServletRequest);
+//        Long userId = getUserIdFrom(httpServletRequest);
+        Long userId = 1L;
         MyBookResponse response = myBookService.create(userId, roomId, request);
         return ResponseEntity.ok(response);
     }
@@ -52,7 +53,8 @@ public class MyBookController {
             @RequestParam("roomId") Long roomId,
             @RequestParam String myBookIds
     ) {
-        Long userId = getUserIdFrom(httpServletRequest);
+//        Long userId = getUserIdFrom(httpServletRequest);
+        Long userId = 1L;
         myBookService.delete(userId, roomId, myBookIds);
         return ResponseEntity.ok().build();
     }
