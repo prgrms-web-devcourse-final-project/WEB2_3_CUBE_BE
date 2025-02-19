@@ -8,6 +8,8 @@ public record MyBookReviewResponse(
         String title,
         String quote,
         String takeaway,
+        String motivate,
+        String topic,
         String freeFormText,
         CoverColor coverColor
 ) {
@@ -18,6 +20,8 @@ public record MyBookReviewResponse(
                 myBookReview.getTitle(),
                 myBookReview.getQuote(),
                 myBookReview.getTakeaway(),
+                myBookReview.getMotivate(),
+                myBookReview.getTopic(),
                 myBookReview.getFreeFormText(),
                 myBookReview.getCoverColor()
         );
