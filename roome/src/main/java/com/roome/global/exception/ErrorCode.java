@@ -19,10 +19,20 @@ public enum ErrorCode {
   // JWT 관련 예외
   INVALID_JWT_TOKEN(HttpStatus.BAD_REQUEST, "JWT 토큰이 유효하지 않거나, 입력값이 비어 있습니다."),
   INVALID_REFRESH_TOKEN(HttpStatus.BAD_REQUEST, "Refresh 토큰이 유효하지 않거나, 입력값이 비어 있습니다."),
-  MISSING_AUTHORITY(HttpStatus.BAD_REQUEST, "해당 토큰에는 권한 정보가 포함되어 있지 않습니다."),
+  MISSING_AUTHORITY(HttpStatus.UNAUTHORIZED, "해당 토큰에는 권한 정보가 포함되어 있지 않습니다."),
 
   // User 관련 예외
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
+
+  //하우스 메이트 목록 조회 시 페이지네이션 관련 예외
+  INVALID_LIMIT_VALUE(HttpStatus.BAD_REQUEST, "유효하지 않은 limit 값입니다. (1-100 사이의 값을 입력해주세요)"),
+  INVALID_CURSOR_VALUE(HttpStatus.BAD_REQUEST, "유효하지 않은 cursor 값입니다."),
+
+  // 하우스메이트 추가시 발생 예외
+  SELF_FOLLOW_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "자기 자신을 하우스메이트로 추가할 수 없습니다."),
+  ALREADY_HOUSEMATE(HttpStatus.BAD_REQUEST, "이미 하우스메이트로 추가된 사용자입니다."),
+  //하우스 메이트 삭제 시 발생 예외
+  NOT_HOUSEMATE(HttpStatus.BAD_REQUEST, "하우스메이트로 추가되지 않은 사용자입니다."),
 
   // Room 관련 예외
   ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 방을 찾을 수 없습니다."),
@@ -41,7 +51,10 @@ public enum ErrorCode {
 
   // CD 관련 예외
   CD_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 CD를 찾을 수 없습니다."),
-  DUPLICATE_CD(HttpStatus.CONFLICT, "이미 추가된 CD입니다.");
+  DUPLICATE_CD(HttpStatus.CONFLICT, "이미 추가된 CD입니다."),
+  //서버 에러
+  INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 에러가 발생했습니다.")
+  ;
 
   private final HttpStatus status;
   private final String message;

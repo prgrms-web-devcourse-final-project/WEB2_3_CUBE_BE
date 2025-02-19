@@ -79,10 +79,13 @@ spring:
       password: ${redis.password}
 
 ---
+---
 spring:
   config:
     activate:
       on-profile: test
+  jwt:
+    secret: ebe1d0e205c1ee44b8e1937f6baed2b069774d7c52fc1c7db419ff850148db89  # .env 파일의 값을 직접 넣어줍니다
   datasource:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:roome;MODE=MySQL
