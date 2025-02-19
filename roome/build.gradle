@@ -37,6 +37,9 @@ dependencies {
 	// Test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testImplementation 'org.mockito:mockito-junit-jupiter'
+	testImplementation 'org.mockito:mockito-core'
 
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'

@@ -30,6 +30,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         OAuth2UserPrincipal oauth2User = (OAuth2UserPrincipal) authentication.getPrincipal();
 
+        String email = oauth2User.getAttribute("email");
+
         // JWT 토큰 생성
         JwtToken token = jwtTokenProvider.createToken(authentication);
 
@@ -40,6 +42,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 .expiresIn(3600L)
                 .user(LoginResponse.UserInfo.builder()
                         .userId(oauth2User.getUser().getId())
+                        .email(email)
                         .nickname(oauth2User.getUser().getNickname())
                         .email(oauth2User.getUser().getEmail())
                         .profileImage(oauth2User.getUser().getProfileImage())

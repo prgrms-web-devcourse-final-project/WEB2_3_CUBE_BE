@@ -49,4 +49,12 @@ public class KakaoResponse implements OAuth2Response {
         Object profileImage = profile.get("profile_image_url");
         return profileImage != null ? profileImage.toString() : null;
     }
+
+    @Override
+    public String getEmail() {
+        if (kakaoAccount != null && kakaoAccount.containsKey("email")) {
+            return kakaoAccount.get("email").toString();
+        }
+        return null;
+    }
 }

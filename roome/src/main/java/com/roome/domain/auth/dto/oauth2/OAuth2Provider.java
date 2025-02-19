@@ -3,7 +3,6 @@ package com.roome.domain.auth.dto.oauth2;
 import com.roome.domain.auth.exception.InvalidProviderException;
 import com.roome.domain.auth.service.OAuth2Factory;
 import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Map;
 
@@ -16,10 +15,6 @@ public enum OAuth2Provider {
     private final String registrationId;
     private final String tokenUri;
     private final String userInfoUri;
-
-    @Value("${oauth2.google.client-id}") private String googleClientId;
-    @Value("${oauth2.google.client-secret}") private String googleClientSecret;
-    @Value("${oauth2.google.redirect-uri}") private String googleRedirectUri;
 
     OAuth2Provider(String registrationId, String tokenUri, String userInfoUri) {
         this.registrationId = registrationId;
