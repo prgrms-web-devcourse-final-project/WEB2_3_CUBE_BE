@@ -4,10 +4,10 @@ import com.roome.domain.book.entity.Book;
 import com.roome.domain.book.entity.repository.BookRepository;
 import com.roome.domain.mybook.entity.MyBook;
 import com.roome.domain.mybook.entity.repository.MyBookRepository;
-import com.roome.domain.mybook.exception.DoNotHavePermissionToMyBookException;
+import com.roome.domain.mybook.exception.MyBookAuthorizationException;
 import com.roome.domain.mybookreview.entity.MyBookReview;
 import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
-import com.roome.domain.mybookreview.exception.MyBookAuthorizationException;
+import com.roome.domain.mybookreview.exception.MyBookReviewAuthorizationException;
 import com.roome.domain.mybookreview.exception.MyBookReviewNotFoundException;
 import com.roome.domain.mybookreview.service.request.MyBookReviewCreateRequest;
 import com.roome.domain.mybookreview.service.request.MyBookReviewUpdateRequest;
@@ -120,7 +120,7 @@ class MyBookReviewServiceTest {
 
         // when // then
         assertThatThrownBy(() -> myBookReviewService.create(user2.getId(), myBook.getId(), request))
-                .isInstanceOf(DoNotHavePermissionToMyBookException.class)
+                .isInstanceOf(MyBookAuthorizationException.class)
                 .hasMessage("등록 도서에 대한 권한이 없는 사용자입니다.");
     }
 
@@ -244,7 +244,7 @@ class MyBookReviewServiceTest {
 
         // when // then
         assertThatThrownBy(() -> myBookReviewService.update(user2.getId(), review.getId(), request))
-                .isInstanceOf(MyBookAuthorizationException.class)
+                .isInstanceOf(MyBookReviewAuthorizationException.class)
                 .hasMessage("서평에 대한 권한이 없는 사용자입니다.");
     }
 
@@ -299,7 +299,7 @@ class MyBookReviewServiceTest {
 
         // when // then
         assertThatThrownBy(() -> myBookReviewService.delete(user2.getId(), review.getId()))
-                .isInstanceOf(MyBookAuthorizationException.class)
+                .isInstanceOf(MyBookReviewAuthorizationException.class)
                 .hasMessage("서평에 대한 권한이 없는 사용자입니다.");
     }
 

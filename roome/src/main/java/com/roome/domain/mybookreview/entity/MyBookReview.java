@@ -1,7 +1,7 @@
 package com.roome.domain.mybookreview.entity;
 
 import com.roome.domain.mybook.entity.MyBook;
-import com.roome.domain.mybookreview.exception.MyBookAuthorizationException;
+import com.roome.domain.mybookreview.exception.MyBookReviewAuthorizationException;
 import com.roome.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -66,7 +66,7 @@ public class MyBookReview {
 
     public void validateOwner(Long userId) {
         if (user == null || !user.getId().equals(userId)) {
-            throw new MyBookAuthorizationException();
+            throw new MyBookReviewAuthorizationException();
         }
     }
 }

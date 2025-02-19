@@ -7,13 +7,12 @@ import com.roome.domain.mybook.entity.MyBookCount;
 import com.roome.domain.mybook.entity.repository.MyBookCountRepository;
 import com.roome.domain.mybook.entity.repository.MyBookRepository;
 import com.roome.domain.mybook.exception.MyBookNotFoundException;
-import com.roome.domain.mybook.service.MyBookService;
 import com.roome.domain.mybook.service.request.MyBookCreateRequest;
 import com.roome.domain.mybook.service.response.MyBookResponse;
 import com.roome.domain.mybook.service.response.MyBooksResponse;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.entity.RoomTheme;
-import com.roome.domain.room.exception.DoNotHavePermissionToRoomException;
+import com.roome.domain.room.exception.RoomAuthorizationException;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.Provider;
 import com.roome.domain.user.entity.Status;
@@ -122,8 +121,8 @@ class MyBookServiceTest {
 
         // when // then
         assertThatThrownBy(() -> myBookService.create(user2.getId(), room.getId(), request))
-                .isInstanceOf(DoNotHavePermissionToRoomException.class)
-                .hasMessage("방에 대한 권한이 없는 사용자입니다.");
+                .isInstanceOf(RoomAuthorizationException.class)
+                .hasMessage("해당 방의 소유주가 아닙니다.");
     }
 
     @DisplayName("등록한 도서의 상세 정보를 조회할 수 있다.")
@@ -325,8 +324,8 @@ class MyBookServiceTest {
 
         // when // then
         assertThatThrownBy(() -> myBookService.delete(user2.getId(), room.getId(), ids))
-                .isInstanceOf(DoNotHavePermissionToRoomException.class)
-                .hasMessage("방에 대한 권한이 없는 사용자입니다.");
+                .isInstanceOf(RoomAuthorizationException.class)
+                .hasMessage("해당 방의 소유주가 아닙니다.");
     }
 
 

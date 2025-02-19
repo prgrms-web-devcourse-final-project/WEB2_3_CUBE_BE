@@ -10,7 +10,6 @@ import com.roome.domain.mybook.service.request.MyBookCreateRequest;
 import com.roome.domain.mybook.service.response.MyBookResponse;
 import com.roome.domain.mybook.service.response.MyBooksResponse;
 import com.roome.domain.room.entity.Room;
-import com.roome.domain.room.exception.DoNotHavePermissionToRoomException;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
@@ -37,7 +36,7 @@ public class MyBookService {
     public MyBookResponse create(Long userId, Long roomId, MyBookCreateRequest request) {
         User user = userRepository.getById(userId);
         Room room = roomRepository.getById(roomId);
-        validateRoomOwner(room, userId);
+        room.validateOwner(userId);
 
         Book book = bookRepository.save(
                 Book.create(
@@ -77,17 +76,11 @@ public class MyBookService {
     @Transactional
     public void delete(Long userId, Long roomId, String myBookIds) {
         Room room = roomRepository.getById(roomId);
-        validateRoomOwner(room, userId);
+        room.validateOwner(userId);
 
         List<String> ids = convertStringToList(myBookIds);
         myBookRepository.deleteAllIn(ids);
         myBookCountRepository.decrease(roomId, ids.size());
-    }
-
-    private void validateRoomOwner(Room room, Long userId) {
-        if (!room.isCreatedBy(userId)) {
-            throw new DoNotHavePermissionToRoomException();
-        }
     }
 
     private Long count(Long roomId) {
