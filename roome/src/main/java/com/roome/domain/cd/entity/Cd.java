@@ -2,6 +2,7 @@ package com.roome.domain.cd.entity;
 
 import com.roome.global.entity.BaseEntity;
 import jakarta.persistence.*;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,8 +26,10 @@ public class Cd extends BaseEntity {
   @Column(nullable = false)
   private String album; // 앨범명
 
-  @Column(nullable = false)
-  private String genre; // 장르
+  @ElementCollection
+  @CollectionTable(name = "cd_genres", joinColumns = @JoinColumn(name = "cd_id"))
+  @Column(name = "genre", nullable = false)
+  private List<String> genres; // 장르
 
   @Column(nullable = false)
   private String coverUrl; // 앨범 커버 이미지 URL
@@ -35,14 +38,14 @@ public class Cd extends BaseEntity {
   private String youtubeUrl;
 
   @Column(nullable = false)
-  private int duration; // 영상 길이 (초 단위)
+  private long duration;
 
-  public Cd(String title, String artist, String album, String genre, String coverUrl,
+  public Cd(String title, String artist, String album, List<String> genres, String coverUrl,
       String youtubeUrl, int duration) {
     this.title = title;
     this.artist = artist;
     this.album = album;
-    this.genre = genre;
+    this.genres = genres;
     this.coverUrl = coverUrl;
     this.youtubeUrl = youtubeUrl;
     this.duration = duration;
