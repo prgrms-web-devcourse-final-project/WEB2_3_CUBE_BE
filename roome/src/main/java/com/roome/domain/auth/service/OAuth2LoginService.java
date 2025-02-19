@@ -50,7 +50,7 @@ public class OAuth2LoginService {
         }
 
         // Authentication 객체 생성 후 JWT 발급
-        Authentication authentication = new UsernamePasswordAuthenticationToken(user.getProviderId(), null);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(user.getId().toString(), null);
         JwtToken jwtToken = jwtTokenProvider.createToken(authentication);
 
         return LoginResponse.builder()
