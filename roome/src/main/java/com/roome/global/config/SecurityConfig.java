@@ -64,12 +64,14 @@ public class SecurityConfig {
                                 "/login/oauth2/code/*",
                                 "/oauth2/authorization/*",
                                 "/api/auth/**",
-                                "/error"
-                                        ).permitAll()
-                        .anyRequest().authenticated())
-                // 접근 허용 설정
-
-        ;
+                                "/error",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/api/**",
+                                "/mock/**"
+                        ).permitAll()
+                        .anyRequest().authenticated());
 
         http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
                 UsernamePasswordAuthenticationFilter.class);
