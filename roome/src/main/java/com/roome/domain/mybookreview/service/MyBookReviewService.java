@@ -2,7 +2,6 @@ package com.roome.domain.mybookreview.service;
 
 import com.roome.domain.mybook.entity.MyBook;
 import com.roome.domain.mybook.entity.repository.MyBookRepository;
-import com.roome.domain.mybook.exception.DoNotHavePermissionToMyBookException;
 import com.roome.domain.mybookreview.entity.MyBookReview;
 import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
 import com.roome.domain.mybookreview.exception.MyBookReviewNotFoundException;
@@ -28,7 +27,7 @@ public class MyBookReviewService {
     public MyBookReviewResponse create(Long userId, Long myBookId, MyBookReviewCreateRequest request) {
         User user = userRepository.getById(userId);
         MyBook myBook = myBookRepository.getById(myBookId);
-        validateMyBookOwner(myBook, userId);
+        myBook.validateOwner(userId);
 
         MyBookReview myBookReview = myBookReviewRepository.save(
                 MyBookReview.create(
@@ -76,11 +75,5 @@ public class MyBookReviewService {
         review.validateOwner(userId);
 
         myBookReviewRepository.delete(review);
-    }
-
-    private void validateMyBookOwner(MyBook myBook, Long userId) {
-        if (!myBook.isRegisteredBy(userId)) {
-            throw new DoNotHavePermissionToMyBookException();
-        }
     }
 }

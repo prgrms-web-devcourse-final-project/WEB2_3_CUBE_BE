@@ -1,6 +1,7 @@
 package com.roome.domain.room.entity;
 
 import com.roome.domain.furniture.entity.Furniture;
+import com.roome.domain.room.exception.RoomAuthorizationException;
 import com.roome.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -43,8 +44,9 @@ public class Room {
         this.theme = theme;
     }
   
-    public boolean isCreatedBy(Long userId) {
-        return user != null && user.getId().equals(userId);
-
+    public void validateOwner(Long userId) {
+        if (user != null || user.getId().equals(userId)) {
+            throw new RoomAuthorizationException();
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.roome.domain.mybook.entity;
 
 import com.roome.domain.book.entity.Book;
+import com.roome.domain.mybook.exception.MyBookAuthorizationException;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.user.entity.User;
 import jakarta.persistence.*;
@@ -37,7 +38,9 @@ public class MyBook {
         return myBook;
     }
 
-    public boolean isRegisteredBy(Long userId) {
-        return user != null && user.getId().equals(userId);
+    public void validateOwner(Long userId) {
+        if (user == null || user.getId().equals(userId)) {
+            throw new MyBookAuthorizationException();
+        }
     }
 }
