@@ -1,6 +1,7 @@
 package com.roome.domain.room.entity;
 
 import com.roome.domain.furniture.entity.Furniture;
+import com.roome.domain.furniture.entity.FurnitureType;
 import com.roome.domain.room.exception.RoomAuthorizationException;
 import com.roome.domain.user.entity.User;
 import jakarta.persistence.*;
@@ -34,6 +35,20 @@ public class Room {
 
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Furniture> furnitures;
+
+    public int getMaxMusic(){
+        return furnitures.stream()
+                .filter(f -> f.getFurnitureType() == FurnitureType.CD_RACK)
+                .mapToInt(Furniture::getMaxCapacity)
+                .sum();
+    }
+
+    public int getMaxBook(){
+        return furnitures.stream()
+                .filter(f -> f.getFurnitureType() == FurnitureType.BOOKSHELF)
+                .mapToInt(Furniture::getMaxCapacity)
+                .sum();
+    }
 
     @PrePersist
     protected void onCreate() {
