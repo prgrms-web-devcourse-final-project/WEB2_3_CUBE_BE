@@ -1,12 +1,11 @@
 package com.roome.domain.book.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Entity
@@ -31,20 +30,13 @@ public class Book {
 
     private String imageUrl;
 
-    private String category;
-
     private Long page;
 
-    public static Book create(Long isbn, String title, String author, String publisher, LocalDate publishedDate, String imageUrl, String category, Long page) {
-        Book book = new Book();
-        book.isbn = isbn;
-        book.title = title;
-        book.author = author;
-        book.publisher = publisher;
-        book.publishedDate = publishedDate;
-        book.imageUrl = imageUrl;
-        book.category = category;
-        book.page = page;
-        return book;
+    @Builder.Default
+    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<BookGenre> bookGenres = new ArrayList<>();
+
+    public void addBookGenre(BookGenre bookGenre) {
+        bookGenres.add(bookGenre);
     }
 }

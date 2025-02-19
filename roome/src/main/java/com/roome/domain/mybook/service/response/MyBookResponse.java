@@ -1,8 +1,11 @@
 package com.roome.domain.mybook.service.response;
 
+import com.roome.domain.book.entity.BookGenre;
+import com.roome.domain.book.entity.Genre;
 import com.roome.domain.mybook.entity.MyBook;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public record MyBookResponse(
         Long id,
@@ -11,7 +14,7 @@ public record MyBookResponse(
         String publisher,
         LocalDate publishedDate,
         String imageUrl,
-        String category,
+        List<String> genreNames,
         Long page
 ) {
 
@@ -23,7 +26,10 @@ public record MyBookResponse(
                 myBook.getBook().getPublisher(),
                 myBook.getBook().getPublishedDate(),
                 myBook.getBook().getImageUrl(),
-                myBook.getBook().getCategory(),
+                myBook.getBook().getBookGenres().stream()
+                        .map(BookGenre::getGenre)
+                        .map(Genre::getName)
+                        .toList(),
                 myBook.getBook().getPage()
         );
     }
