@@ -60,13 +60,16 @@ public class SecurityConfig {
                 // 접근 제어 설정
                 .authorizeHttpRequests((auth) -> auth
                         .requestMatchers(
-                                "/",
+                                "/**",
                                 "/login/oauth2/code/*",
                                 "/oauth2/authorization/*",
                                 "/api/auth/**",
                                 "/error"
-                        ).permitAll()
-                        .anyRequest().authenticated());
+                                        ).permitAll()
+                        .anyRequest().authenticated())
+                // 접근 허용 설정
+
+        ;
 
         http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
                 UsernamePasswordAuthenticationFilter.class);

@@ -15,22 +15,12 @@ public class SwaggerConfig {
      *
      * @return OpenAPI OpenAPI 설정 객체
      */
-    private Info info() {
-        return new Info()
-                .title("RoomE ")
-                .version("1.0")
-                .description("API 명세서");
-    }
-
     @Bean
-    public OpenAPI customOpenAPI() {
+    public OpenAPI openAPI() {
         return new OpenAPI()
-                .components(new Components()
-                        .addSecuritySchemes("access-token", new SecurityScheme()
-                                .type(SecurityScheme.Type.HTTP)
-                                .scheme("bearer")
-                                .bearerFormat("JWT")))
-                .addSecurityItem(new SecurityRequirement().addList("access-token"))
-                .info(info());
+                .info(new Info()
+                              .title("Roome API")
+                              .description("Roome 프로젝트 API 명세서")
+                              .version("v1.0.0"));
     }
 }
