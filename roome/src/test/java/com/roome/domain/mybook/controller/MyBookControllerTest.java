@@ -48,26 +48,28 @@ class MyBookControllerTest {
         // given
         String title = "title";
         List<String> genreNames = List.of("웹", "IT");
-        Long myBookId = 1L;
         MyBookCreateRequest request = createMyBookCreateRequest(1213214432L, title, genreNames);
-        MyBookResponse response = createMyBookResponse(myBookId, title, genreNames);
 
-        given(myBookService.create(1L, 1L, request))
+        Long myBookId = 1L;
+        MyBookResponse response = createMyBookResponse(myBookId, request);
+
+        Long roomId = 1L;
+        given(myBookService.create(1L, roomId, request))
                 .willReturn(response);
 
         // when // then
         mockMvc.perform(
                         post("/api/mybooks")
-                                .param("roomId", "1")
+                                .param("roomId", String.valueOf(roomId))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request))
                                 .with(csrf())
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value("1"))
-                .andExpect(jsonPath("$.title").value(title))
+                .andExpect(jsonPath("$.id").value(myBookId))
+                .andExpect(jsonPath("$.title").value(request.title()))
                 .andExpect(jsonPath("$.genreNames", hasSize(2)))
-                .andExpect(jsonPath("$.genreNames", containsInAnyOrder("웹", "IT")));
+                .andExpect(jsonPath("$.genreNames", containsInAnyOrder(request.genreNames().get(0), request.genreNames().get(1))));
     }
 
     @DisplayName("도서의 상세 정보를 조회할 수 있다.")
@@ -190,6 +192,19 @@ class MyBookControllerTest {
                 "image.jpg",
                 genreNames,
                 321L
+        );
+    }
+
+    private MyBookResponse createMyBookResponse(Long myBookId, MyBookCreateRequest request) {
+        return new MyBookResponse(
+                myBookId,
+                request.title(),
+                request.author(),
+                request.publisher(),
+                request.publishedDate(),
+                request.imageUrl(),
+                request.genreNames(),
+                request.page()
         );
     }
 

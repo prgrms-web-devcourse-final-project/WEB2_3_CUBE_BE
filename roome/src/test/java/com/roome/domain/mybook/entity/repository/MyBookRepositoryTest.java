@@ -3,7 +3,6 @@ package com.roome.domain.mybook.entity.repository;
 import com.roome.domain.book.entity.Book;
 import com.roome.domain.book.entity.repository.BookRepository;
 import com.roome.domain.mybook.entity.MyBook;
-import com.roome.domain.mybook.entity.repository.MyBookRepository;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.entity.RoomTheme;
 import com.roome.domain.room.repository.RoomRepository;
