@@ -60,16 +60,11 @@ public class SecurityConfig {
                 // 접근 제어 설정
                 .authorizeHttpRequests((auth) -> auth
                         .requestMatchers(
-                                "/",
+                                "/**",
                                 "/login/oauth2/code/*",
                                 "/oauth2/authorization/*",
                                 "/api/auth/**",
-                                "/error",
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/api/**",
-                                "/mock/**"
+                                "/error"
                         ).permitAll()
                         .anyRequest().authenticated());
 
