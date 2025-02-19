@@ -30,7 +30,7 @@ public class Furniture {
     private Boolean isVisible;
 
     @Column(nullable = false)
-    private Integer level;
+    private int level;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -47,5 +47,18 @@ public class Furniture {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public int getMaxCapacity(){
+        switch(level){
+            case 1:
+                return 5;
+            case 2:
+                return 10;
+            case 3:
+                return 15;
+            default:
+                throw new IllegalStateException("유효하지 않은 가구 레벨입니다.");
+        }
     }
 }
