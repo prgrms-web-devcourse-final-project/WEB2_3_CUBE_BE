@@ -70,4 +70,17 @@ public class MyCdService {
 
     return new MyCdListResponse(myCdResponses);
   }
+
+  public MyCdResponse getMyCd(Long userId, Long myCdId) {
+    // userId가 실제 존재하는지 검증
+    userRepository.findById(userId)
+        .orElseThrow(() -> new IllegalArgumentException("해당 사용자가 존재하지 않습니다."));
+
+    // 해당 사용자의 특정 CD 조회
+    MyCd myCd = myCdRepository.findByIdAndUserId(myCdId, userId)
+        .orElseThrow(() -> new CdNotFoundException(myCdId));
+
+    return MyCdResponse.fromEntity(myCd);
+  }
+
 }
