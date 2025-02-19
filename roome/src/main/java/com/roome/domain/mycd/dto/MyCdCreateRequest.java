@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class MyCdRequest {
+public class MyCdCreateRequest {
 
   @NotNull
   private Long cdId;

@@ -27,7 +27,7 @@ public class MyCdResponse {
         .album(myCd.getCd().getAlbum())
         .genre(myCd.getCd().getGenre())
         .coverUrl(myCd.getCd().getCoverUrl())
-        .youtubeUrl(myCd.getCd().getYoutubeVideoId()) // youtubeVideoId를 URL로 변환
+        .youtubeUrl(myCd.getCd().getYoutubeUrl()) // youtubeVideoId를 URL로 변환
         .duration(myCd.getCd().getDuration())
         .build();
   }

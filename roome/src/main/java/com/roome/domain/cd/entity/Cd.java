@@ -32,19 +32,19 @@ public class Cd extends BaseEntity {
   private String coverUrl; // 앨범 커버 이미지 URL
 
   @Column(nullable = false, unique = true)
-  private String youtubeVideoId; // 유튜브 영상 ID
+  private String youtubeUrl;
 
   @Column(nullable = false)
   private int duration; // 영상 길이 (초 단위)
 
   public Cd(String title, String artist, String album, String genre, String coverUrl,
-      String youtubeVideoId, int duration) {
+      String youtubeUrl, int duration) {
     this.title = title;
     this.artist = artist;
     this.album = album;
     this.genre = genre;
     this.coverUrl = coverUrl;
-    this.youtubeVideoId = youtubeVideoId;
+    this.youtubeUrl = youtubeUrl;
     this.duration = duration;
   }
 }

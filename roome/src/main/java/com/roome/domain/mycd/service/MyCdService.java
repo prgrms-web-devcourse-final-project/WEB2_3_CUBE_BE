@@ -2,6 +2,7 @@ package com.roome.domain.mycd.service;
 
 import com.roome.domain.cd.entity.Cd;
 import com.roome.domain.cd.repository.CdRepository;
+import com.roome.domain.mycd.dto.MyCdListResponse;
 import com.roome.domain.mycd.dto.MyCdResponse;
 import com.roome.domain.mycd.entity.MyCd;
 import com.roome.domain.mycd.entity.MyCdCount;
@@ -13,7 +14,10 @@ import com.roome.domain.mycd.repository.MyCdRepository;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
+import com.roome.domain.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import java.util.stream.Collectors;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +30,7 @@ public class MyCdService {
   private final CdRepository cdRepository;
   private final MyCdCountRepository myCdCountRepository;
   private final RoomRepository roomRepository;
+  private final UserRepository userRepository;
 
   public MyCdResponse addCdToMyList(Long userId, Long cdId) {
     // 1. CD 존재 여부 확인
@@ -51,5 +56,18 @@ public class MyCdService {
     myCdCount.increment();
 
     return MyCdResponse.fromEntity(myCd);
+  }
+
+  public MyCdListResponse getMyCdList(Long userId) {
+    // 1. 사용자 존재 여부 확인
+    userRepository.findById(userId)
+        .orElseThrow(() -> new IllegalArgumentException("해당 사용자가 존재하지 않습니다."));
+
+    // 2. 해당 사용자의 MyCd 목록 조회
+    List<MyCdResponse> myCdResponses = myCdRepository.findByUserId(userId).stream()
+        .map(MyCdResponse::fromEntity)
+        .collect(Collectors.toList());
+
+    return new MyCdListResponse(myCdResponses);
   }
 }
