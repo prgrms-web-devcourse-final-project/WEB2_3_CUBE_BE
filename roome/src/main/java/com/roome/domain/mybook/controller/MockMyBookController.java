@@ -18,7 +18,7 @@ import java.util.List;
 public class MockMyBookController {
 
     @Tag(name = "도서 등록", description = "도서를 등록할 수 있다.")
-    @PostMapping("/api/mybooks")
+    @PostMapping()
     public ResponseEntity<MyBookResponse> create(
             @RequestParam("userId") Long userId,
             @RequestBody MyBookCreateRequest request
@@ -28,14 +28,14 @@ public class MockMyBookController {
     }
 
     @Tag(name = "등록 도서 상세 조회", description = "등록된 도서 목록에서 도서를 클릭하면 도서의 상세 정보를 조회할 수 있다.")
-    @GetMapping("/api/mybooks/{myBookId}")
+    @GetMapping("/{myBookId}")
     public ResponseEntity<MyBookResponse> read(@PathVariable Long myBookId) {
         MyBookResponse response = createMyBookResponse(1L, "title");
         return ResponseEntity.ok(response);
     }
 
     @Tag(name = "등록 도서 목록 조회", description = "등록된 도서 목록을 조회할 수 있다. 무한 스크롤 방식.")
-    @GetMapping("/api/mybooks")
+    @GetMapping()
     public ResponseEntity<MyBooksResponse> readAll(
             @RequestParam("userId") Long userId,
             @RequestParam("pageSize") Long pageSize,
@@ -52,7 +52,7 @@ public class MockMyBookController {
     }
 
     @Tag(name = "등록 도서 삭제", description = "등록된 도서를 삭제할 수 있다.")
-    @DeleteMapping("/api/mybooks")
+    @DeleteMapping()
     public ResponseEntity<Void> delete(
             @RequestParam("userId") Long userId,
             @RequestParam String myBookIds
