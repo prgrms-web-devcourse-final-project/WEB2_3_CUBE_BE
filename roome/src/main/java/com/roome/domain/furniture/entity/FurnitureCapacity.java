@@ -9,14 +9,14 @@ public class FurnitureCapacity {
 
     static {
         capacityMap.put(FurnitureType.BOOKSHELF, Map.of(
-                1, 5,
-                2, 10,
-                3, 15
+                1, 20,
+                2, 40,
+                3, 60
         ));
         capacityMap.put(FurnitureType.CD_RACK, Map.of(
-                1, 5,
-                2, 10,
-                3, 15
+                1, 20,
+                2, 40,
+                3, 60
         ));
     }
 
