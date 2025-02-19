@@ -49,7 +49,7 @@ public class RoomService {
     }
 
     @Transactional
-    public RoomResponseDto updateRoomTheme(Long userId, Long roomId, String newTheme){
+    public String updateRoomTheme(Long userId, Long roomId, String newTheme){
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
@@ -60,6 +60,6 @@ public class RoomService {
         RoomTheme theme = RoomTheme.fromString(newTheme);
         room.updateTheme(theme);
 
-        return RoomResponseDto.from(room);
+        return theme.name();
     }
 }
