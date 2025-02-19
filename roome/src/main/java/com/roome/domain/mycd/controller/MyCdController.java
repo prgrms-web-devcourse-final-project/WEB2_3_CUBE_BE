@@ -47,6 +47,10 @@ public class MyCdController {
       userId = authUserId;
     }
 
+    // userId가 실제 존재하는지 검증 (예외 방지)
+    userRepository.findById(userId)
+        .orElseThrow(() -> new IllegalArgumentException("해당 사용자가 존재하지 않습니다."));
+
     return ResponseEntity.ok(myCdService.getMyCdList(userId));
   }
 
