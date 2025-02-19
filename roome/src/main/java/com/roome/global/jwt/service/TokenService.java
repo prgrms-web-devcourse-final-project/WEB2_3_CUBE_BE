@@ -12,8 +12,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -27,12 +25,7 @@ public class TokenService {
         User user = findUserByRefreshToken(refreshToken);
         verifyRefreshTokenMatch(refreshToken, user);
 
-        // 단순히 사용자 ID만 포함
-        Authentication authentication = new UsernamePasswordAuthenticationToken(
-                user.getProviderId(),
-                null,
-                Collections.emptyList()  // 권한 없이 빈 리스트로 설정
-        );
+        Authentication authentication = new UsernamePasswordAuthenticationToken(user.getId().toString(), null);
         return jwtTokenProvider.createToken(authentication);
     }
 
@@ -45,9 +38,9 @@ public class TokenService {
 
     private User findUserByRefreshToken(String refreshToken) {
         Claims claims = jwtTokenProvider.parseClaims(refreshToken);
-        String userId = claims.getSubject();
+        Long userId = Long.valueOf(claims.getSubject());
 
-        return userRepository.findByProviderId(userId)
+        return userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
     }
 

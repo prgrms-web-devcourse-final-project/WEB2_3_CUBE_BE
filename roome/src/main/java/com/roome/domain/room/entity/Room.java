@@ -1,6 +1,7 @@
 package com.roome.domain.room.entity;
 
 import com.roome.domain.furniture.entity.Furniture;
+import com.roome.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,11 +20,13 @@ public class Room {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    private User user;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String theme;
+    private RoomTheme theme;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -34,5 +37,14 @@ public class Room {
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+    }
+
+    public void updateTheme(RoomTheme theme) {
+        this.theme = theme;
+    }
+  
+    public boolean isCreatedBy(Long userId) {
+        return user != null && user.getId().equals(userId);
+
     }
 }
