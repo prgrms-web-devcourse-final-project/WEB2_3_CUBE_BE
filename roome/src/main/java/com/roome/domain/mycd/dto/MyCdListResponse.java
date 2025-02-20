@@ -11,11 +11,17 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class MyCdListResponse {
   private List<MyCdResponse> data;
+  private boolean hasNext;
+
+  public MyCdListResponse(List<MyCdResponse> data) {
+    this.data = data;
+    this.hasNext = false;  // 기본값 false
+  }
 
   public static MyCdListResponse fromEntities(List<MyCd> myCds) {
     List<MyCdResponse> responses = myCds.stream()
         .map(MyCdResponse::fromEntity)
         .collect(Collectors.toList());
-    return new MyCdListResponse(responses);
+    return new MyCdListResponse(responses, false);
   }
 }
