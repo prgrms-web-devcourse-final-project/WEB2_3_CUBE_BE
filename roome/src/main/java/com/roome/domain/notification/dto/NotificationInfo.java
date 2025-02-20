@@ -12,10 +12,10 @@ public class NotificationInfo {
     private NotificationType type;
     private String title;
     private String content;
-    private String senderId;
+    private Long senderId;
     private String senderName;
     private String senderProfileImage;
-    private String targetId;
-    private boolean isRead;
+    private Long targetId;
+    private boolean read;
     private String createdAt;
 }
