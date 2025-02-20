@@ -44,7 +44,11 @@ public class MyBookService {
 
         Book book = request.toBookEntity();
         addGenres(book, request.genreNames());
-        bookRepository.save(book);
+        bookRepository.findByIsbn(book.getIsbn())
+                        .ifPresentOrElse(
+                                ignored -> {},
+                                () -> bookRepository.save(book)
+                        );
 
         MyBook myBook = myBookRepository.save(MyBook.create(user, room, book));
         int result = myBookCountRepository.increase(roomId);

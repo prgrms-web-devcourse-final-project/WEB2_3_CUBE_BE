@@ -123,7 +123,7 @@ class MyBookReviewControllerTest {
         // given // when // then
         Long myBookReviewId = 1L;
         mockMvc.perform(
-                        MockMvcRequestBuilders.delete("/api/mybooks-review" + myBookReviewId)
+                        MockMvcRequestBuilders.delete("/api/mybooks-review/" + myBookReviewId)
                                 .with(csrf())
                 )
                 .andExpect(status().isOk());
