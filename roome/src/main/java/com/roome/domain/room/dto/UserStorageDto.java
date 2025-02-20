@@ -9,12 +9,12 @@ import lombok.Getter;
 @AllArgsConstructor
 public class UserStorageDto {
 
-    private int savedMusic;
-    private int savedBooks;
-    private int writtenReviews;
-    private int writtenMusicLogs;
+    private Long savedMusic;
+    private Long savedBooks;
+    private Long writtenReviews;
+    private Long writtenMusicLogs;
 
-    public static UserStorageDto from(int savedMusic, int savedBooks, int writtenReviews, int writtenMusicLogs) {
+    public static UserStorageDto from(Long savedMusic, Long savedBooks, Long writtenReviews, Long writtenMusicLogs) {
         return UserStorageDto.builder()
                 .savedMusic(savedMusic)
                 .savedBooks(savedBooks)
