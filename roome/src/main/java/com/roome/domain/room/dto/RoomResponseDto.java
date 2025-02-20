@@ -22,7 +22,7 @@ public class RoomResponseDto {
     private StorageLimitsDto storageLimits;
     private UserStorageDto userStorage;
 
-    public static RoomResponseDto from(Room room, int savedMusic, int savedBooks, int writtenReviews, int writtenMusicLogs) {
+    public static RoomResponseDto from(Room room, Long savedMusic, Long savedBooks, Long writtenReviews, Long writtenMusicLogs) {
         return RoomResponseDto.builder()
                 .roomId(room.getId())
                 .userId(room.getUser().getId())

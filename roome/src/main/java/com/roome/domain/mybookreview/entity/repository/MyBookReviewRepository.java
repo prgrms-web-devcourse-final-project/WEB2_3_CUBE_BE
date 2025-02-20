@@ -14,4 +14,6 @@ public interface MyBookReviewRepository extends JpaRepository<MyBookReview, Long
     }
 
     Optional<MyBookReview> findByMyBookId(Long myBookId);
+
+    Long countByUserId(Long userId);
 }
