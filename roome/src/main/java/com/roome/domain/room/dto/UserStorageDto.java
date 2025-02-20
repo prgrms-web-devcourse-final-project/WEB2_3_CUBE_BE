@@ -1,10 +1,12 @@
 package com.roome.domain.room.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
+@AllArgsConstructor
 public class UserStorageDto {
 
     private int savedMusic;

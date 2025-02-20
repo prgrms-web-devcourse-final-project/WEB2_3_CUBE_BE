@@ -1,11 +1,13 @@
 package com.roome.domain.furniture.dto;
 
 import com.roome.domain.furniture.entity.Furniture;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
+@AllArgsConstructor
 public class FurnitureResponseDto {
     private String furnitureType;
     private Boolean isVisible;
