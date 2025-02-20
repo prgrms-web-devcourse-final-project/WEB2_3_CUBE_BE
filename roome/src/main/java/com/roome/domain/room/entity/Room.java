@@ -1,12 +1,14 @@
 package com.roome.domain.room.entity;
 
 import com.roome.domain.furniture.entity.Furniture;
+import com.roome.domain.furniture.entity.FurnitureType;
 import com.roome.domain.room.exception.RoomAuthorizationException;
 import com.roome.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -33,7 +35,21 @@ public class Room {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Furniture> furnitures;
+    private List<Furniture> furnitures = new ArrayList<>();
+
+    public int getMaxMusic(){
+        return furnitures.stream()
+                .filter(f -> f.getFurnitureType() == FurnitureType.CD_RACK)
+                .mapToInt(Furniture::getMaxCapacity)
+                .sum();
+    }
+
+    public int getMaxBooks(){
+        return furnitures.stream()
+                .filter(f -> f.getFurnitureType() == FurnitureType.BOOKSHELF)
+                .mapToInt(Furniture::getMaxCapacity)
+                .sum();
+    }
 
     @PrePersist
     protected void onCreate() {

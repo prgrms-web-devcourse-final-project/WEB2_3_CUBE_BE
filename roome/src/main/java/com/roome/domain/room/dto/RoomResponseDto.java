@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,16 +19,20 @@ public class RoomResponseDto {
     private String theme;
     private LocalDateTime createdAt;
     private List<FurnitureResponseDto> furnitures;
+    private StorageLimitsDto storageLimits;
+    private UserStorageDto userStorage;
 
-    public static RoomResponseDto from(Room room) {
+    public static RoomResponseDto from(Room room, int savedMusic, int savedBooks, int writtenReviews, int writtenMusicLogs) {
         return RoomResponseDto.builder()
                 .roomId(room.getId())
                 .userId(room.getUser().getId())
                 .theme(room.getTheme().getThemeName())
                 .createdAt(room.getCreatedAt())
-                .furnitures(room.getFurnitures().stream()
-                        .map(FurnitureResponseDto::from)
-                        .collect(Collectors.toList()))
+                .furnitures(room.getFurnitures() != null
+                        ? room.getFurnitures().stream().map(FurnitureResponseDto::from).collect(Collectors.toList())
+                        : Collections.emptyList())
+                .storageLimits(StorageLimitsDto.from(room))
+                .userStorage(UserStorageDto.from(savedMusic, savedBooks, writtenReviews, writtenMusicLogs))
                 .build();
     }
 }

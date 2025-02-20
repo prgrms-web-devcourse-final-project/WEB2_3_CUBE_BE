@@ -30,7 +30,13 @@ public class RoomService {
                 .build();
 
         Room savedRoom = roomRepository.save(newRoom);
-        return RoomResponseDto.from(savedRoom);
+
+        int savedMusic = 0;
+        int savedBooks = 0;
+        int writtenReviews = 0;
+        int writtenMusicLogs = 0;
+
+        return RoomResponseDto.from(savedRoom, savedMusic, savedBooks, writtenReviews, writtenMusicLogs);
     }
 
     @Transactional(readOnly = true)
@@ -38,18 +44,30 @@ public class RoomService {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
-        return RoomResponseDto.from(room);
+        int savedMusic = fetchSavedMusicCount(room.getUser().getId());
+        int savedBooks = fetchSavedBooksCount(room.getUser().getId());
+        int writtenReviews = fetchWrittenReviewsCount(room.getUser().getId());
+        int writtenMusicLogs = fetchWrittenMusicLogsCount(room.getUser().getId());
+
+        return RoomResponseDto.from(room, savedMusic, savedBooks, writtenReviews, writtenMusicLogs);
     }
 
     @Transactional(readOnly = true)
     public RoomResponseDto getRoomByUserId(Long userId){
-        return roomRepository.findByUserId(userId)
-                .map(RoomResponseDto::from)
+        Room room = roomRepository.findByUserId(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+
+        int savedMusic = fetchSavedMusicCount(userId);
+        int savedBooks = fetchSavedBooksCount(userId);
+        int writtenReviews = fetchWrittenReviewsCount(userId);
+        int writtenMusicLogs = fetchWrittenMusicLogsCount(userId);
+
+        return RoomResponseDto.from(room, savedMusic, savedBooks, writtenReviews, writtenMusicLogs);
+
     }
 
     @Transactional
-    public RoomResponseDto updateRoomTheme(Long userId, Long roomId, String newTheme){
+    public String updateRoomTheme(Long userId, Long roomId, String newTheme){
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
@@ -60,6 +78,22 @@ public class RoomService {
         RoomTheme theme = RoomTheme.fromString(newTheme);
         room.updateTheme(theme);
 
-        return RoomResponseDto.from(room);
+        return theme.name();
+    }
+
+    private int fetchSavedMusicCount(Long userId) {
+        return 0;
+    }
+
+    private int fetchSavedBooksCount(Long userId) {
+        return 0;
+    }
+
+    private int fetchWrittenReviewsCount(Long userId) {
+        return 0;
+    }
+
+    private int fetchWrittenMusicLogsCount(Long userId) {
+        return 0;
     }
 }

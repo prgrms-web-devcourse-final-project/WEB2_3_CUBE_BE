@@ -30,7 +30,7 @@ public class Furniture {
     private Boolean isVisible;
 
     @Column(nullable = false)
-    private Integer level;
+    private int level;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -47,5 +47,9 @@ public class Furniture {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public int getMaxCapacity(){
+        return FurnitureCapacity.getCapacity(furnitureType, level);
     }
 }

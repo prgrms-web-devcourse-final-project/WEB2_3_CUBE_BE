@@ -6,7 +6,9 @@ import lombok.Getter;
 
 @Getter
 public enum RoomTheme {
-    BASIC("basic");
+    BASIC("basic"),
+    MODERN_CENTURY("modern_century"),
+    RETRO("retro");
 
     private final String themeName;
 

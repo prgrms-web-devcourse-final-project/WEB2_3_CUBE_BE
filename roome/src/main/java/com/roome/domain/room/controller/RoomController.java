@@ -9,6 +9,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/rooms")
 @RequiredArgsConstructor
@@ -34,11 +37,17 @@ public class RoomController {
 
     @PreAuthorize("isAuthenticated()")
     @PutMapping("/{roomId}")
-    public RoomResponseDto updateRoomTheme(
+    public ResponseEntity<Map<String, Object>> updateRoomTheme(
             @AuthenticationPrincipal Long userId,
             @PathVariable Long roomId,
             @RequestBody UpdateRoomThemeRequestDto requestDto
-            ) {
-        return roomService.updateRoomTheme(userId, roomId, requestDto.getThemeName());
+    ) {
+        String updatedTheme = roomService.updateRoomTheme(userId, roomId, requestDto.getThemeName());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("roomId", roomId);
+        response.put("updatedTheme", updatedTheme);
+
+        return ResponseEntity.ok(response);
     }
 }
