@@ -2,10 +2,13 @@ package com.roome.domain.mycd.dto;
 
 import com.roome.domain.mycd.entity.MyCd;
 import java.time.LocalDateTime;
+import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
+@AllArgsConstructor
 @Builder
 public class MyCdResponse {
   private Long myCdId;
@@ -13,10 +16,10 @@ public class MyCdResponse {
   private String title;
   private String artist;
   private String album;
-  private String genre;
+  private List<String> genres;
   private String coverUrl;
   private String youtubeUrl;
-  private int duration;
+  private long duration;
 
   public static MyCdResponse fromEntity(MyCd myCd) {
     return MyCdResponse.builder()
@@ -25,7 +28,7 @@ public class MyCdResponse {
         .title(myCd.getCd().getTitle())
         .artist(myCd.getCd().getArtist())
         .album(myCd.getCd().getAlbum())
-        .genre(myCd.getCd().getGenre())
+        .genres(myCd.getCd().getGenres())
         .coverUrl(myCd.getCd().getCoverUrl())
         .youtubeUrl(myCd.getCd().getYoutubeUrl()) // youtubeVideoId를 URL로 변환
         .duration(myCd.getCd().getDuration())

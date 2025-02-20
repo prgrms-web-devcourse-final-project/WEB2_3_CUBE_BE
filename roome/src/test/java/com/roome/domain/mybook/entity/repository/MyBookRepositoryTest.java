@@ -2,6 +2,7 @@ package com.roome.domain.mybook.entity.repository;
 
 import com.roome.domain.book.entity.Book;
 import com.roome.domain.book.entity.repository.BookRepository;
+import com.roome.domain.config.TestQueryDslConfig;
 import com.roome.domain.mybook.entity.MyBook;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.entity.RoomTheme;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDate;
@@ -23,6 +25,7 @@ import java.util.List;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 @ActiveProfiles("test")
+@Import(TestQueryDslConfig.class)
 @DataJpaTest
 class MyBookRepositoryTest {
 
