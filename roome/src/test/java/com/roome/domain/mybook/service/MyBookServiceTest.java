@@ -56,9 +56,9 @@ class MyBookServiceTest {
     @Autowired
     private UserRepository userRepository;
 
-    @DisplayName("도서를 등록할 수 있다.")
+    @DisplayName("도서를 등록할 수 있다. 등록하고자 하는 도서가 테이블에 없는 경우.")
     @Test
-    void create() {
+    void createBookDoesNotExist() {
 
         // given
         User user = createUser("user@gmail.com", "user", "provId1");
@@ -67,20 +67,16 @@ class MyBookServiceTest {
         Room room = createRoom(user);
         roomRepository.save(room);
 
-        Book book = createBook(1L, "book");
-        bookRepository.save(book);
-
         List<String> genreNames = List.of("IT", "웹");
-
         MyBookCreateRequest request = new MyBookCreateRequest(
-                book.getIsbn(),
-                book.getTitle(),
-                book.getTitle(),
-                book.getPublisher(),
-                book.getPublishedDate(),
-                book.getImageUrl(),
+                1L,
+                "title",
+                "author",
+                "publisher",
+                LocalDate.of(2025, 1, 1),
+                "image.jpg",
                 genreNames,
-                book.getPage()
+                1231L
         );
 
         // when
@@ -88,10 +84,48 @@ class MyBookServiceTest {
 
         // then
         MyBook myBook = myBookRepository.findById(myBookResponse.id()).orElseThrow();
-        assertThat(myBook.getBook().getTitle()).isEqualTo(book.getTitle());
+        assertThat(myBook.getBook().getTitle()).isEqualTo(request.title());
         assertThat(myBook.getBook().getBookGenres()).hasSize(2)
                 .extracting("genre.name")
                 .containsExactlyInAnyOrder("IT", "웹");
+
+        Long count = myBookCountRepository.findByRoomId(room.getId())
+                .map(MyBookCount::getCount)
+                .orElse(0L);
+        assertThat(count).isEqualTo(1L);
+    }
+
+    @DisplayName("도서를 등록할 수 있다. 등록하고자 하는 도서가 이미 테이블에 있는 경우.")
+    @Test
+    void createBookExist() {
+
+        // given
+        User user = createUser("user@gmail.com", "user", "provId1");
+        userRepository.save(user);
+
+        Room room = createRoom(user);
+        roomRepository.save(room);
+
+        Book book = createBook(1L, "title");
+        bookRepository.save(book);
+
+        MyBookCreateRequest request = new MyBookCreateRequest(
+                book.getIsbn(),
+                book.getTitle(),
+                "author",
+                "publisher",
+                LocalDate.of(2025, 1, 1),
+                "image.jpg",
+                List.of(),
+                100L
+        );
+
+        // when
+        MyBookResponse myBookResponse = myBookService.create(user.getId(), room.getId(), request);
+
+        // then
+        MyBook myBook = myBookRepository.findById(myBookResponse.id()).orElseThrow();
+        assertThat(myBook.getBook().getTitle()).isEqualTo(request.title());
 
         Long count = myBookCountRepository.findByRoomId(room.getId())
                 .map(MyBookCount::getCount)

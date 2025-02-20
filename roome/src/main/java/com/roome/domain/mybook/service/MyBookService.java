@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 import static com.roome.global.util.StringUtil.convertStringToList;
 
@@ -42,13 +43,12 @@ public class MyBookService {
         Room room = roomRepository.getById(roomId);
         room.validateOwner(userId);
 
-        Book book = request.toBookEntity();
-        addGenres(book, request.genreNames());
-        bookRepository.findByIsbn(book.getIsbn())
-                        .ifPresentOrElse(
-                                ignored -> {},
-                                () -> bookRepository.save(book)
-                        );
+        Book bookEntity = request.toBookEntity();
+        Book book = bookRepository.findByIsbn(bookEntity.getIsbn())
+                .orElseGet(() -> {
+                    addGenres(bookEntity, request.genreNames());
+                    return bookRepository.save(bookEntity);
+                });
 
         MyBook myBook = myBookRepository.save(MyBook.create(user, room, book));
         int result = myBookCountRepository.increase(roomId);
