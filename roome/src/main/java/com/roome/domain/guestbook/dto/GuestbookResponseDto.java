@@ -1,6 +1,7 @@
 package com.roome.domain.guestbook.dto;
 
 import com.roome.domain.guestbook.entity.Guestbook;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -8,6 +9,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Builder
+@AllArgsConstructor
 public class GuestbookResponseDto {
     private Long guestbookId;
     private Long userId;
