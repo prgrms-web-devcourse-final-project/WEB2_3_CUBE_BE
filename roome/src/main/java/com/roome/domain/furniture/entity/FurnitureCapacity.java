@@ -11,12 +11,12 @@ public class FurnitureCapacity {
         capacityMap.put(FurnitureType.BOOKSHELF, Map.of(
                 1, 20,
                 2, 40,
-                3, 60
+                3, 100
         ));
         capacityMap.put(FurnitureType.CD_RACK, Map.of(
                 1, 20,
                 2, 40,
-                3, 60
+                3, 100
         ));
     }
 
