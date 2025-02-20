@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -29,11 +30,9 @@ public class MockUserController {
                 .bio("안녕하세요. Mock입니다..")
                 .bookGenres(List.of("Fantasy", "Mystery", "Sci-Fi"))
                 .musicGenres(List.of("Pop", "Jazz", "Rock"))
-                .similarUser(List.of(
-                        new MockUserProfileResponse.SimilarUser("101", "Mock Friend 1", "https://mock-image.com/friend1.png"),
-                        new MockUserProfileResponse.SimilarUser("102", "Mock Friend 2", "https://mock-image.com/friend2.png")
-                ))
+                .similarUser(generateMockSimilarUsers())
                 .build();
+
 
         return ResponseEntity.ok(mockResponse);
     }
@@ -57,5 +56,27 @@ public class MockUserController {
                 "bio", request.getBio(),
                 "message", "프로필이 수정되었습니다"
         ));
+    }
+
+    @GetMapping("/{userId}/recommendations")
+    public ResponseEntity<List<MockUserProfileResponse.SimilarUser>> getRecommendedUsers(@PathVariable Long userId) {
+        log.info("[Mock 추천 유저 조회] 사용자 ID: {}", userId);
+
+        // 취향이 4개 이상 겹치는 유저 5명 추천
+        List<MockUserProfileResponse.SimilarUser> recommendedUsers = generateMockSimilarUsers().stream()
+                .limit(5)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(recommendedUsers);
+    }
+
+    private List<MockUserProfileResponse.SimilarUser> generateMockSimilarUsers() {
+        return List.of(
+                new MockUserProfileResponse.SimilarUser("101", "Similar User 1", "https://mock-image.com/similar1.png"),
+                new MockUserProfileResponse.SimilarUser("102", "Similar User 2", "https://mock-image.com/similar2.png"),
+                new MockUserProfileResponse.SimilarUser("103", "Similar User 3", "https://mock-image.com/similar3.png"),
+                new MockUserProfileResponse.SimilarUser("104", "Similar User 4", "https://mock-image.com/similar4.png"),
+                new MockUserProfileResponse.SimilarUser("105", "Similar User 5", "https://mock-image.com/similar5.png")
+        );
     }
 }
