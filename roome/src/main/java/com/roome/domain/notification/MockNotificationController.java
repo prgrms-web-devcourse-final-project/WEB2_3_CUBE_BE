@@ -7,9 +7,9 @@ import com.roome.domain.notification.dto.NotificationType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/mock/notifications")
@@ -27,8 +27,8 @@ public class MockNotificationController {
                             .senderName("John Doe")
                             .senderProfileImage("https://example.com/profile1.jpg")
                             .targetId(2L)
-                            .read(false)
-                            .createdAt("2024-02-14T12:00:00Z")
+                            .isRead(false)
+                            .createdAt(LocalDateTime.now())
                             .build(),
             NotificationInfo.builder()
                             .notificationId(2L)
@@ -39,8 +39,8 @@ public class MockNotificationController {
                             .senderName("Jane Smith")
                             .senderProfileImage("https://example.com/profile2.jpg")
                             .targetId(1L)
-                            .read(true)
-                            .createdAt("2024-02-14T11:00:00Z")
+                            .isRead(true)
+                            .createdAt(LocalDateTime.now())
                             .build(),
             NotificationInfo.builder()
                             .notificationId(3L)
@@ -51,8 +51,8 @@ public class MockNotificationController {
                             .senderName("Event Team")
                             .senderProfileImage("https://example.com/profile3.jpg")
                             .targetId(4L)
-                            .read(false)
-                            .createdAt("2024-02-14T10:00:00Z")
+                            .isRead(false)
+                            .createdAt(LocalDateTime.now())
                             .build(),
             NotificationInfo.builder()
                             .notificationId(4L)
@@ -63,8 +63,8 @@ public class MockNotificationController {
                             .senderName("Sarah Kim")
                             .senderProfileImage("https://example.com/profile4.jpg")
                             .targetId(3L)
-                            .read(true)
-                            .createdAt("2024-02-14T09:00:00Z")
+                            .isRead(true)
+                            .createdAt(LocalDateTime.now())
                             .build(),
             NotificationInfo.builder()
                             .notificationId(5L)
@@ -75,8 +75,8 @@ public class MockNotificationController {
                             .senderName("Mike Park")
                             .senderProfileImage("https://example.com/profile5.jpg")
                             .targetId(4L)
-                            .read(false)
-                            .createdAt("2024-02-14T08:00:00Z")
+                            .isRead(false)
+                            .createdAt(LocalDateTime.now())
                             .build()
                                                             );
 

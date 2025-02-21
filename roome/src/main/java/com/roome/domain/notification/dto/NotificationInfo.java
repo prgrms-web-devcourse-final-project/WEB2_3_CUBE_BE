@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Builder
 @Setter
@@ -16,6 +18,6 @@ public class NotificationInfo {
     private String senderName;
     private String senderProfileImage;
     private Long targetId;
-    private boolean read;
-    private String createdAt;
+    private boolean isRead;
+    private LocalDateTime createdAt;
 }

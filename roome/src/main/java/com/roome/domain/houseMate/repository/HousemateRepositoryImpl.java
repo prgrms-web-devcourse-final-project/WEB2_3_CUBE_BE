@@ -13,7 +13,7 @@ import java.util.List;
 import static com.roome.domain.houseMate.entity.QAddedHousemate.addedHousemate;
 
 @RequiredArgsConstructor
-public class AddedHousemateRepositoryImpl implements AddedHousemateRepositoryCustom {
+public class HousemateRepositoryImpl implements HousemateRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
 
