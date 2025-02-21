@@ -35,47 +35,38 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            // CSRF 보호 비활성화
+            .csrf((auth) -> auth.disable())
 
-                // CSRF 보호 비활성화
-                .csrf((auth) -> auth.disable())
+            // 폼 로그인, HTTP 기본 인증 비활성화
+            .formLogin((form) -> form.disable())
+            .httpBasic((auth) -> auth.disable())
+            .sessionManagement((session) -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 폼 로그인, HTTP 기본 인증 비활성화
-                .formLogin((form) -> form.disable())
-                .httpBasic((auth) -> auth.disable())
-                .sessionManagement((session) -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            // OAuth2 로그인 설정
+            .oauth2Login(oauth2 -> oauth2
+                .authorizationEndpoint(endpoint -> endpoint
+                    .baseUri("/oauth2/authorization")
+                    .authorizationRequestRepository(authorizationRequestRepository()))
+                .redirectionEndpoint(redirection -> redirection
+                    .baseUri("/login/oauth2/code/*"))
+                .userInfoEndpoint(userInfo -> userInfo
+                    .userService(customOAuth2UserService))
+                .successHandler(oAuth2SuccessHandler)
+                .failureHandler(oAuth2FailureHandler))
 
-                // OAuth2 로그인 설정
-                .oauth2Login(oauth2 -> oauth2
-                        .authorizationEndpoint(endpoint -> endpoint
-                                .baseUri("/oauth2/authorization")
-                                .authorizationRequestRepository(authorizationRequestRepository()))
-                        .redirectionEndpoint(redirection -> redirection
-                                .baseUri("/login/oauth2/code/*"))
-                        .userInfoEndpoint(userInfo -> userInfo
-                                .userService(customOAuth2UserService))
-                        .successHandler(oAuth2SuccessHandler)
-                        .failureHandler(oAuth2FailureHandler))
-
-                // 접근 제어 설정
-                .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers(
-                                "/**",
-                                "/login/oauth2/code/*",
-                                "/oauth2/authorization/*",
-                                "/api/auth/**",
-                                "/error",
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/api/**",
-                                "/mock/**"
-                        ).permitAll()
-                        .anyRequest().authenticated());
+            // 접근 제어 설정
+            .authorizeHttpRequests((auth) -> auth
+                .requestMatchers(
+                    "/**"
+                ).permitAll()
+                .anyRequest().authenticated());
 
         http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
-                UsernamePasswordAuthenticationFilter.class);
+            UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
 }
