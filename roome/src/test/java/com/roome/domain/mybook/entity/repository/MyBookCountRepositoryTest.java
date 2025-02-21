@@ -45,11 +45,11 @@ class MyBookCountRepositoryTest {
         Room room = createRoom(user);
         roomRepository.save(room);
 
-        MyBookCount myBookCount = createMyBookCount(1L, room);
+        MyBookCount myBookCount = createMyBookCount(1L, room, user);
         myBookCountRepository.save(myBookCount);
 
         // when
-        int result = myBookCountRepository.increase(room.getId());
+        int result = myBookCountRepository.increase(user.getId());
 
         // then
         assertThat(result).isEqualTo(1);
@@ -71,13 +71,13 @@ class MyBookCountRepositoryTest {
         Room room = createRoom(user);
         roomRepository.save(room);
 
-        MyBookCount myBookCount = createMyBookCount(1L, room);
+        MyBookCount myBookCount = createMyBookCount(1L, room, user);
         myBookCountRepository.save(myBookCount);
 
         int count = 1;
 
         // when
-        int result = myBookCountRepository.decrease(room.getId(), count);
+        int result = myBookCountRepository.decrease(user.getId(), count);
 
         // then
         assertThat(result).isEqualTo(1);
@@ -111,10 +111,11 @@ class MyBookCountRepositoryTest {
                 .build();
     }
 
-    private MyBookCount createMyBookCount(Long count, Room room) {
+    private MyBookCount createMyBookCount(Long count, Room room, User user) {
         return MyBookCount.builder()
                 .count(count)
                 .room(room)
+                .user(user)
                 .build();
     }
 }

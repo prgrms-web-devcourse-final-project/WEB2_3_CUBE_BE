@@ -21,12 +21,12 @@ public interface MyBookRepository extends JpaRepository<MyBook, Long> {
                     select mb
                     from MyBook mb
                     join fetch mb.book
-                    where mb.room.id = :roomId
+                    where mb.user.id = :roomOwnerId
                     order by mb.id desc limit :limit
                     """
     )
     List<MyBook> findAll(
-            @Param("roomId") Long roomId,
+            @Param("roomOwnerId") Long roomOwnerId,
             @Param("limit") Long limit
     );
 
@@ -35,12 +35,12 @@ public interface MyBookRepository extends JpaRepository<MyBook, Long> {
                     select mb
                     from MyBook mb
                     join fetch mb.book
-                    where mb.room.id = :roomId and mb.id < :lastMyBookId
+                    where mb.user.id = :roomOwnerId and mb.id < :lastMyBookId
                     order by mb.id desc limit :limit
                     """
     )
     List<MyBook> findAll(
-            @Param("roomId") Long roomId,
+            @Param("roomOwnerId") Long roomOwnerId,
             @Param("limit") Long limit,
             @Param("lastMyBookId") Long lastMyBookId
     );

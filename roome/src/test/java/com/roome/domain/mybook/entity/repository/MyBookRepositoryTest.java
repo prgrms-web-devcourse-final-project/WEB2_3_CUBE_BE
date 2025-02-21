@@ -69,7 +69,7 @@ class MyBookRepositoryTest {
         Long limit = 3L;
 
         // when
-        List<MyBook> myBooks = myBookRepository.findAll(room.getId(), limit);
+        List<MyBook> myBooks = myBookRepository.findAll(user.getId(), limit);
 
         // then
         assertThat(myBooks).hasSize(3)
@@ -106,7 +106,7 @@ class MyBookRepositoryTest {
         Long lastMyBookId = myBook3.getId();
 
         // when
-        List<MyBook> myBooks = myBookRepository.findAll(room.getId(), limit, lastMyBookId);
+        List<MyBook> myBooks = myBookRepository.findAll(user.getId(), limit, lastMyBookId);
 
         // then
         assertThat(myBooks).hasSize(2)
