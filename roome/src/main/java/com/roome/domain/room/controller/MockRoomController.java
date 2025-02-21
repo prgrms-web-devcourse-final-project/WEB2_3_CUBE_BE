@@ -62,7 +62,7 @@ public class MockRoomController {
                         new FurnitureResponseDto("CD_RACK", false, 1, FurnitureCapacity.getCapacity(FurnitureType.CD_RACK, 1))
                 ))
                 .storageLimits(new StorageLimitsDto(100, 50))
-                .userStorage(new UserStorageDto(25, 10, 5, 7))
+                .userStorage(new UserStorageDto(25L, 10L, 5L, 7L))
                 .build();
     }
 }
