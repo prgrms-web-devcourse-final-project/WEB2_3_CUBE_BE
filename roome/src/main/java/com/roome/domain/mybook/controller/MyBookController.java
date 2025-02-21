@@ -16,37 +16,37 @@ public class MyBookController {
 
     @PostMapping("/api/mybooks")
     public ResponseEntity<MyBookResponse> create(
-            @RequestParam("roomId") Long roomId,
+            @RequestParam("userId") Long userId,
             @RequestBody MyBookCreateRequest request
     ) {
-        Long userId = 1L;
-        MyBookResponse response = myBookService.create(userId, roomId, request);
+        Long loginUserId = 1L;
+        MyBookResponse response = myBookService.create(loginUserId, userId, request);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/api/mybooks/{myBookId}")
     public ResponseEntity<MyBookResponse> read(@PathVariable Long myBookId) {
-        MyBookResponse response =  myBookService.read(myBookId);
+        MyBookResponse response = myBookService.read(myBookId);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/api/mybooks")
     public ResponseEntity<MyBooksResponse> readAll(
-            @RequestParam("roomId") Long roomId,
+            @RequestParam("userId") Long userId,
             @RequestParam("pageSize") Long pageSize,
             @RequestParam(value = "lastMyBookId", required = false) Long lastMyBookId
     ) {
-        MyBooksResponse response = myBookService.readAll(roomId, pageSize, lastMyBookId);
+        MyBooksResponse response = myBookService.readAll(userId, pageSize, lastMyBookId);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/api/mybooks")
     public ResponseEntity<Void> delete(
-            @RequestParam("roomId") Long roomId,
+            @RequestParam("userId") Long userId,
             @RequestParam String myBookIds
     ) {
-        Long userId = 1L;
-        myBookService.delete(userId, roomId, myBookIds);
+        Long loginUserId = 1L;
+        myBookService.delete(loginUserId, userId, myBookIds);
         return ResponseEntity.ok().build();
     }
 }

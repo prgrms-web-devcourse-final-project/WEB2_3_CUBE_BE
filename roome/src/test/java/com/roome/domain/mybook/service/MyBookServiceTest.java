@@ -80,7 +80,7 @@ class MyBookServiceTest {
         );
 
         // when
-        MyBookResponse myBookResponse = myBookService.create(user.getId(), room.getId(), request);
+        MyBookResponse myBookResponse = myBookService.create(user.getId(), user.getId(), request);
 
         // then
         MyBook myBook = myBookRepository.findById(myBookResponse.id()).orElseThrow();
@@ -89,7 +89,7 @@ class MyBookServiceTest {
                 .extracting("genre.name")
                 .containsExactlyInAnyOrder("IT", "웹");
 
-        Long count = myBookCountRepository.findByRoomId(room.getId())
+        Long count = myBookCountRepository.findByUserId(user.getId())
                 .map(MyBookCount::getCount)
                 .orElse(0L);
         assertThat(count).isEqualTo(1L);
@@ -121,13 +121,13 @@ class MyBookServiceTest {
         );
 
         // when
-        MyBookResponse myBookResponse = myBookService.create(user.getId(), room.getId(), request);
+        MyBookResponse myBookResponse = myBookService.create(user.getId(), user.getId(), request);
 
         // then
         MyBook myBook = myBookRepository.findById(myBookResponse.id()).orElseThrow();
         assertThat(myBook.getBook().getTitle()).isEqualTo(request.title());
 
-        Long count = myBookCountRepository.findByRoomId(room.getId())
+        Long count = myBookCountRepository.findByUserId(user.getId())
                 .map(MyBookCount::getCount)
                 .orElse(0L);
         assertThat(count).isEqualTo(1L);
@@ -160,7 +160,7 @@ class MyBookServiceTest {
         );
 
         // when // then
-        assertThatThrownBy(() -> myBookService.create(user2.getId(), room.getId(), request))
+        assertThatThrownBy(() -> myBookService.create(user2.getId(), user1.getId(), request))
                 .isInstanceOf(RoomAuthorizationException.class)
                 .hasMessage("해당 방의 소유주가 아닙니다.");
     }
@@ -238,12 +238,12 @@ class MyBookServiceTest {
         MyBook myBook5 = createMyBook(room, book5, user);
         myBookRepository.saveAll(List.of(myBook1, myBook2, myBook3, myBook4, myBook5));
 
-        MyBookCount myBookCount = createMyBookCount(5L, room);
+        MyBookCount myBookCount = createMyBookCount(5L, room, user);
         myBookCountRepository.save(myBookCount);
 
 
         // when
-        MyBooksResponse myBooksResponse = myBookService.readAll(room.getId(), 3L, null);
+        MyBooksResponse myBooksResponse = myBookService.readAll(user.getId(), 3L, null);
 
         // then
         assertThat(myBooksResponse.count()).isEqualTo(5);
@@ -283,11 +283,11 @@ class MyBookServiceTest {
         MyBook myBook5 = createMyBook(room, book5, user);
         myBookRepository.saveAll(List.of(myBook1, myBook2, myBook3, myBook4, myBook5));
 
-        MyBookCount myBookCount = createMyBookCount(5L, room);
+        MyBookCount myBookCount = createMyBookCount(5L, room, user);
         myBookCountRepository.save(myBookCount);
 
         // when
-        MyBooksResponse myBooksResponse = myBookService.readAll(room.getId(), 3L, myBook3.getId());
+        MyBooksResponse myBooksResponse = myBookService.readAll(user.getId(), 3L, myBook3.getId());
 
         // then
         assertThat(myBooksResponse.count()).isEqualTo(5);
@@ -322,13 +322,13 @@ class MyBookServiceTest {
         MyBook myBook3 = createMyBook(room, book3, user);
         myBookRepository.saveAll(List.of(myBook1, myBook2, myBook3));
 
-        MyBookCount myBookCount = createMyBookCount(3L, room);
+        MyBookCount myBookCount = createMyBookCount(3L, room, user);
         myBookCountRepository.save(myBookCount);
 
         String ids = myBook1.getId() + "," + myBook2.getId();
 
         // when
-        myBookService.delete(user.getId(), room.getId(), ids);
+        myBookService.delete(user.getId(), user.getId(), ids);
 
         // then
         boolean deleted1 = myBookRepository.findById(myBook1.getId()).isEmpty();
@@ -363,7 +363,7 @@ class MyBookServiceTest {
         String ids = String.valueOf(myBook1.getId());
 
         // when // then
-        assertThatThrownBy(() -> myBookService.delete(user2.getId(), room.getId(), ids))
+        assertThatThrownBy(() -> myBookService.delete(user2.getId(), user1.getId(), ids))
                 .isInstanceOf(RoomAuthorizationException.class)
                 .hasMessage("해당 방의 소유주가 아닙니다.");
     }
@@ -412,10 +412,11 @@ class MyBookServiceTest {
                 .build();
     }
 
-    private MyBookCount createMyBookCount(Long count, Room room) {
+    private MyBookCount createMyBookCount(Long count, Room room, User user) {
         return MyBookCount.builder()
                 .count(count)
                 .room(room)
+                .user(user)
                 .build();
     }
 }

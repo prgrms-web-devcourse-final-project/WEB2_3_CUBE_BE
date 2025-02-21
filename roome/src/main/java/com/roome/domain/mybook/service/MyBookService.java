@@ -13,6 +13,7 @@ import com.roome.domain.mybook.service.request.MyBookCreateRequest;
 import com.roome.domain.mybook.service.response.MyBookResponse;
 import com.roome.domain.mybook.service.response.MyBooksResponse;
 import com.roome.domain.room.entity.Room;
+import com.roome.domain.room.exception.RoomNoFoundException;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
@@ -21,7 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 import static com.roome.global.util.StringUtil.convertStringToList;
 
@@ -38,10 +38,11 @@ public class MyBookService {
     private final GenreRepository genreRepository;
 
     @Transactional
-    public MyBookResponse create(Long userId, Long roomId, MyBookCreateRequest request) {
-        User user = userRepository.getById(userId);
-        Room room = roomRepository.getById(roomId);
-        room.validateOwner(userId);
+    public MyBookResponse create(Long loginUserId, Long roomOwnerId, MyBookCreateRequest request) {
+        User loginUser = userRepository.getById(loginUserId);
+        Room room = roomRepository.findByUserId(roomOwnerId)
+                .orElseThrow(RoomNoFoundException::new);
+        room.validateOwner(loginUserId);
 
         Book bookEntity = request.toBookEntity();
         Book book = bookRepository.findByIsbn(bookEntity.getIsbn())
@@ -50,10 +51,10 @@ public class MyBookService {
                     return bookRepository.save(bookEntity);
                 });
 
-        MyBook myBook = myBookRepository.save(MyBook.create(user, room, book));
-        int result = myBookCountRepository.increase(roomId);
+        MyBook myBook = myBookRepository.save(MyBook.create(loginUser, room, book));
+        int result = myBookCountRepository.increase(roomOwnerId);
         if (result == 0) {
-            myBookCountRepository.save(MyBookCount.init(room));
+            myBookCountRepository.save(MyBookCount.init(room, loginUser));
         }
 
         return MyBookResponse.from(myBook);
@@ -65,25 +66,26 @@ public class MyBookService {
         );
     }
 
-    public MyBooksResponse readAll(Long roomId, Long pageSize, Long lastMyBookId) {
+    public MyBooksResponse readAll(Long roomOwnerId, Long pageSize, Long lastMyBookId) {
         List<MyBook> myBooks = lastMyBookId == null ?
-                myBookRepository.findAll(roomId, pageSize) :
-                myBookRepository.findAll(roomId, pageSize, lastMyBookId);
-        return MyBooksResponse.of(myBooks, count(roomId));
+                myBookRepository.findAll(roomOwnerId, pageSize) :
+                myBookRepository.findAll(roomOwnerId, pageSize, lastMyBookId);
+        return MyBooksResponse.of(myBooks, count(roomOwnerId));
     }
 
     @Transactional
-    public void delete(Long userId, Long roomId, String myBookIds) {
-        Room room = roomRepository.getById(roomId);
-        room.validateOwner(userId);
+    public void delete(Long loginUserId, Long roomOwnerId, String myBookIds) {
+        Room room = roomRepository.findByUserId(roomOwnerId)
+                .orElseThrow(RoomNoFoundException::new);
+        room.validateOwner(loginUserId);
 
         List<String> ids = convertStringToList(myBookIds);
         myBookRepository.deleteAllIn(ids);
-        myBookCountRepository.decrease(roomId, ids.size());
+        myBookCountRepository.decrease(roomOwnerId, ids.size());
     }
 
-    private Long count(Long roomId) {
-        return myBookCountRepository.findByRoomId(roomId)
+    private Long count(Long roomOwnerId) {
+        return myBookCountRepository.findByUserId(roomOwnerId)
                 .map(MyBookCount::getCount)
                 .orElse(0L);
     }

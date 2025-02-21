@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -25,9 +26,10 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@ActiveProfiles("test")
 @WebMvcTest(controllers = MyBookController.class)
 class MyBookControllerTest {
 
@@ -53,14 +55,14 @@ class MyBookControllerTest {
         Long myBookId = 1L;
         MyBookResponse response = createMyBookResponse(myBookId, request);
 
-        Long roomId = 1L;
-        given(myBookService.create(1L, roomId, request))
+        Long roomOwnerId = 1L;
+        given(myBookService.create(1L, roomOwnerId, request))
                 .willReturn(response);
 
         // when // then
         mockMvc.perform(
                         post("/api/mybooks")
-                                .param("roomId", String.valueOf(roomId))
+                                .param("userId", String.valueOf(roomOwnerId))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request))
                                 .with(csrf())
@@ -114,15 +116,15 @@ class MyBookControllerTest {
                 5L
         );
 
-        Long roomId = 1L;
+        Long roomOwnerId = 1L;
         Long pageSize = 2L;
-        given(myBookService.readAll(roomId, pageSize, null))
+        given(myBookService.readAll(roomOwnerId, pageSize, null))
                 .willReturn(response);
 
         // when // then
         mockMvc.perform(
                         get("/api/mybooks")
-                                .param("roomId", String.valueOf(roomId))
+                                .param("userId", String.valueOf(roomOwnerId))
                                 .param("pageSize", String.valueOf(pageSize))
                                 .with(csrf())
                 )
@@ -147,16 +149,16 @@ class MyBookControllerTest {
                 5L
         );
 
-        Long roomId = 1L;
+        Long roomOwnerId = 1L;
         Long pageSize = 2L;
         Long lastMyBookId = 4L;
-        given(myBookService.readAll(roomId, pageSize, lastMyBookId))
+        given(myBookService.readAll(roomOwnerId, pageSize, lastMyBookId))
                 .willReturn(response);
 
         // when // then
         mockMvc.perform(
                         get("/api/mybooks")
-                                .param("roomId", String.valueOf(roomId))
+                                .param("userId", String.valueOf(roomOwnerId))
                                 .param("pageSize", String.valueOf(pageSize))
                                 .param("lastMyBookId", String.valueOf(lastMyBookId))
                                 .with(csrf())
@@ -174,7 +176,7 @@ class MyBookControllerTest {
         // given // when // then
         mockMvc.perform(
                         MockMvcRequestBuilders.delete("/api/mybooks")
-                                .param("roomId", String.valueOf(1L))
+                                .param("userId", String.valueOf(1L))
                                 .param("myBookIds", "1,2,3")
                                 .with(csrf())
                 )

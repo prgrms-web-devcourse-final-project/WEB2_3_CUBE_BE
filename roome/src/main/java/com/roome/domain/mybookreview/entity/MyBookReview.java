@@ -44,7 +44,7 @@ public class MyBookReview {
         this.title = myBookReview.getTitle();
         this.quote = myBookReview.getQuote();
         this.takeaway = myBookReview.getTakeaway();
-        this.motivate= myBookReview.getMotivate();
+        this.motivate = myBookReview.getMotivate();
         this.topic = myBookReview.getTopic();
         this.freeFormText = myBookReview.getFreeFormText();
         this.coverColor = myBookReview.getCoverColor();
