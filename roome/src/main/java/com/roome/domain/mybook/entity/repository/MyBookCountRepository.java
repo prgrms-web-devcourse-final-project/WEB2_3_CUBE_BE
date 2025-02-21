@@ -32,4 +32,6 @@ public interface MyBookCountRepository extends JpaRepository<MyBookCount, Long> 
     );
 
     Optional<MyBookCount> findByUserId(Long userId);
+
+    Optional<MyBookCount> findByRoomId(Long roomId);
 }
