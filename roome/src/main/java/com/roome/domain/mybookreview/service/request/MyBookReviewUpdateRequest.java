@@ -3,7 +3,7 @@ package com.roome.domain.mybookreview.service.request;
 import com.roome.domain.mybookreview.entity.CoverColor;
 import com.roome.domain.mybookreview.entity.MyBookReview;
 
-public record MyBookReviewUpdateRequest (
+public record MyBookReviewUpdateRequest(
         String title,
         String quote,
         String takeaway,

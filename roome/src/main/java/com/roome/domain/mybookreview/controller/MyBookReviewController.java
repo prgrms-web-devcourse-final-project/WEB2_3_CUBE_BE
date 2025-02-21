@@ -36,7 +36,7 @@ public class MyBookReviewController {
             @RequestBody MyBookReviewUpdateRequest request
     ) {
         Long userId = 1L;
-        MyBookReviewResponse response =  myBookReviewService.update(userId, myBookReviewId, request);
+        MyBookReviewResponse response = myBookReviewService.update(userId, myBookReviewId, request);
         return ResponseEntity.ok(response);
     }
 
