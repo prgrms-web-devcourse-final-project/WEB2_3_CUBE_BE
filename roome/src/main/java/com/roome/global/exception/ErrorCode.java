@@ -24,7 +24,7 @@ public enum ErrorCode {
   // User 관련 예외
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
 
-  //하우스 메이트 목록 조회 시 페이지네이션 관련 예외
+  //페이지네이션 관련 예외
   INVALID_LIMIT_VALUE(HttpStatus.BAD_REQUEST, "유효하지 않은 limit 값입니다. (1-100 사이의 값을 입력해주세요)"),
   INVALID_CURSOR_VALUE(HttpStatus.BAD_REQUEST, "유효하지 않은 cursor 값입니다."),
 
@@ -55,6 +55,13 @@ public enum ErrorCode {
   // CD 관련 예외
   CD_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 CD를 찾을 수 없습니다."),
   DUPLICATE_CD(HttpStatus.CONFLICT, "이미 추가된 CD입니다."),
+
+  // 알림 관련 예외
+  NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림 데이터가 존재하지 않습니다."),
+  NOTIFICATION_ALREADY_READ(HttpStatus.BAD_REQUEST, "이미 읽음 처리된 알림입니다."),
+  NOTIFICATION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 알림에 접근 권한이 없습니다."),
+  NOTIFICATION_EXPIRED(HttpStatus.GONE, "만료된 알림입니다."),
+  INVALID_NOTIFICATION_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 알림 타입입니다."),
   //서버 에러
   INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 에러가 발생했습니다.")
   ;
