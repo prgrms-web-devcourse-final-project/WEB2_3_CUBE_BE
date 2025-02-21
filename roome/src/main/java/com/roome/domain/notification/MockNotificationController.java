@@ -112,8 +112,9 @@ public class MockNotificationController {
                                                          .build());
     }
 
-    @PatchMapping("/read-all")
-    public ResponseEntity<?> readAllNotifications() {
-        return ResponseEntity.ok().build();
-    }
+    //현재 기능 사용 안 함
+//    @PatchMapping("/read-all")
+//    public ResponseEntity<?> readAllNotifications() {
+//        return ResponseEntity.ok().build();
+//    }
 }
