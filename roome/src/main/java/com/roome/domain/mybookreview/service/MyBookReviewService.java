@@ -29,7 +29,7 @@ public class MyBookReviewService {
         MyBook myBook = myBookRepository.getById(myBookId);
         myBook.validateOwner(userId);
 
-        MyBookReview myBookReview = myBookReviewRepository.save(request.toEntity());
+        MyBookReview myBookReview = myBookReviewRepository.save(request.toEntity(myBook, user));
         return MyBookReviewResponse.from(myBookReview);
     }
 
