@@ -16,6 +16,7 @@ import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -81,6 +82,23 @@ public class MyCdService {
         .orElseThrow(() -> new CdNotFoundException(myCdId));
 
     return MyCdResponse.fromEntity(myCd);
+  }
+
+  @Transactional
+  public void delete(Long userId, String myCdIds) {
+    List<Long> ids = convertStringToList(myCdIds).stream()
+        .map(Long::parseLong)
+        .toList();
+
+    myCdRepository.deleteByUserIdAndIds(userId, ids);
+    myCdRepository.flush();
+  }
+
+
+  private List<String> convertStringToList(String ids) {
+    return Arrays.stream(ids.split(","))
+        .map(String::trim)
+        .toList();
   }
 
 }
