@@ -5,6 +5,7 @@ import com.roome.domain.user.entity.User;
 import com.roome.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -26,12 +27,17 @@ public class CdComment extends BaseEntity {
   @JoinColumn(name = "my_cd_id", nullable = false)
   private MyCd myCd; // 댓글이 달린 CD
 
-  @Column(nullable = false)
+  @Column(nullable = false, length = 10)
+  private String timestamp; // 댓글이 달린 타임스탬프 (예: "3:40")
+
+  @Column(nullable = false, length = 255)
   private String content; // 댓글 내용
 
-  public CdComment(User user, MyCd myCd, String content) {
+  @Builder
+  public CdComment(User user, MyCd myCd, String timestamp, String content) {
     this.user = user;
     this.myCd = myCd;
+    this.timestamp = timestamp;
     this.content = content;
   }
 }
