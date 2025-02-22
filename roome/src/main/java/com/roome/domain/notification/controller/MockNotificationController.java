@@ -4,6 +4,7 @@ import com.roome.domain.notification.dto.NotificationInfo;
 import com.roome.domain.notification.dto.NotificationReadResponse;
 import com.roome.domain.notification.dto.NotificationResponse;
 import com.roome.domain.notification.dto.NotificationType;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -102,6 +103,7 @@ public class MockNotificationController {
         }
     }
 
+    //알림 읽음
     @PatchMapping("/{notificationId}/read")
     public ResponseEntity<NotificationReadResponse> readNotification(@PathVariable Long notificationId) {
         // 고정된 응답 반환
@@ -112,4 +114,9 @@ public class MockNotificationController {
                                                          .build());
     }
 
+    //알림 생성
+    @PostMapping
+    public ResponseEntity<Void> createNotification(@RequestBody NotificationInfo notificationInfo) {
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
 }
