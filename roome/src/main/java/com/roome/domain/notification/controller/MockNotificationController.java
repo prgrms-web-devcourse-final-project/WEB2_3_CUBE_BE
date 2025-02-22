@@ -27,7 +27,7 @@ public class MockNotificationController {
                             .senderName("John Doe")
                             .senderProfileImage("https://example.com/profile1.jpg")
                             .targetId(2L)
-                            .isRead(false)
+                            .read(false)
                             .createdAt(LocalDateTime.now())
                             .build(),
             NotificationInfo.builder()
@@ -39,7 +39,7 @@ public class MockNotificationController {
                             .senderName("Jane Smith")
                             .senderProfileImage("https://example.com/profile2.jpg")
                             .targetId(1L)
-                            .isRead(true)
+                            .read(true)
                             .createdAt(LocalDateTime.now())
                             .build(),
             NotificationInfo.builder()
@@ -51,7 +51,7 @@ public class MockNotificationController {
                             .senderName("Event Team")
                             .senderProfileImage("https://example.com/profile3.jpg")
                             .targetId(4L)
-                            .isRead(false)
+                            .read(false)
                             .createdAt(LocalDateTime.now())
                             .build(),
             NotificationInfo.builder()
@@ -63,7 +63,7 @@ public class MockNotificationController {
                             .senderName("Sarah Kim")
                             .senderProfileImage("https://example.com/profile4.jpg")
                             .targetId(3L)
-                            .isRead(true)
+                            .read(true)
                             .createdAt(LocalDateTime.now())
                             .build(),
             NotificationInfo.builder()
@@ -75,7 +75,7 @@ public class MockNotificationController {
                             .senderName("Mike Park")
                             .senderProfileImage("https://example.com/profile5.jpg")
                             .targetId(4L)
-                            .isRead(false)
+                            .read(false)
                             .createdAt(LocalDateTime.now())
                             .build()
                                                             );
@@ -84,10 +84,10 @@ public class MockNotificationController {
     public ResponseEntity<NotificationResponse> getNotifications(
             @RequestParam(required = false) Long cursor,
             @RequestParam(required = false, defaultValue = "10") int limit,
-            @RequestParam(required = false, defaultValue = "true") boolean isRead) {
+            @RequestParam(required = false, defaultValue = "true") boolean read) {
 
         // 항상 동일한 응답 반환
-        if (isRead) {
+        if (read) {
             return ResponseEntity.ok(NotificationResponse.builder()
                                                          .notifications(Arrays.asList(mockNotifications.get(1), mockNotifications.get(3)))  // 읽은 알림만
                                                          .nextCursor("")

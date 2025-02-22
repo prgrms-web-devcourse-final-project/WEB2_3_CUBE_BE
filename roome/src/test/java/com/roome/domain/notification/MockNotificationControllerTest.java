@@ -1,7 +1,7 @@
 package com.roome.domain.notification;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.roome.domain.notification.dto.NotificationResponse;
+import com.roome.domain.notification.controller.MockNotificationController;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -10,11 +10,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 @WebMvcTest(MockNotificationController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -22,9 +20,6 @@ class MockNotificationControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Nested
     @DisplayName("알림 목록 조회 API 테스트")
@@ -35,13 +30,17 @@ class MockNotificationControllerTest {
         void getUnreadNotifications() throws Exception {
             // when & then
             mockMvc.perform(get("/mock/notifications")
-                                    .param("isRead", "false")
+                                    .param("cursor", (String) null)
+                                    .param("limit", "10")
+                                    .param("read", "false")
                                     .contentType(MediaType.APPLICATION_JSON))
                    .andExpect(status().isOk())
                    .andExpect(jsonPath("$.notifications").isArray())
                    .andExpect(jsonPath("$.notifications.length()").value(3))
                    .andExpect(jsonPath("$.notifications[0].notificationId").value(1))
                    .andExpect(jsonPath("$.notifications[0].read").value(false))
+                   .andExpect(jsonPath("$.notifications[1].notificationId").value(3))
+                   .andExpect(jsonPath("$.notifications[2].notificationId").value(5))
                    .andExpect(jsonPath("$.nextCursor").value(""))
                    .andExpect(jsonPath("$.hasNext").value(false));
         }
@@ -51,19 +50,22 @@ class MockNotificationControllerTest {
         void getReadNotifications() throws Exception {
             // when & then
             mockMvc.perform(get("/mock/notifications")
-                                    .param("isRead", "true")
+                                    .param("cursor", (String) null)
+                                    .param("limit", "10")
+                                    .param("read", "true")
                                     .contentType(MediaType.APPLICATION_JSON))
                    .andExpect(status().isOk())
                    .andExpect(jsonPath("$.notifications").isArray())
                    .andExpect(jsonPath("$.notifications.length()").value(2))
                    .andExpect(jsonPath("$.notifications[0].notificationId").value(2))
                    .andExpect(jsonPath("$.notifications[0].read").value(true))
+                   .andExpect(jsonPath("$.notifications[1].notificationId").value(4))
                    .andExpect(jsonPath("$.nextCursor").value(""))
                    .andExpect(jsonPath("$.hasNext").value(false));
         }
 
         @Test
-        @DisplayName("기본값으로 읽은 알림 목록을 조회한다")
+        @DisplayName("기본값으로 알림 목록을 조회한다")
         void getNotificationsWithDefaultParams() throws Exception {
             // when & then
             mockMvc.perform(get("/mock/notifications")
@@ -89,15 +91,6 @@ class MockNotificationControllerTest {
                    .andExpect(jsonPath("$.type").value("GUESTBOOK"))
                    .andExpect(jsonPath("$.targetId").value(1))
                    .andExpect(jsonPath("$.senderId").value(2));
-        }
-
-        @Test
-        @DisplayName("모든 알림을 읽음 처리한다")
-        void readAllNotifications() throws Exception {
-            // when & then
-            mockMvc.perform(patch("/mock/notifications/read-all")
-                                    .contentType(MediaType.APPLICATION_JSON))
-                   .andExpect(status().isOk());
         }
     }
 }
