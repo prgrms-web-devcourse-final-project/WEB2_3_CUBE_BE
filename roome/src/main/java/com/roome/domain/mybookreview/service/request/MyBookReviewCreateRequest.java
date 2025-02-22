@@ -5,6 +5,8 @@ import com.roome.domain.mybookreview.entity.CoverColor;
 import com.roome.domain.mybookreview.entity.MyBookReview;
 import com.roome.domain.user.entity.User;
 
+import java.time.LocalDateTime;
+
 public record MyBookReviewCreateRequest(
         String title,
         String quote,
@@ -24,6 +26,7 @@ public record MyBookReviewCreateRequest(
                 .topic(topic)
                 .freeFormText(freeFormText)
                 .coverColor(CoverColor.valueOf(coverColor))
+                .writeDateTime(LocalDateTime.now())
                 .myBook(myBook)
                 .user(user)
                 .build();
