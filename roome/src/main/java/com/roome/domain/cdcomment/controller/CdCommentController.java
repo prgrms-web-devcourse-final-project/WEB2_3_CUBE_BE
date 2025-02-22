@@ -4,7 +4,6 @@ import com.roome.domain.cdcomment.dto.CdCommentCreateRequest;
 import com.roome.domain.cdcomment.dto.CdCommentListResponse;
 import com.roome.domain.cdcomment.dto.CdCommentResponse;
 import com.roome.domain.cdcomment.service.CdCommentService;
-import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +16,7 @@ public class CdCommentController {
 
   private final CdCommentService cdCommentService;
 
-  @PostMapping("/api/myCd/{myCdId}/comment")
+  @PostMapping("/api/mycd/{myCdId}/comment")
   public ResponseEntity<CdCommentResponse> create(
       @PathVariable Long myCdId,
       @RequestBody @Valid CdCommentCreateRequest request
@@ -27,7 +26,7 @@ public class CdCommentController {
     return ResponseEntity.ok(response);
   }
 
-  @GetMapping("/api/myCd/{myCdId}/comments")
+  @GetMapping("/api/mycd/{myCdId}/comments")
   public ResponseEntity<CdCommentListResponse> getComments(
       @PathVariable Long myCdId,
       @RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -37,7 +36,7 @@ public class CdCommentController {
     return ResponseEntity.ok(response);
   }
 
-  @GetMapping("/api/myCd/{myCdId}/comments/search")
+  @GetMapping("/api/mycd/{myCdId}/comments/search")
   public ResponseEntity<CdCommentListResponse> searchComments(
       @PathVariable Long myCdId,
       @RequestParam("query") String keyword,
@@ -48,20 +47,14 @@ public class CdCommentController {
     return ResponseEntity.ok(response);
   }
 
-  @DeleteMapping("/api/myCd/{myCdId}/comments/{commentId}")
-  public ResponseEntity<Void> deleteComment(
-      @PathVariable Long myCdId,
-      @PathVariable Long commentId
-  ) {
+  @DeleteMapping("/api/mycd/comments/{commentId}")
+  public ResponseEntity<Void> deleteComment(@PathVariable Long commentId) {
     cdCommentService.deleteComment(commentId);
     return ResponseEntity.noContent().build();
   }
 
-  @DeleteMapping("/api/myCd/{myCdId}/comments")
-  public ResponseEntity<Void> deleteMultipleComments(
-      @PathVariable Long myCdId,
-      @RequestParam List<Long> commentIds // 요청 파라미터로 삭제할 댓글 ID 리스트 받음
-  ) {
+  @DeleteMapping("/api/mycd/comments")
+  public ResponseEntity<Void> deleteMultipleComments(@RequestParam List<Long> commentIds) {
     cdCommentService.deleteMultipleComments(commentIds);
     return ResponseEntity.noContent().build();
   }

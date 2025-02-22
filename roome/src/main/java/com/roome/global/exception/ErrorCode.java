@@ -58,8 +58,10 @@ public enum ErrorCode {
   MYCD_LIST_EMPTY(HttpStatus.NOT_FOUND, "CD 목록이 비어 있습니다."),
   CD_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 CD를 찾을 수 없습니다."),
   DUPLICATE_CD(HttpStatus.CONFLICT, "이미 추가된 CD입니다."),
+  CD_COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 댓글을 찾을 수 없습니다."),
+  CD_COMMENT_LIST_EMPTY(HttpStatus.NOT_FOUND, "댓글 목록이 비어 있습니다."),
+  CD_COMMENT_SEARCH_EMPTY(HttpStatus.NOT_FOUND, "검색된 댓글이 없습니다."),
   CD_TEMPLATE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 CD 템플릿을 찾을 수 없습니다."),
-  CD_COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 CD 댓글을 찾을 수 없습니다."),
   CD_COMMENT_ACCESS_DENIED(HttpStatus.BAD_REQUEST, "해당 CD 댓글에 대한 권한이 없습니다."),
 
   // 알림 관련 예외
