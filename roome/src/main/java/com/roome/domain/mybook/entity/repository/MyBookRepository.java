@@ -55,4 +55,7 @@ public interface MyBookRepository extends JpaRepository<MyBook, Long> {
                     """
     )
     void deleteAllIn(List<String> ids);
+
+    // 특정 사용자가 가지고 있는 모든 도서 목록 조회
+    List<MyBook> findAllByUserId(Long userId);
 }

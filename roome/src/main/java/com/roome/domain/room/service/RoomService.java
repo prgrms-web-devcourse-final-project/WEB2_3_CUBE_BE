@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+
 @Service
 @RequiredArgsConstructor
 public class RoomService {
@@ -37,6 +39,7 @@ public class RoomService {
         Room newRoom = Room.builder()
                 .user(user)
                 .theme(RoomTheme.BASIC)
+                .furnitures(new ArrayList<>())
                 .build();
 
         Room savedRoom = roomRepository.save(newRoom);

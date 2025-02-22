@@ -29,12 +29,14 @@ public class Room {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private RoomTheme theme;
+    @Builder.Default
+    private RoomTheme theme = RoomTheme.BASIC;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Furniture> furnitures = new ArrayList<>();
 
     public int getMaxMusic(){

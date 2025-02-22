@@ -85,4 +85,12 @@ public class User extends BaseTimeEntity {
     public void updateRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
     }
+
+    public void updateProvider(Provider provider) {
+        this.provider = provider;
+    }
+
+    public void updateProviderId(String providerId) {
+        this.providerId = providerId;
+    }
 }

@@ -8,4 +8,6 @@ public interface HousemateRepository extends JpaRepository<AddedHousemate, Long>
     boolean existsByUserIdAndAddedId(Long userId, Long addedId);
     // 삭제도 단순화
     void deleteByUserIdAndAddedId(Long userId, Long addedId);
+    // 사용자가 추가한 하우스메이트 관계와 사용자를 추가한 하우스메이트 관계 모두 삭제
+    void deleteByUserIdOrAddedId(Long userId, Long addedId);
 }
