@@ -6,6 +6,7 @@ import com.roome.domain.mybook.entity.MyBook;
 import com.roome.domain.mybook.entity.MyBookCount;
 import com.roome.domain.mybook.entity.repository.MyBookCountRepository;
 import com.roome.domain.mybook.entity.repository.MyBookRepository;
+import com.roome.domain.mybook.exception.MyBookDuplicateException;
 import com.roome.domain.mybook.exception.MyBookNotFoundException;
 import com.roome.domain.mybook.service.request.MyBookCreateRequest;
 import com.roome.domain.mybook.service.response.MyBookResponse;
@@ -163,6 +164,40 @@ class MyBookServiceTest {
         assertThatThrownBy(() -> myBookService.create(user2.getId(), user1.getId(), request))
                 .isInstanceOf(RoomAuthorizationException.class)
                 .hasMessage("해당 방의 소유주가 아닙니다.");
+    }
+
+    @DisplayName("이미 등록된 도서를 등록하려고 하는 경우 예외가 발생한다.")
+    @Test
+    void createDuplicateMyBook() {
+
+        // given
+        User user1 = createUser("user1@gmail.com", "user1", "provId1");
+        userRepository.save(user1);
+
+        Room room = createRoom(user1);
+        roomRepository.save(room);
+
+        Book book = createBook(1L, "book");
+        bookRepository.save(book);
+
+        MyBook myBook = createMyBook(room, book, user1);
+        myBookRepository.save(myBook);
+
+        MyBookCreateRequest request = new MyBookCreateRequest(
+                book.getIsbn(),
+                book.getTitle(),
+                book.getTitle(),
+                book.getPublisher(),
+                book.getPublishedDate(),
+                book.getImageUrl(),
+                List.of(),
+                book.getPage()
+        );
+
+        // when // then
+        assertThatThrownBy(() -> myBookService.create(user1.getId(), user1.getId(), request))
+                .isInstanceOf(MyBookDuplicateException.class)
+                .hasMessage("책장에 등록된 도서입니다.");
     }
 
     @DisplayName("등록한 도서의 상세 정보를 조회할 수 있다.")

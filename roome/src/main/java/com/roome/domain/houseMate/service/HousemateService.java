@@ -2,7 +2,7 @@ package com.roome.domain.houseMate.service;
 
 import com.roome.domain.houseMate.dto.HousemateInfo;
 import com.roome.domain.houseMate.entity.AddedHousemate;
-import com.roome.domain.houseMate.repository.AddedHousemateRepository;
+import com.roome.domain.houseMate.repository.HousemateRepository;
 import com.roome.domain.houseMate.dto.HousemateListResponse;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
@@ -19,7 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class HousemateService {
-    private final AddedHousemateRepository addedHousemateRepository;
+    private final HousemateRepository housemateRepository;
     private final UserRepository userRepository;
 
     //email로 userId 조회
@@ -31,13 +31,13 @@ public class HousemateService {
 
     // 팔로잉 목록 조회 (내가 추가한 유저 목록)
     public HousemateListResponse getFollowingList(Long userId, String cursor, int limit, String nickname) {
-        List<HousemateInfo> housemates = addedHousemateRepository.findByUserId(userId, cursor, limit + 1, nickname);
+        List<HousemateInfo> housemates = housemateRepository.findByUserId(userId, cursor, limit + 1, nickname);
         return createHousemateListResponse(housemates, limit);
     }
 
     // 팔로워 목록 조회 (나를 추가한 유저 목록)
     public HousemateListResponse getFollowerList(Long userId, String cursor, int limit, String nickname) {
-        List<HousemateInfo> housemates = addedHousemateRepository.findByAddedId(userId, cursor, limit + 1, nickname);
+        List<HousemateInfo> housemates = housemateRepository.findByAddedId(userId, cursor, limit + 1, nickname);
         return createHousemateListResponse(housemates, limit);
     }
 
@@ -58,11 +58,11 @@ public class HousemateService {
                       .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 이미 추가된 하우스메이트 체크
-        if (addedHousemateRepository.existsByUserIdAndAddedId(userId, targetId)) {
+        if (housemateRepository.existsByUserIdAndAddedId(userId, targetId)) {
             throw new BusinessException(ErrorCode.ALREADY_HOUSEMATE);
         }
 
-        addedHousemateRepository.save(AddedHousemate
+        housemateRepository.save(AddedHousemate
                                               .builder()
                                               .userId(userId)
                                               .addedId(targetId)
@@ -73,11 +73,11 @@ public class HousemateService {
     @Transactional
     public void removeHousemate(Long userId, Long targetId) {
         // 하우스메이트 관계 확인
-        if (!addedHousemateRepository.existsByUserIdAndAddedId(userId, targetId)) {
+        if (!housemateRepository.existsByUserIdAndAddedId(userId, targetId)) {
             throw new BusinessException(ErrorCode.NOT_HOUSEMATE);
         }
 
-        addedHousemateRepository.deleteByUserIdAndAddedId(userId, targetId);
+        housemateRepository.deleteByUserIdAndAddedId(userId, targetId);
     }
 
     // 하우스메이트 목록 응답 생성

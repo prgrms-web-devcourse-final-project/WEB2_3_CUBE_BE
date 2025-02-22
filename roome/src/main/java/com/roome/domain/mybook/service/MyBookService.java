@@ -9,11 +9,11 @@ import com.roome.domain.mybook.entity.MyBook;
 import com.roome.domain.mybook.entity.MyBookCount;
 import com.roome.domain.mybook.entity.repository.MyBookCountRepository;
 import com.roome.domain.mybook.entity.repository.MyBookRepository;
+import com.roome.domain.mybook.exception.MyBookDuplicateException;
 import com.roome.domain.mybook.service.request.MyBookCreateRequest;
 import com.roome.domain.mybook.service.response.MyBookResponse;
 import com.roome.domain.mybook.service.response.MyBooksResponse;
 import com.roome.domain.room.entity.Room;
-import com.roome.domain.room.exception.RoomNoFoundException;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
@@ -40,8 +40,7 @@ public class MyBookService {
     @Transactional
     public MyBookResponse create(Long loginUserId, Long roomOwnerId, MyBookCreateRequest request) {
         User loginUser = userRepository.getById(loginUserId);
-        Room room = roomRepository.findByUserId(roomOwnerId)
-                .orElseThrow(RoomNoFoundException::new);
+        Room room = roomRepository.getByUserId(roomOwnerId);
         room.validateOwner(loginUserId);
 
         Book bookEntity = request.toBookEntity();
@@ -50,6 +49,9 @@ public class MyBookService {
                     addGenres(bookEntity, request.genreNames());
                     return bookRepository.save(bookEntity);
                 });
+
+        myBookRepository.findByBookId(book.getId())
+                .ifPresent(exist -> { throw new MyBookDuplicateException(); });
 
         MyBook myBook = myBookRepository.save(MyBook.create(loginUser, room, book));
         int result = myBookCountRepository.increase(roomOwnerId);
@@ -75,8 +77,7 @@ public class MyBookService {
 
     @Transactional
     public void delete(Long loginUserId, Long roomOwnerId, String myBookIds) {
-        Room room = roomRepository.findByUserId(roomOwnerId)
-                .orElseThrow(RoomNoFoundException::new);
+        Room room = roomRepository.getByUserId(roomOwnerId);
         room.validateOwner(loginUserId);
 
         List<String> ids = convertStringToList(myBookIds);

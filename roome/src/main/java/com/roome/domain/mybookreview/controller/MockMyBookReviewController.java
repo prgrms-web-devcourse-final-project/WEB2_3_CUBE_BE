@@ -9,6 +9,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/mock/mybooks-review")
@@ -59,7 +63,8 @@ public class MockMyBookReviewController {
                 "motivate",
                 "topic",
                 "freeFormText",
-                CoverColor.BLUE
+                CoverColor.BLUE,
+                LocalDateTime.of(2025, 1, 1, 1, 1, 1).format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 a h시 mm분", Locale.KOREAN))
         );
     }
 }

@@ -8,6 +8,7 @@ import com.roome.domain.mybook.exception.MyBookAuthorizationException;
 import com.roome.domain.mybookreview.entity.MyBookReview;
 import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
 import com.roome.domain.mybookreview.exception.MyBookReviewAuthorizationException;
+import com.roome.domain.mybookreview.exception.MyBookReviewDuplicateException;
 import com.roome.domain.mybookreview.exception.MyBookReviewNotFoundException;
 import com.roome.domain.mybookreview.service.request.MyBookReviewCreateRequest;
 import com.roome.domain.mybookreview.service.request.MyBookReviewUpdateRequest;
@@ -122,6 +123,42 @@ class MyBookReviewServiceTest {
         assertThatThrownBy(() -> myBookReviewService.create(user2.getId(), myBook.getId(), request))
                 .isInstanceOf(MyBookAuthorizationException.class)
                 .hasMessage("등록 도서에 대한 권한이 없는 사용자입니다.");
+    }
+
+    @DisplayName("이미 서평이 작성되어 있는 도서에 서평을 작성하려고 하면 예외가 발생한다.")
+    @Test
+    void createDuplicateMyBookReview() {
+
+        // given
+        User user1 = createUser("user1@gmail.com", "user1", "provId1");
+        userRepository.save(user1);
+
+        Room room = createRoom(user1);
+        roomRepository.save(room);
+
+        Book book = createBook(1L, "book1");
+        bookRepository.save(book);
+
+        MyBook myBook = createMyBook(room, book, user1);
+        myBookRepository.save(myBook);
+
+        MyBookReview review = createMyBookReview("title", user1, myBook);
+        myBookReviewRepository.save(review);
+
+        MyBookReviewCreateRequest request = new MyBookReviewCreateRequest(
+                "title",
+                "quote",
+                "takeaway",
+                "motivate",
+                "topic",
+                "freeFormText",
+                "BLUE"
+        );
+
+        // when // then
+        assertThatThrownBy(() -> myBookReviewService.create(user1.getId(), myBook.getId(), request))
+                .isInstanceOf(MyBookReviewDuplicateException.class)
+                .hasMessage("서평이 작성된 도서입니다.");
     }
 
     @DisplayName("등록 도서에 작성한 서평을 조회할 수 있다.")
@@ -356,6 +393,7 @@ class MyBookReviewServiceTest {
                 .freeFormText("freeFormText")
                 .user(user)
                 .myBook(myBook)
+                .writeDateTime(LocalDateTime.of(2025, 1, 1, 1, 1, 1))
                 .build();
     }
 }

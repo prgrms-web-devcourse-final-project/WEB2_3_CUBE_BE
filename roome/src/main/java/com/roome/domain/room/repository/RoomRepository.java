@@ -10,11 +10,10 @@ import java.util.Optional;
 @Repository
 public interface RoomRepository extends JpaRepository<Room, Long> {
 
-    default Room getById(Long id) {
-        return findById(id)
+    default Room getByUserId(Long userId) {
+        return findByUserId(userId)
                 .orElseThrow(RoomNoFoundException::new);
     }
-
 
     Optional<Room> findByUserId(Long userId);
 }

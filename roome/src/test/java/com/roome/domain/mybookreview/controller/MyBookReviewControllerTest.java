@@ -166,7 +166,8 @@ class MyBookReviewControllerTest {
                 request.motivate(),
                 request.freeFormText(),
                 request.freeFormText(),
-                CoverColor.valueOf(request.coverColor())
+                CoverColor.valueOf(request.coverColor()),
+                "2025년 2월 22일 오후 6시 30분"
         );
     }
 
@@ -179,7 +180,8 @@ class MyBookReviewControllerTest {
                 "motivate",
                 "topic",
                 "freeFormText",
-                CoverColor.BLUE
+                CoverColor.BLUE,
+                "2025년 2월 22일 오후 6시 30분"
         );
     }
 }

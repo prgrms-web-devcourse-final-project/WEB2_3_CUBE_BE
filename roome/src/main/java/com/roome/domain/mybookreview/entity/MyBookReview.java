@@ -6,6 +6,8 @@ import com.roome.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Entity
 @Builder
@@ -32,6 +34,8 @@ public class MyBookReview {
     @Enumerated(EnumType.STRING)
     private CoverColor coverColor;
 
+    private LocalDateTime writeDateTime;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "my_book_id")
     private MyBook myBook;
@@ -48,6 +52,7 @@ public class MyBookReview {
         this.topic = myBookReview.getTopic();
         this.freeFormText = myBookReview.getFreeFormText();
         this.coverColor = myBookReview.getCoverColor();
+        this.writeDateTime = LocalDateTime.now();
     }
 
     public void validateOwner(Long userId) {
