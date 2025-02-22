@@ -1,37 +1,34 @@
 package com.roome.domain.mycd.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
 public class MyCdCreateRequest {
 
-  @NotNull
-  private Long cdId;
-
-  @NotBlank
+  @NotEmpty
   private String title;
 
-  @NotBlank
+  @NotEmpty
   private String artist;
 
-  @NotBlank
+  @NotEmpty
   private String album;
 
-  @NotBlank
-  private String genre;
+  @NotEmpty
+  private List<String> genres;
 
-  @NotBlank
+  @NotEmpty
   private String coverUrl;
 
-  @NotBlank
+  @NotEmpty
   private String youtubeUrl;
 
-  @NotNull
-  private int duration;
+  private long duration;
+
 }

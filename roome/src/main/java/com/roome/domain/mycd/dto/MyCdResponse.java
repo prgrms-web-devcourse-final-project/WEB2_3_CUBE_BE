@@ -1,7 +1,6 @@
 package com.roome.domain.mycd.dto;
 
 import com.roome.domain.mycd.entity.MyCd;
-import java.time.LocalDateTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

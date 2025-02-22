@@ -3,6 +3,7 @@ package com.roome.domain.mycd.repository;
 import com.roome.domain.mycd.entity.MyCd;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -18,8 +19,11 @@ public interface MyCdRepository extends JpaRepository<MyCd, Long> {
 
   Optional<MyCd> findByIdAndUserId(Long myCdId, Long userId);
 
+  List<MyCd> findByUserIdOrderByIdAsc(Long userId, Pageable pageable);
+
+  List<MyCd> findByUserIdAndIdGreaterThanOrderByIdAsc(Long userId, Long id, Pageable pageable);
+
   @Modifying
   @Query("DELETE FROM MyCd mc WHERE mc.user.id = :userId AND mc.id IN (:ids)")
   void deleteByUserIdAndIds(@Param("userId") Long userId, @Param("ids") List<Long> ids);
-
 }

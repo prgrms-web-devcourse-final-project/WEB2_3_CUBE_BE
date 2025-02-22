@@ -1,26 +1,32 @@
 package com.roome.domain.mycd.service;
 
 import com.roome.domain.cd.entity.Cd;
+import com.roome.domain.cd.entity.CdGenre;
+import com.roome.domain.cd.entity.CdGenreType;
+import com.roome.domain.cd.repository.CdGenreTypeRepository;
 import com.roome.domain.cd.repository.CdRepository;
+import com.roome.domain.mycd.dto.MyCdCreateRequest;
 import com.roome.domain.mycd.dto.MyCdListResponse;
 import com.roome.domain.mycd.dto.MyCdResponse;
 import com.roome.domain.mycd.entity.MyCd;
 import com.roome.domain.mycd.entity.MyCdCount;
-import com.roome.domain.mycd.exception.CdNotFoundException;
-import com.roome.domain.mycd.exception.DuplicateCdException;
-import com.roome.domain.room.exception.RoomNoFoundException;
+import com.roome.domain.mycd.exception.MyCdAlreadyExistsException;
+import com.roome.domain.mycd.exception.MyCdListEmptyException;
+import com.roome.domain.mycd.exception.MyCdNotFoundException;
 import com.roome.domain.mycd.repository.MyCdCountRepository;
 import com.roome.domain.mycd.repository.MyCdRepository;
 import com.roome.domain.room.entity.Room;
+import com.roome.domain.room.exception.RoomNoFoundException;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
+import com.roome.global.jwt.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
-import java.util.Arrays;
-import java.util.stream.Collectors;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -32,26 +38,43 @@ public class MyCdService {
   private final MyCdCountRepository myCdCountRepository;
   private final RoomRepository roomRepository;
   private final UserRepository userRepository;
+  private final CdGenreTypeRepository cdGenreTypeRepository;
 
-  public MyCdResponse addCdToMyList(Long userId, Long cdId) {
-    // 1. CD 존재 여부 확인
-    Cd cd = cdRepository.findById(cdId)
-        .orElseThrow(() -> new CdNotFoundException(cdId));
+  public MyCdResponse addCdToMyList(Long userId, MyCdCreateRequest request) {
+    User user = userRepository.findById(userId)
+        .orElseThrow(UserNotFoundException::new);
 
-    // 2. 사용자 방 정보 가져오기
     Room room = roomRepository.findByUserId(userId)
         .orElseThrow(RoomNoFoundException::new);
 
-    // 3. 이미 추가된 CD인지 확인
-    if (myCdRepository.existsByUserIdAndCdId(userId, cdId)) {
-      throw new DuplicateCdException(cdId);
+    Cd cd = cdRepository.findByTitleAndArtist(request.getTitle(), request.getArtist())
+        .orElseGet(() -> {
+          Cd newCd = Cd.create(
+              request.getTitle(),
+              request.getArtist(),
+              request.getAlbum(),
+              request.getCoverUrl(),
+              request.getYoutubeUrl(),
+              request.getDuration()
+          );
+
+          for (String genreName : request.getGenres()) {
+            CdGenreType genreType = cdGenreTypeRepository.findByName(genreName)
+                .orElseGet(() -> cdGenreTypeRepository.save(new CdGenreType(genreName)));
+
+            CdGenre cdGenre = new CdGenre(newCd, genreType);
+            newCd.addGenre(cdGenre);
+          }
+
+          return cdRepository.save(newCd);
+        });
+
+    if (myCdRepository.existsByUserIdAndCdId(userId, cd.getId())) {
+      throw new MyCdAlreadyExistsException();
     }
 
-    // 4. MyCd 저장
-    User user = room.getUser();  // Room에서 User 엔티티 가져오기
     MyCd myCd = myCdRepository.save(MyCd.create(user, room, cd));
 
-    // 5. MyCdCount 증가
     MyCdCount myCdCount = myCdCountRepository.findByRoom(room)
         .orElseGet(() -> myCdCountRepository.save(MyCdCount.init(room)));
     myCdCount.increment();
@@ -59,46 +82,49 @@ public class MyCdService {
     return MyCdResponse.fromEntity(myCd);
   }
 
-  public MyCdListResponse getMyCdList(Long userId) {
-    // 1. 사용자 존재 여부 확인
-    userRepository.findById(userId)
-        .orElseThrow(() -> new IllegalArgumentException("해당 사용자가 존재하지 않습니다."));
+  public MyCdListResponse getMyCdList(Long userId, Long cursor, int size) {
+    validateUser(userId);
 
-    // 2. 해당 사용자의 MyCd 목록 조회
-    List<MyCdResponse> myCdResponses = myCdRepository.findByUserId(userId).stream()
-        .map(MyCdResponse::fromEntity)
-        .collect(Collectors.toList());
+    List<MyCd> myCds;
+    if (cursor == null) {
+      myCds = myCdRepository.findByUserIdOrderByIdAsc(userId, PageRequest.of(0, size));
+    } else {
+      myCds = myCdRepository.findByUserIdAndIdGreaterThanOrderByIdAsc(userId, cursor,
+          PageRequest.of(0, size));
+    }
 
-    return new MyCdListResponse(myCdResponses);
+    if (myCds.isEmpty()) {
+      throw new MyCdListEmptyException();
+    }
+
+    return MyCdListResponse.fromEntities(myCds);
   }
 
   public MyCdResponse getMyCd(Long userId, Long myCdId) {
-    // userId가 실제 존재하는지 검증
-    userRepository.findById(userId)
-        .orElseThrow(() -> new IllegalArgumentException("해당 사용자가 존재하지 않습니다."));
+    validateUser(userId);
 
-    // 해당 사용자의 특정 CD 조회
     MyCd myCd = myCdRepository.findByIdAndUserId(myCdId, userId)
-        .orElseThrow(() -> new CdNotFoundException(myCdId));
+        .orElseThrow(MyCdNotFoundException::new);
 
     return MyCdResponse.fromEntity(myCd);
   }
 
-  @Transactional
   public void delete(Long userId, String myCdIds) {
-    List<Long> ids = convertStringToList(myCdIds).stream()
+    validateUser(userId);
+
+    List<Long> ids = List.of(myCdIds.split(",")).stream()
         .map(Long::parseLong)
         .toList();
 
+    if (myCdRepository.findAllById(ids).isEmpty()) {
+      throw new MyCdNotFoundException();
+    }
+
     myCdRepository.deleteByUserIdAndIds(userId, ids);
-    myCdRepository.flush();
   }
 
-
-  private List<String> convertStringToList(String ids) {
-    return Arrays.stream(ids.split(","))
-        .map(String::trim)
-        .toList();
+  private void validateUser(Long userId) {
+    userRepository.findById(userId)
+        .orElseThrow(UserNotFoundException::new);
   }
-
 }

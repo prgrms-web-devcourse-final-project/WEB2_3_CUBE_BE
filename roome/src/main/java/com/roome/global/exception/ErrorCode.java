@@ -24,14 +24,13 @@ public enum ErrorCode {
   // User 관련 예외
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
 
-  //페이지네이션 관련 예외
+  // 페이지네이션 관련 예외
   INVALID_LIMIT_VALUE(HttpStatus.BAD_REQUEST, "유효하지 않은 limit 값입니다. (1-100 사이의 값을 입력해주세요)"),
   INVALID_CURSOR_VALUE(HttpStatus.BAD_REQUEST, "유효하지 않은 cursor 값입니다."),
 
-  // 하우스메이트 추가시 발생 예외
+  // 하우스메이트 관련 예외
   SELF_FOLLOW_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "자기 자신을 하우스메이트로 추가할 수 없습니다."),
   ALREADY_HOUSEMATE(HttpStatus.BAD_REQUEST, "이미 하우스메이트로 추가된 사용자입니다."),
-  //하우스 메이트 삭제 시 발생 예외
   NOT_HOUSEMATE(HttpStatus.BAD_REQUEST, "하우스메이트로 추가되지 않은 사용자입니다."),
 
   // Room 관련 예외
@@ -54,8 +53,14 @@ public enum ErrorCode {
   MY_BOOK_DUPLICATE(HttpStatus.BAD_REQUEST, "책장에 등록된 도서입니다."),
 
   // CD 관련 예외
+  MYCD_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 MyCd를 찾을 수 없습니다."),
+  MYCD_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 추가된 CD입니다."),
+  MYCD_LIST_EMPTY(HttpStatus.NOT_FOUND, "CD 목록이 비어 있습니다."),
   CD_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 CD를 찾을 수 없습니다."),
   DUPLICATE_CD(HttpStatus.CONFLICT, "이미 추가된 CD입니다."),
+  CD_TEMPLATE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 CD 템플릿을 찾을 수 없습니다."),
+  CD_COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 CD 댓글을 찾을 수 없습니다."),
+  CD_COMMENT_ACCESS_DENIED(HttpStatus.BAD_REQUEST, "해당 CD 댓글에 대한 권한이 없습니다."),
 
   // 알림 관련 예외
   NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림 데이터가 존재하지 않습니다."),
@@ -63,11 +68,10 @@ public enum ErrorCode {
   NOTIFICATION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 알림에 접근 권한이 없습니다."),
   NOTIFICATION_EXPIRED(HttpStatus.GONE, "만료된 알림입니다."),
   INVALID_NOTIFICATION_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 알림 타입입니다."),
-  // 알림 생성 요청 검증
-    INVALID_NOTIFICATION_REQUEST(HttpStatus.BAD_REQUEST, "알림 생성 요청이 유효하지 않습니다."),
-  //서버 에러
-  INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 에러가 발생했습니다.")
-  ;
+  INVALID_NOTIFICATION_REQUEST(HttpStatus.BAD_REQUEST, "알림 생성 요청이 유효하지 않습니다."),
+
+  // 서버 에러
+  INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 에러가 발생했습니다.");
 
   private final HttpStatus status;
   private final String message;
