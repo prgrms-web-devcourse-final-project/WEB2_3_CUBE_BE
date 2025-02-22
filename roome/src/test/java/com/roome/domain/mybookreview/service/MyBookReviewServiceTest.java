@@ -356,6 +356,7 @@ class MyBookReviewServiceTest {
                 .freeFormText("freeFormText")
                 .user(user)
                 .myBook(myBook)
+                .writeDateTime(LocalDateTime.of(2025, 1, 1, 1, 1, 1))
                 .build();
     }
 }
