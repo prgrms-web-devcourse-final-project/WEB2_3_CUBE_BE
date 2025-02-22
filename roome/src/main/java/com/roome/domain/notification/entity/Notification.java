@@ -29,24 +29,24 @@ public class Notification extends BaseTimeEntity {
 
     @Column(nullable = false)
     private String content;
-
+    //보낸 사람의 user_id
     @Column(name = "sender_id", nullable = false)
     private Long senderId;
-
+    //보낸 사람의 이름
     @Column(name = "sender_name", nullable = false)
     private String senderName;
 
     @Column(name = "sender_profile_image")
     private String senderProfileImage;
-
+    //받는 사람의 target_id(음악, 이벤트, 게스트북 등의 id)
     @Column(name = "target_id", nullable = false)
     private Long targetId;
-
+    //받는 사람의 user_id
     @Column(name = "receiver_id", nullable = false)
     private Long receiverId;
 
     @Column(nullable = false)
-    private boolean isRead;
+    private boolean read;
 
     @Builder
     public Notification(NotificationType type, String title, String content,
@@ -60,10 +60,10 @@ public class Notification extends BaseTimeEntity {
         this.senderProfileImage = senderProfileImage;
         this.targetId = targetId;
         this.receiverId = receiverId;
-        this.isRead = false;
+        this.read = false;
     }
 
     public void markAsRead() {
-        this.isRead = true;
+        this.read = true;
     }
 }
