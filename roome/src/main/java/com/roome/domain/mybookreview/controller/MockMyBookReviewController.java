@@ -64,7 +64,7 @@ public class MockMyBookReviewController {
                 "topic",
                 "freeFormText",
                 CoverColor.BLUE,
-                LocalDateTime.of(2025, 1, 1, 1, 1, 1).format(DateTimeFormatter.ofPattern("yyyy년 MM월 d일 a h시 mm분", Locale.KOREAN))
+                LocalDateTime.of(2025, 1, 1, 1, 1, 1).format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 a h시 mm분", Locale.KOREAN))
         );
     }
 }

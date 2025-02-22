@@ -28,7 +28,7 @@ public record MyBookReviewResponse(
                 myBookReview.getTopic(),
                 myBookReview.getFreeFormText(),
                 myBookReview.getCoverColor(),
-                myBookReview.getWriteDateTime().format(DateTimeFormatter.ofPattern("yyyy년 MM월 d일 a h시 mm분", Locale.KOREAN))
+                myBookReview.getWriteDateTime().format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 a h시 mm분", Locale.KOREAN))
         );
     }
 }
