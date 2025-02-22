@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicLong;
 
 @RestController
@@ -28,8 +27,7 @@ public class MockCdTemplateController {
         request.getReason(),
         request.getBestPart(),
         request.getEmotion(),
-        request.getFrequentSituation(),
-        LocalDateTime.now()
+        request.getFrequentSituation()
     );
 
     return ResponseEntity.ok(response);
@@ -44,8 +42,7 @@ public class MockCdTemplateController {
         "CD를 듣게 된 계기",
         "CD에서 가장 좋았던 부분",
         "CD를 들으며 느낀 감정",
-        "자주 듣는 상황",
-        LocalDateTime.now()
+        "자주 듣는 상황"
     );
 
     return ResponseEntity.ok(response);
@@ -63,8 +60,7 @@ public class MockCdTemplateController {
         request.getReason(),
         request.getBestPart(),
         request.getEmotion(),
-        request.getFrequentSituation(),
-        LocalDateTime.now()
+        request.getFrequentSituation()
     );
 
     return ResponseEntity.ok(response);
