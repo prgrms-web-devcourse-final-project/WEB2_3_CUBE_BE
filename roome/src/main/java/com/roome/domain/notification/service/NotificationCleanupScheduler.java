@@ -7,7 +7,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -18,7 +17,9 @@ public class NotificationCleanupScheduler {
     @Scheduled(cron = "0 0 0 * * *") // 매일 자정에 실행
     @Transactional
     public void cleanupOldNotifications() {
-        LocalDateTime threshold = LocalDateTime.now().minusDays(30);
+        LocalDateTime threshold = LocalDateTime
+                .now()
+                .minusDays(30);
         notificationRepository.deleteOldNotifications(threshold);
     }
 }
