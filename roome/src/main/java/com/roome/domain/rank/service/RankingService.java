@@ -19,15 +19,18 @@ public class RankingService {
 
     // TODO: Redis 활용 예정
     // 점수 업데이트
-    @Transactional
-    public void updateScore(Long userId, int points) {
+    public void updateScore(Long userId, int additionalScore) {
         Ranking ranking = rankingRepository.findByUserId(userId)
-                .orElseGet(() -> rankingRepository.save(new Ranking(null, userId, 0, 0, LocalDateTime.now())));
+                .orElse(Ranking.builder()
+                        .userId(userId)
+                        .score(0)         // 기본 점수 0
+                        .rankPosition(0)  // 초기 순위 0
+                        .lastUpdated(LocalDateTime.now())
+                        .build());
 
-        ranking.addScore(points);
+        ranking.addScore(additionalScore);
+
         rankingRepository.save(ranking);
-
-        updateRanking();
     }
 
     // 현재 순위 업데이트
