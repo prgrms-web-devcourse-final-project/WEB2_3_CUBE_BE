@@ -9,23 +9,23 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "user_music_genres")
+@Table(name = "user_music_genres",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "genre"}))
 public class UserMusicGenre {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private Long userId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MusicGenre genre;
 
-    public static UserMusicGenre create(User user, MusicGenre genre) {
+    public static UserMusicGenre create(Long userId, MusicGenre genre) {
         return UserMusicGenre.builder()
-                             .user(user)
+                             .userId(userId)
                              .genre(genre)
                              .build();
     }
