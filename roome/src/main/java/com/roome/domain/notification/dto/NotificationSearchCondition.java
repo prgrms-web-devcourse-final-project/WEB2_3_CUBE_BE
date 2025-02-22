@@ -8,6 +8,6 @@ import lombok.Getter;
 public class NotificationSearchCondition {
     private Long receiverId;
     private Long cursor;
-    private Boolean isRead;
+    private Boolean read;
     private Integer limit;
 }

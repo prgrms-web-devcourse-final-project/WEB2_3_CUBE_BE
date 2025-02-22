@@ -12,12 +12,9 @@ import java.time.LocalDateTime;
 public class NotificationInfo {
     private Long notificationId;
     private NotificationType type;
-    private String title;
-    private String content;
-    private Long senderId;
-    private String senderName;
+    private String senderId;
+    private String senderNickName;
     private String senderProfileImage;
     private Long targetId;
-    private boolean isRead;
     private LocalDateTime createdAt;
 }
