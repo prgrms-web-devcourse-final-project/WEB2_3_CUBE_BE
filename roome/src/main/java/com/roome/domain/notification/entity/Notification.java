@@ -24,9 +24,6 @@ public class Notification extends BaseTimeEntity {
     @Column(nullable = false)
     private NotificationType type;
 
-    @Column(nullable = false)
-    private String content;
-
     @Column(name = "sender_id", nullable = false)
     private Long senderId;
 
@@ -43,7 +40,6 @@ public class Notification extends BaseTimeEntity {
     public Notification(NotificationType type, String title, String content,
                         Long senderId, Long targetId, Long receiverId) {
         this.type = type;
-        this.content = content;
         this.senderId = senderId;
         this.targetId = targetId;
         this.receiverId = receiverId;
