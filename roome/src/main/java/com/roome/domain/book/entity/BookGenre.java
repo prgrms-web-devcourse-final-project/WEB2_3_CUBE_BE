@@ -16,9 +16,9 @@ public class BookGenre {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "book_id")
-    Book book;
+    private Book book;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "genre_id")
-    Genre genre;
+    private Genre genre;
 }
