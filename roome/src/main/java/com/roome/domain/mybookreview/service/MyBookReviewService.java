@@ -4,6 +4,7 @@ import com.roome.domain.mybook.entity.MyBook;
 import com.roome.domain.mybook.entity.repository.MyBookRepository;
 import com.roome.domain.mybookreview.entity.MyBookReview;
 import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
+import com.roome.domain.mybookreview.exception.MyBookReviewDuplicateException;
 import com.roome.domain.mybookreview.exception.MyBookReviewNotFoundException;
 import com.roome.domain.mybookreview.service.request.MyBookReviewCreateRequest;
 import com.roome.domain.mybookreview.service.request.MyBookReviewUpdateRequest;
@@ -28,6 +29,9 @@ public class MyBookReviewService {
         User user = userRepository.getById(loginUserId);
         MyBook myBook = myBookRepository.getById(myBookId);
         myBook.validateOwner(loginUserId);
+
+        myBookReviewRepository.findByMyBookId(myBook.getId())
+                .ifPresent(exist -> { throw new MyBookReviewDuplicateException(); });
 
         MyBookReview myBookReview = myBookReviewRepository.save(request.toEntity(myBook, user));
         return MyBookReviewResponse.from(myBookReview);
