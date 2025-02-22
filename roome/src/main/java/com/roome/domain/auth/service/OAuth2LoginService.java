@@ -14,12 +14,18 @@ import com.roome.global.jwt.service.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientProperties;
+import org.springframework.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Map;
 
@@ -50,24 +56,10 @@ public class OAuth2LoginService {
                 roomService.createRoom(user.getId());
             }
 
-            // Authentication 객체 생성 후 JWT 발급
-            Authentication authentication = new UsernamePasswordAuthenticationToken(
-                    user.getId().toString(), null, Collections.emptyList()
-            );
-            JwtToken jwtToken = jwtTokenProvider.createToken(authentication);
+            // JWT 토큰 발급
+            JwtToken jwtToken = generateJwtToken(user);
 
-            return LoginResponse.builder()
-                    .accessToken(jwtToken.getAccessToken())
-                    .refreshToken(jwtToken.getRefreshToken())
-                    .expiresIn(3600L)
-                    .user(LoginResponse.UserInfo.builder()
-                            .userId(user.getId())
-                            .nickname(user.getNickname())
-                            .email(user.getEmail())
-                            .roomId(roomService.getRoomByUserId(user.getId()).getRoomId())
-                            .profileImage(user.getProfileImage())
-                            .build())
-                    .build();
+            return buildLoginResponse(user, jwtToken);
         } catch (Exception e) {
             log.error("OAuth2 로그인 처리 중 오류 발생: ", e);
             throw new OAuth2AuthenticationProcessingException();
@@ -75,42 +67,67 @@ public class OAuth2LoginService {
     }
 
     private String fetchAccessToken(OAuth2Provider provider, String authorizationCode) {
-        var registration = oauth2ClientProperties.getRegistration().get(provider.getRegistrationId());
+        try {
 
-        Map<String, String> params = Map.of(
-                "grant_type", "authorization_code",
-                "client_id", registration.getClientId(),
-                "client_secret", registration.getClientSecret(),
-                "code", authorizationCode,
-                "redirect_uri", registration.getRedirectUri()
-        );
+            // Provider별 코드 디코딩 처리
+            String code = provider.requiresDecoding()
+                    ? URLDecoder.decode(authorizationCode, StandardCharsets.UTF_8)
+                    : authorizationCode;
 
-        Map<String, Object> response = restTemplate.postForObject(
-                provider.getTokenUri(),
-                params,
-                Map.class
-        );
+            var registration = oauth2ClientProperties.getRegistration()
+                    .get(provider.getRegistrationId());
 
-        if (response == null || !response.containsKey("access_token")) {
-            log.error("Failed to fetch access token from {}: Response={}", provider.getTokenUri(), response);
+            // 토큰 요청 파라미터 설정
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+            params.add("grant_type", "authorization_code");
+            params.add("client_id", registration.getClientId());
+            params.add("client_secret", registration.getClientSecret());
+            params.add("code", code);
+            params.add("redirect_uri", registration.getRedirectUri());
+
+            // 헤더 설정
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+            // API 호출
+            ResponseEntity<Map> response = restTemplate.postForEntity(
+                    provider.getTokenUri(),
+                    new HttpEntity<>(params, headers),
+                    Map.class
+            );
+
+            if (response.getStatusCode() != HttpStatus.OK || !response.getBody().containsKey("access_token")) {
+                log.error("액세스 토큰을 가져오지 못했습니다: {}", response.getBody());
+                throw new OAuth2AuthenticationProcessingException();
+            }
+
+            return (String) response.getBody().get("access_token");
+        } catch (RestClientException e) {
+            log.error("액세스 토큰을 가져오지 못했습니다.: {}", e.getMessage());
             throw new OAuth2AuthenticationProcessingException();
         }
-
-        return (String) response.get("access_token");
     }
 
     private OAuth2Response fetchUserProfile(OAuth2Provider provider, String accessToken) {
-        Map<String, Object> attributes = restTemplate.getForObject(
-                provider.getUserInfoUri(accessToken),
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + accessToken);
+
+        ResponseEntity<Map> response = restTemplate.exchange(
+                provider.getUserInfoUri(),
+                HttpMethod.GET,
+                new HttpEntity<>(headers),
                 Map.class
         );
-        return provider.createOAuth2Response(attributes);
+        return provider.createOAuth2Response(response.getBody());
     }
 
     private User updateOrCreateUser(OAuth2Response response) {
-        return userRepository.findByProviderId(response.getProviderId())
+        return userRepository.findByEmail(response.getEmail())
                 .map(user -> {
+                    // 기존 유저 정보 업데이트
                     user.updateProfile(response.getName(), response.getProfileImageUrl(), user.getBio());
+                    user.updateProvider(Provider.valueOf(response.getProvider().name()));
+                    user.updateProviderId(response.getProviderId());
                     user.updateLastLogin();
                     return user;
                 })
@@ -125,5 +142,27 @@ public class OAuth2LoginService {
                                 .status(Status.OFFLINE)
                                 .build()
                 ));
+    }
+
+    private JwtToken generateJwtToken(User user) {
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                user.getId().toString(), null, Collections.emptyList()
+        );
+        return jwtTokenProvider.createToken(authentication);
+    }
+
+    private LoginResponse buildLoginResponse(User user, JwtToken jwtToken) {
+        return LoginResponse.builder()
+                .accessToken(jwtToken.getAccessToken())
+                .refreshToken(jwtToken.getRefreshToken())
+                .expiresIn(3600L)
+                .user(LoginResponse.UserInfo.builder()
+                        .userId(user.getId())
+                        .nickname(user.getNickname())
+                        .email(user.getEmail())
+                        .roomId(roomService.getRoomByUserId(user.getId()).getRoomId())
+                        .profileImage(user.getProfileImage())
+                        .build())
+                .build();
     }
 }
