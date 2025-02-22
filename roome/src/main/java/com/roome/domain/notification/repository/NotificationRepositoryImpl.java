@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.roome.domain.notification.entity.QNotification.notification;
+import static com.roome.domain.user.entity.QUser.user;
 
 @RequiredArgsConstructor
 public class NotificationRepositoryImpl implements NotificationRepositoryCustom {
@@ -21,6 +22,8 @@ public class NotificationRepositoryImpl implements NotificationRepositoryCustom 
     public List<Notification> findNotifications(NotificationSearchCondition condition) {
         return queryFactory
                 .selectFrom(notification)
+                .leftJoin(user).on(notification.senderId.eq(user.id))
+                .fetchJoin()  // Sender 정보를 한 번에 조회
                 .where(
                         receiverIdEq(condition.getReceiverId()),
                         cursorLt(condition.getCursor()),
