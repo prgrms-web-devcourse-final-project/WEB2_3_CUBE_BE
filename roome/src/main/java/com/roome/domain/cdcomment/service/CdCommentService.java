@@ -94,5 +94,24 @@ public class CdCommentService {
         commentPage.getTotalPages()
     );
   }
+
+  @Transactional
+  public void deleteComment(Long commentId) {
+    CdComment comment = cdCommentRepository.findById(commentId)
+        .orElseThrow(() -> new EntityNotFoundException("해당 댓글이 존재하지 않습니다."));
+
+    cdCommentRepository.delete(comment);
+  }
+
+  @Transactional
+  public void deleteMultipleComments(List<Long> commentIds) {
+    List<CdComment> comments = cdCommentRepository.findAllById(commentIds);
+
+    if (comments.isEmpty()) {
+      throw new EntityNotFoundException("삭제할 댓글이 존재하지 않습니다.");
+    }
+
+    cdCommentRepository.deleteAll(comments);
+  }
 }
 
