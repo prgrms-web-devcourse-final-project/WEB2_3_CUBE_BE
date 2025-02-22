@@ -4,7 +4,9 @@ import com.roome.domain.cdcomment.dto.CdCommentCreateRequest;
 import com.roome.domain.cdcomment.dto.CdCommentListResponse;
 import com.roome.domain.cdcomment.dto.CdCommentResponse;
 import com.roome.domain.cdcomment.service.CdCommentService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -44,6 +46,24 @@ public class CdCommentController {
   ) {
     CdCommentListResponse response = cdCommentService.searchComments(myCdId, keyword, page, size);
     return ResponseEntity.ok(response);
+  }
+
+  @DeleteMapping("/api/myCd/{myCdId}/comments/{commentId}")
+  public ResponseEntity<Void> deleteComment(
+      @PathVariable Long myCdId,
+      @PathVariable Long commentId
+  ) {
+    cdCommentService.deleteComment(commentId);
+    return ResponseEntity.noContent().build();
+  }
+
+  @DeleteMapping("/api/myCd/{myCdId}/comments")
+  public ResponseEntity<Void> deleteMultipleComments(
+      @PathVariable Long myCdId,
+      @RequestParam List<Long> commentIds // 요청 파라미터로 삭제할 댓글 ID 리스트 받음
+  ) {
+    cdCommentService.deleteMultipleComments(commentIds);
+    return ResponseEntity.noContent().build();
   }
 
 }
