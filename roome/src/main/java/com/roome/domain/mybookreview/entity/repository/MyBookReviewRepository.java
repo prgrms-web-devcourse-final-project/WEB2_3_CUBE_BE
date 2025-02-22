@@ -16,4 +16,7 @@ public interface MyBookReviewRepository extends JpaRepository<MyBookReview, Long
     Optional<MyBookReview> findByMyBookId(Long myBookId);
 
     Long countByUserId(Long userId);
+
+    // 특정 사용자가 작성한 모든 도서 리뷰 삭제
+    void deleteAllByUserId(Long userId);
 }

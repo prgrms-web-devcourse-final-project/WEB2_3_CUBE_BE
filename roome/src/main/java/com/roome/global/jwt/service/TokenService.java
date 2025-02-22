@@ -3,6 +3,7 @@ package com.roome.global.jwt.service;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.jwt.dto.JwtToken;
+import com.roome.global.jwt.exception.InvalidJwtTokenException;
 import com.roome.global.jwt.exception.InvalidRefreshTokenException;
 import com.roome.global.jwt.exception.UserNotFoundException;
 import io.jsonwebtoken.Claims;
@@ -46,5 +47,16 @@ public class TokenService {
 
         return userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
+    }
+
+    public Long getUserIdFromToken(String accessToken) {
+        return Long.valueOf(jwtTokenProvider.getAuthentication(accessToken).getName());
+    }
+
+    public Long validateAndGetUserId(String accessToken) {
+        if (!jwtTokenProvider.validateToken(accessToken)) {
+            throw new InvalidJwtTokenException();
+        }
+        return getUserIdFromToken(accessToken);
     }
 }
