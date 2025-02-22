@@ -6,8 +6,11 @@ import com.roome.domain.auth.dto.request.LoginRequest;
 import com.roome.domain.auth.dto.response.LoginResponse;
 import com.roome.domain.auth.exception.OAuth2AuthenticationProcessingException;
 import com.roome.domain.auth.service.OAuth2LoginService;
+import com.roome.domain.user.service.UserService;
 import com.roome.global.jwt.dto.JwtToken;
 import com.roome.global.jwt.helper.TokenResponseHelper;
+import com.roome.global.jwt.service.JwtTokenProvider;
+import com.roome.global.jwt.service.TokenService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,7 +43,16 @@ class AuthControllerTest {
     private OAuth2LoginService oAuth2LoginService;
 
     @MockBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockBean
     private TokenResponseHelper tokenResponseHelper;
+
+    @MockBean
+    private TokenService tokenService;
+
+    @MockBean
+    private UserService userService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -76,7 +88,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("구글 로그인 요청 시 Access Token과 200 반환한다.")
+    @DisplayName("구글 로그인 요청 시 Access Token과 200을 반환한다.")
     void testLogin_Google_Success() throws Exception {
         // Given
         LoginRequest loginRequest = new LoginRequest("google-test-code");
@@ -107,7 +119,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 OAuth Provider로 로그인 시 400을 응답한다.")
+    @DisplayName("존재하지 않는 제공자로 로그인 시 400을 반환한다.")
     void testLogin_InvalidProvider() throws Exception {
         // Given
         LoginRequest loginRequest = new LoginRequest("invalid-code");
@@ -124,7 +136,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("잘못된 인증 코드로 로그인 시 401을 응답한다.")
+    @DisplayName("잘못된 인증 코드로 로그인 시 401을 반환한다.")
     void testLogin_InvalidCode() throws Exception {
         // Given
         LoginRequest loginRequest = new LoginRequest("wrong-code");

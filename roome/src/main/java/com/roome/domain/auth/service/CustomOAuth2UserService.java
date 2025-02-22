@@ -1,6 +1,8 @@
 package com.roome.domain.auth.service;
 
+import com.roome.domain.auth.dto.oauth2.OAuth2Provider;
 import com.roome.domain.auth.dto.oauth2.OAuth2Response;
+import com.roome.domain.auth.exception.InvalidProviderException;
 import com.roome.domain.auth.security.OAuth2UserPrincipal;
 import com.roome.domain.user.entity.Provider;
 import com.roome.domain.user.entity.Status;
@@ -29,11 +31,21 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         return processOAuth2User(userRequest, oAuth2User);
     }
 
-    private OAuth2User processOAuth2User(OAuth2UserRequest userRequest, OAuth2User oAuth2User) {
+    // 테스트를 위한 public
+    public OAuth2User processOAuth2User(OAuth2UserRequest userRequest, OAuth2User oAuth2User) {
         try {
 
-            OAuth2Response oAuth2Response = OAuth2Factory.getProvider(
-                    userRequest.getClientRegistration().getRegistrationId(),
+            String registrationId = userRequest.getClientRegistration().getRegistrationId().toUpperCase();
+
+            OAuth2Provider provider;
+            try {
+                provider = OAuth2Provider.valueOf(registrationId);
+            } catch (IllegalArgumentException e) {
+                throw new InvalidProviderException();
+            }
+
+            OAuth2Response oAuth2Response = OAuth2Factory.createResponse(
+                    provider,
                     oAuth2User.getAttributes()
             );
 
@@ -53,10 +65,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private User updateOrCreateUser(OAuth2Response oAuth2Response) {
         return userRepository.findByProviderId(oAuth2Response.getProviderId())
                 .map(user -> {
-                    updateUser(user, oAuth2Response);
+                    updateUser(user);  // 기존 유저
                     return user;
                 })
-                .orElseGet(() -> userRepository.save(createUser(oAuth2Response)));
+                .orElseGet(() -> userRepository.save(createUser(oAuth2Response)));  // 신규 유저
     }
 
     private User createUser(OAuth2Response response) {
@@ -70,7 +82,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .build();
     }
 
-    private void updateUser(User user, OAuth2Response response) {
-        user.updateProfile(response.getName(), response.getProfileImageUrl(), user.getBio());
+    private void updateUser(User user) {
+        user.updateLastLogin();
     }
 }
