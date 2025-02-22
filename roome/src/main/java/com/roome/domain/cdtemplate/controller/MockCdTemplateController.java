@@ -4,11 +4,14 @@ import com.roome.domain.cdtemplate.dto.CdTemplateCreateRequest;
 import com.roome.domain.cdtemplate.dto.CdTemplateResponse;
 import com.roome.domain.cdtemplate.dto.CdTemplateUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+@Tag(name = "Mock - CD Template", description = "CD 템플릿 작성/조회/수정/삭제")
 @RestController
 @RequestMapping("/mock/api/mycd/{myCdId}/template")
 public class MockCdTemplateController {
@@ -18,7 +21,8 @@ public class MockCdTemplateController {
   @Operation(summary = "Mock - CD 템플릿 작성", description = "CD 템플릿을 작성합니다.")
   @PostMapping
   public ResponseEntity<CdTemplateResponse> createTemplate(
-      @PathVariable Long myCdId,
+      @Parameter(description = "CD ID", required = true) @PathVariable Long myCdId,
+      @Parameter(description = "사용자 ID", required = true) @RequestParam Long userId,
       @RequestBody CdTemplateCreateRequest request
   ) {
     CdTemplateResponse response = new CdTemplateResponse(
@@ -35,7 +39,9 @@ public class MockCdTemplateController {
 
   @Operation(summary = "Mock - CD 템플릿 조회", description = "CD 템플릿을 조회합니다.")
   @GetMapping
-  public ResponseEntity<CdTemplateResponse> getTemplate(@PathVariable Long myCdId) {
+  public ResponseEntity<CdTemplateResponse> getTemplate(
+      @Parameter(description = "CD ID", required = true) @PathVariable Long myCdId
+  ) {
     CdTemplateResponse response = new CdTemplateResponse(
         5L,
         myCdId,
@@ -51,7 +57,8 @@ public class MockCdTemplateController {
   @Operation(summary = "Mock - CD 템플릿 수정", description = "CD 템플릿을 수정합니다.")
   @PatchMapping
   public ResponseEntity<CdTemplateResponse> updateTemplate(
-      @PathVariable Long myCdId,
+      @Parameter(description = "CD ID", required = true) @PathVariable Long myCdId,
+      @Parameter(description = "사용자 ID", required = true) @RequestParam Long userId,
       @RequestBody CdTemplateUpdateRequest request
   ) {
     CdTemplateResponse response = new CdTemplateResponse(
@@ -68,7 +75,10 @@ public class MockCdTemplateController {
 
   @Operation(summary = "Mock - CD 템플릿 삭제", description = "CD 템플릿을 삭제합니다.")
   @DeleteMapping
-  public ResponseEntity<Void> deleteTemplate(@PathVariable Long myCdId) {
+  public ResponseEntity<Void> deleteTemplate(
+      @Parameter(description = "CD ID", required = true) @PathVariable Long myCdId,
+      @Parameter(description = "사용자 ID", required = true) @RequestParam Long userId
+  ) {
     return ResponseEntity.noContent().build();
   }
 }
