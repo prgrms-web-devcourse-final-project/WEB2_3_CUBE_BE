@@ -50,6 +50,7 @@ public enum ErrorCode {
   // 등록 도서 관련 예외
   MY_BOOK_NOT_FOUND(HttpStatus.NOT_FOUND, "등록 도서를 찾을 수 없습니다."),
   MY_BOOK_ACCESS_DENIED(HttpStatus.BAD_REQUEST, "등록 도서에 대한 권한이 없는 사용자입니다."),
+  MY_BOOK_DUPLICATE(HttpStatus.BAD_REQUEST, "책장에 등록된 도서입니다."),
 
   // CD 관련 예외
   CD_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 CD를 찾을 수 없습니다."),
