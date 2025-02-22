@@ -18,6 +18,14 @@ public class GlobalExceptionHandler {
         .body(new ErrorResponse(error.getMessage(), error.getStatus().value()));
   }
 
+  @ExceptionHandler(ControllerException.class)
+    public ResponseEntity<ErrorResponse> handleCustomException(ControllerException e) {
+        ErrorCode error = e.getErrorCode();
+        return ResponseEntity
+            .status(error.getStatus())
+            .body(new ErrorResponse(error.getMessage(), error.getStatus().value()));
+    }
+
   // DB 관련 예외 처리
   @ExceptionHandler(DataAccessException.class)
   protected ResponseEntity<ErrorResponse> handleDataAccessException(DataAccessException e) {
