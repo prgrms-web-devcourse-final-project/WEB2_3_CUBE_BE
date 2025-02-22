@@ -1,8 +1,7 @@
 package com.roome.domain.cdtemplate.controller;
 
-import com.roome.domain.cdtemplate.dto.CdTemplateCreateRequest;
+import com.roome.domain.cdtemplate.dto.CdTemplateRequest;
 import com.roome.domain.cdtemplate.dto.CdTemplateResponse;
-import com.roome.domain.cdtemplate.dto.CdTemplateUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,15 +22,15 @@ public class MockCdTemplateController {
   public ResponseEntity<CdTemplateResponse> createTemplate(
       @Parameter(description = "CD ID", required = true) @PathVariable Long myCdId,
       @Parameter(description = "사용자 ID", required = true) @RequestParam Long userId,
-      @RequestBody CdTemplateCreateRequest request
+      @RequestBody CdTemplateRequest request
   ) {
     CdTemplateResponse response = new CdTemplateResponse(
         templateIdCounter.getAndIncrement(),
         myCdId,
-        request.getReason(),
-        request.getBestPart(),
-        request.getEmotion(),
-        request.getFrequentSituation()
+        request.getComment1(),
+        request.getComment2(),
+        request.getComment3(),
+        request.getComment4()
     );
 
     return ResponseEntity.ok(response);
@@ -59,15 +58,15 @@ public class MockCdTemplateController {
   public ResponseEntity<CdTemplateResponse> updateTemplate(
       @Parameter(description = "CD ID", required = true) @PathVariable Long myCdId,
       @Parameter(description = "사용자 ID", required = true) @RequestParam Long userId,
-      @RequestBody CdTemplateUpdateRequest request
+      @RequestBody CdTemplateRequest request
   ) {
     CdTemplateResponse response = new CdTemplateResponse(
         5L,
         myCdId,
-        request.getReason(),
-        request.getBestPart(),
-        request.getEmotion(),
-        request.getFrequentSituation()
+        request.getComment1(),
+        request.getComment2(),
+        request.getComment3(),
+        request.getComment4()
     );
 
     return ResponseEntity.ok(response);
