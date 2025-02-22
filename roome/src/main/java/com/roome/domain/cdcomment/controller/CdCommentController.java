@@ -35,4 +35,15 @@ public class CdCommentController {
     return ResponseEntity.ok(response);
   }
 
+  @GetMapping("/api/myCd/{myCdId}/comments/search")
+  public ResponseEntity<CdCommentListResponse> searchComments(
+      @PathVariable Long myCdId,
+      @RequestParam("query") String keyword,
+      @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+      @RequestParam(value = "size", required = false, defaultValue = "5") int size
+  ) {
+    CdCommentListResponse response = cdCommentService.searchComments(myCdId, keyword, page, size);
+    return ResponseEntity.ok(response);
+  }
+
 }

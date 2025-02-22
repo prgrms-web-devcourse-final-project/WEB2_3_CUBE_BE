@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -46,6 +47,7 @@ public class CdCommentService {
         savedComment.getId(),
         savedComment.getMyCd().getId(),
         savedComment.getUser().getId(),
+        savedComment.getUser().getNickname(),
         savedComment.getTimestamp(),
         savedComment.getContent(),
         savedComment.getCreatedAt()
@@ -63,12 +65,34 @@ public class CdCommentService {
             comment.getMyCd().getId(),
             comment.getUser().getId(),
             comment.getUser().getNickname(),
+            comment.getTimestamp(),
             comment.getContent(),
             comment.getCreatedAt()
         ))
         .collect(Collectors.toList());
 
     return new CdCommentListResponse(comments, page, size, commentPage.getTotalElements(), commentPage.getTotalPages());
+  }
+
+  public CdCommentListResponse searchComments(Long myCdId, String keyword, int page, int size) {
+    Pageable pageable = PageRequest.of(page, size);
+    Page<CdComment> commentPage = cdCommentRepository.findByMyCdIdAndKeyword(myCdId, keyword, pageable);
+
+    return new CdCommentListResponse(
+        commentPage.map(comment -> new CdCommentResponse(
+            comment.getId(),
+            comment.getMyCd().getId(),
+            comment.getUser().getId(),
+            comment.getUser().getNickname(),
+            comment.getTimestamp(),
+            comment.getContent(),
+            comment.getCreatedAt()
+        )).toList(),
+        page,
+        size,
+        commentPage.getTotalElements(),
+        commentPage.getTotalPages()
+    );
   }
 }
 
