@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface MyBookRepository extends JpaRepository<MyBook, Long> {
 
@@ -15,6 +16,8 @@ public interface MyBookRepository extends JpaRepository<MyBook, Long> {
         return findById(id)
                 .orElseThrow(MyBookNotFoundException::new);
     }
+
+    Optional<MyBook> findByBookId(Long bookId);
 
     @Query(
             value = """
