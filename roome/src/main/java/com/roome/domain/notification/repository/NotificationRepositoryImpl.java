@@ -24,7 +24,7 @@ public class NotificationRepositoryImpl implements NotificationRepositoryCustom 
                 .where(
                         receiverIdEq(condition.getReceiverId()),
                         cursorLt(condition.getCursor()),
-                        isReadEq(condition.getIsRead())
+                        isReadEq(condition.getRead())
                       )
                 .orderBy(notification.id.desc())
                 .limit(condition.getLimit() + 1)
@@ -50,6 +50,6 @@ public class NotificationRepositoryImpl implements NotificationRepositoryCustom 
     }
 
     private BooleanExpression isReadEq(Boolean isRead) {
-        return isRead != null ? notification.isRead.eq(isRead) : null;
+        return isRead != null ? notification.read.eq(isRead) : null;
     }
 }
