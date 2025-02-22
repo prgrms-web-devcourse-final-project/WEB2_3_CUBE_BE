@@ -2,6 +2,7 @@ package com.roome.domain.user.controller;
 
 import com.roome.domain.user.dto.request.MockUpdateProfileRequest;
 import com.roome.domain.user.dto.response.MockUserProfileResponse;
+import com.roome.domain.user.dto.response.UserProfileResponse;
 import com.roome.domain.user.entity.BookGenre;
 import com.roome.domain.user.entity.MusicGenre;
 import com.roome.domain.user.entity.UserBookGenre;
@@ -29,18 +30,18 @@ public class MockUserController {
 
     @Operation(summary = "프로필 조회")
     @GetMapping("/{userId}")
-    public ResponseEntity<MockUserProfileResponse> getMockUserProfile(@PathVariable Long userId) {
+    public ResponseEntity<UserProfileResponse> getMockUserProfile(@PathVariable Long userId) {
         log.info("[Mock 프로필 조회] 사용자 ID: {}", userId);
 
-        MockUserProfileResponse mockResponse = MockUserProfileResponse.builder()
-                                                                      .id(userId.toString())
-                                                                      .nickname("Mock User " + userId)
-                                                                      .profileImage("https://mock-image.com/user" + userId + ".png")
-                                                                      .bio("안녕하세요. Mock입니다..")
-                                                                      .bookGenres(List.of("Fantasy", "Mystery", "Sci-Fi"))
-                                                                      .musicGenres(List.of("Pop", "Jazz", "Rock"))
-                                                                      .similarUser(generateMockSimilarUsers())
-                                                                      .build();
+        UserProfileResponse mockResponse = UserProfileResponse.builder()
+                                                              .id(userId.toString())
+                                                              .nickname("Mock User " + userId)
+                                                              .profileImage("https://mock-image.com/user" + userId + ".png")
+                                                              .bio("안녕하세요. Mock입니다..")
+                                                              .bookGenres(List.of(BookGenre.SF, BookGenre.LIFE_SCIENCE))
+                                                              .musicGenres(List.of(MusicGenre.AFRO, MusicGenre.HIPHOP))
+                                                              .isMyProfile(true)
+                                                              .build();
 
         return ResponseEntity.ok(mockResponse);
     }
