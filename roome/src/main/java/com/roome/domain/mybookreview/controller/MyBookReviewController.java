@@ -19,8 +19,8 @@ public class MyBookReviewController {
             @RequestParam("myBookId") Long myBookId,
             @RequestBody MyBookReviewCreateRequest request
     ) {
-        Long userId = 1L;
-        MyBookReviewResponse response = myBookReviewService.create(userId, myBookId, request);
+        Long loginUserId = 1L;
+        MyBookReviewResponse response = myBookReviewService.create(loginUserId, myBookId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -35,8 +35,8 @@ public class MyBookReviewController {
             @PathVariable("myBookReviewId") Long myBookReviewId,
             @RequestBody MyBookReviewUpdateRequest request
     ) {
-        Long userId = 1L;
-        MyBookReviewResponse response = myBookReviewService.update(userId, myBookReviewId, request);
+        Long loginUserId = 1L;
+        MyBookReviewResponse response = myBookReviewService.update(loginUserId, myBookReviewId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -44,8 +44,8 @@ public class MyBookReviewController {
     public ResponseEntity<Void> delete(
             @PathVariable("myBookReviewId") Long myBookReviewId
     ) {
-        Long userId = 1L;
-        myBookReviewService.delete(userId, myBookReviewId);
+        Long loginUserId = 1L;
+        myBookReviewService.delete(loginUserId, myBookReviewId);
         return ResponseEntity.ok().build();
     }
 }

@@ -46,6 +46,7 @@ public enum ErrorCode {
   // 서평 관련 예외
   MY_BOOK_REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "서평을 찾을 수 없습니다."),
   MY_BOOK_REVIEW_ACCESS_DENIED(HttpStatus.BAD_REQUEST, "서평에 대한 권한이 없는 사용자입니다."),
+  MY_BOOK_REVIEW_DUPLICATE(HttpStatus.BAD_REQUEST, "서평이 작성된 도서입니다."),
 
   // 등록 도서 관련 예외
   MY_BOOK_NOT_FOUND(HttpStatus.NOT_FOUND, "등록 도서를 찾을 수 없습니다."),

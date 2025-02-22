@@ -34,7 +34,7 @@ public class Book {
 
     @Builder.Default
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<BookGenre> bookGenres = new ArrayList<>();
+    private List<BookGenre> bookGenres = new ArrayList<>();
 
     public void addBookGenre(BookGenre bookGenre) {
         bookGenres.add(bookGenre);
