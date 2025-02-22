@@ -1,6 +1,10 @@
 package com.roome.domain.notification.controller;
 
 import com.roome.domain.notification.dto.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/mock/notifications")
+@Tag(name = "Mock Notification", description = "알림 관련 Mock API - 개발 테스트용")
 public class MockNotificationController {
 
     // Mock 데이터 생성
@@ -67,6 +72,8 @@ public class MockNotificationController {
                                                                      .createdAt(LocalDateTime.now())
                                                                      .build());
 
+    @Operation(summary = "Mock 알림 목록 조회", description = "테스트용 Mock 알림 목록을 조회합니다.")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Mock 알림 목록 조회 성공")})
     @GetMapping
     public ResponseEntity<NotificationResponse> getNotifications(@RequestParam(required = false) Long cursor, @RequestParam(required = false, defaultValue = "10") int limit, @RequestParam(required = false, defaultValue = "true") boolean read) {
 
@@ -92,7 +99,8 @@ public class MockNotificationController {
     }
 
     //알림 읽음
-    @PatchMapping("/{notificationId}/read")
+    @Operation(summary = "Mock 알림 읽음 처리", description = "테스트용 Mock 알림을 읽음 상태로 변경합니다.")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Mock 알림 읽음 처리 성공")})
     public ResponseEntity<NotificationReadResponse> readNotification(@PathVariable Long notificationId) {
         // 고정된 응답 반환
         return ResponseEntity.ok(NotificationReadResponse
@@ -104,6 +112,8 @@ public class MockNotificationController {
     }
 
     //알림 생성
+    @Operation(summary = "Mock 알림 생성", description = "테스트용 Mock 알림을 생성합니다.")
+    @ApiResponses(value = {@ApiResponse(responseCode = "201", description = "Mock 알림 생성 성공")})
     @PostMapping
     @ResponseBody
     public ResponseEntity<CreateNotificationResponse> createNotification(@RequestBody CreateNotificationRequest request) {
