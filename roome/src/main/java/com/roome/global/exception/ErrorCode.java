@@ -52,8 +52,13 @@ public enum ErrorCode {
   MY_BOOK_ACCESS_DENIED(HttpStatus.BAD_REQUEST, "등록 도서에 대한 권한이 없는 사용자입니다."),
 
   // CD 관련 예외
-  CD_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 CD를 찾을 수 없습니다."),
-  DUPLICATE_CD(HttpStatus.CONFLICT, "이미 추가된 CD입니다."),
+  MYCD_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 MyCd를 찾을 수 없습니다."),
+  MYCD_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 추가된 CD입니다."),
+  MYCD_LIST_EMPTY(HttpStatus.NOT_FOUND, "CD 목록이 비어 있습니다."),
+  CD_TEMPLATE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 CD 템플릿을 찾을 수 없습니다."),
+  CD_COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 CD 댓글을 찾을 수 없습니다."),
+  CD_COMMENT_ACCESS_DENIED(HttpStatus.BAD_REQUEST, "해당 CD 댓글에 대한 권한이 없습니다."),
+
   //서버 에러
   INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 에러가 발생했습니다.")
   ;
