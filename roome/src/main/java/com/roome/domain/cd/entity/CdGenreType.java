@@ -22,7 +22,7 @@ public class CdGenreType {
     return CdGenreType.builder().name(name).build();
   }
 
-  public CdGenreType(String name) {  // ✅ 생성자 추가
+  public CdGenreType(String name) {
     this.name = name;
   }
 }

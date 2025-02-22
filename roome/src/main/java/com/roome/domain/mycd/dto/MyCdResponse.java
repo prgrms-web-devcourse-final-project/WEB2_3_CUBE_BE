@@ -27,7 +27,7 @@ public class MyCdResponse {
         .title(myCd.getCd().getTitle())
         .artist(myCd.getCd().getArtist())
         .album(myCd.getCd().getAlbum())
-        .genres(myCd.getCd().getGenres())  // ✅ 이제 정상적으로 genres 가져올 수 있음
+        .genres(myCd.getCd().getGenres())
         .coverUrl(myCd.getCd().getCoverUrl())
         .youtubeUrl(myCd.getCd().getYoutubeUrl())
         .duration(myCd.getCd().getDuration())

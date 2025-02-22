@@ -11,13 +11,11 @@ public class MyCdListResponse {
   private final List<MyCdResponse> data;
   private final Long nextCursor;  // 다음 페이지의 커서 (무한 스크롤)
 
-  // ✅ 생성자는 private → 외부에서 직접 생성 불가
   public MyCdListResponse(List<MyCdResponse> data, Long nextCursor) {
     this.data = data;
     this.nextCursor = nextCursor;
   }
 
-  // ✅ 정적 팩토리 메서드 추가
   public static MyCdListResponse fromEntities(List<MyCd> myCds) {
     List<MyCdResponse> responses = myCds.stream()
         .map(MyCdResponse::fromEntity)

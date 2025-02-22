@@ -36,7 +36,7 @@ public class Cd {
 
   @OneToMany(mappedBy = "cd", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
-  private List<CdGenre> cdGenres = new ArrayList<>();  // ✅ 초기화 추가
+  private List<CdGenre> cdGenres = new ArrayList<>();
 
   public static Cd create(String title, String artist, String album, String coverUrl,
       String youtubeUrl, long duration) {
@@ -47,7 +47,7 @@ public class Cd {
         .coverUrl(coverUrl)
         .youtubeUrl(youtubeUrl)
         .duration(duration)
-        .cdGenres(new ArrayList<>()) // ✅ 기본값 설정
+        .cdGenres(new ArrayList<>())
         .build();
   }
 
@@ -57,7 +57,7 @@ public class Cd {
 
   public List<String> getGenres() {
     return cdGenres.stream()
-        .map(cdGenre -> cdGenre.getGenreType().getName()) // ✅ Genre 이름 추출
+        .map(cdGenre -> cdGenre.getGenreType().getName())
         .toList();
   }
 }

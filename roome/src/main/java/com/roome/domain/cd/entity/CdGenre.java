@@ -20,7 +20,7 @@ public class CdGenre {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "cd_genre_type_id", nullable = false)
-  private CdGenreType genreType;  // ✅ 이 필드가 있어야 getGenreType() 호출 가능
+  private CdGenreType genreType;
 
   public CdGenre(Cd cd, CdGenreType genreType) {
     this.cd = cd;
