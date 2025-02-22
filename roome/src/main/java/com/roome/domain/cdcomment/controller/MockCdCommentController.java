@@ -25,12 +25,14 @@ public class MockCdCommentController {
 
     // Mock 사용자 정보 (하드코딩)
     Long mockUserId = 2L;
+    String mockNickname = "현구"; // 닉네임 추가
 
     CdCommentResponse response = new CdCommentResponse(
-        new Random().nextLong(1, 100), // commentId 랜덤 생성
+        new Random().nextLong(1, 100), // 랜덤 commentId 생성
         myCdId,
         mockUserId,
-        request.getTimestamp(), // 순서 수정
+        mockNickname, // 닉네임 추가
+        request.getTimestamp(),
         request.getContent(),
         createdAt
     );
@@ -45,9 +47,10 @@ public class MockCdCommentController {
       @RequestParam(value = "page", required = false, defaultValue = "0") int page
   ) {
     List<CdCommentResponse> mockData = List.of(
-        new CdCommentResponse(1L, myCdId, 2L, "3:40", "이 곡 진짜 좋네요!", LocalDateTime.now()),
-        new CdCommentResponse(2L, myCdId, 3L, "2:10", "현구님 추천 감사합니다!", LocalDateTime.now())
+        new CdCommentResponse(1L, myCdId, 2L, "현구", "3:40", "이 곡 진짜 좋네요!", LocalDateTime.now()),
+        new CdCommentResponse(2L, myCdId, 3L, "음악좋아하는사람", "2:10", "현구님 추천 감사합니다!", LocalDateTime.now())
     );
+
     return ResponseEntity.ok(new CdCommentListResponse(mockData, page, 5, 12, 3));
   }
 
@@ -59,9 +62,10 @@ public class MockCdCommentController {
       @RequestParam(value = "page", required = false, defaultValue = "0") int page
   ) {
     List<CdCommentResponse> mockData = List.of(
-        new CdCommentResponse(1L, myCdId, 2L, "4:00", "이 곡 진짜 좋네요!", LocalDateTime.now()),
-        new CdCommentResponse(2L, myCdId, 3L, "2:45", "현구님 추천 감사합니다!", LocalDateTime.now())
+        new CdCommentResponse(1L, myCdId, 2L, "현구", "4:00", "이 곡 진짜 좋네요!", LocalDateTime.now()),
+        new CdCommentResponse(2L, myCdId, 3L, "음악좋아하는사람", "2:45", "현구님 추천 감사합니다!", LocalDateTime.now())
     );
+
     return ResponseEntity.ok(new CdCommentListResponse(mockData, page, 2, 2, 1));
   }
 

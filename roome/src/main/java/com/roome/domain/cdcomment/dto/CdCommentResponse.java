@@ -11,6 +11,7 @@ public class CdCommentResponse {
   private Long id;
   private Long myCdId;
   private Long userId;
+  private String nickname;
   private String timestamp;
   private String content;
   private LocalDateTime createdAt;
