@@ -35,8 +35,9 @@ public enum OAuth2Provider {
     private final boolean requiresDecoding;
 
     public static OAuth2Provider from(String provider) {
+        String cleanedProvider = provider.trim().toLowerCase();
         for (OAuth2Provider p : values()) {
-            if (p.registrationId.equalsIgnoreCase(provider)) return p;
+            if (p.registrationId.equals(cleanedProvider)) return p;
         }
         throw new InvalidProviderException();
     }
