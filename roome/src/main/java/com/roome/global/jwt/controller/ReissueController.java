@@ -10,10 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -30,20 +27,38 @@ public class ReissueController {
     @Operation(security = { @SecurityRequirement(name = "cookieAuth") })
     @PostMapping("/reissue-token")
     public ResponseEntity<?> reissueToken(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
             @CookieValue(value = "refresh_token", required = false) String refreshToken,
             HttpServletResponse response
     ) {
         try {
+            // 액세스 토큰이 없는 경우
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "액세스 토큰이 필요합니다."));
+            }
+
+            String accessToken = authHeader.substring(7);
+
+            // 액세스 토큰이 아직 유효한 경우
+            if (jwtTokenProvider.validateAccessToken(accessToken)) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "아직 유효한 액세스 토큰입니다."));
+            }
+
+            // 액세스 토큰이 만료된 경우에만 리프레시 토큰 확인
             if (refreshToken == null || refreshToken.isBlank()) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("message", "리프레시 토큰이 없습니다."));
             }
 
-            if (!jwtTokenProvider.validateToken(refreshToken)) {
+            // 리프레시 토큰 검증
+            if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("message", "유효하지 않은 리프레시 토큰입니다."));
             }
 
+            // 새로운 토큰 발급
             JwtToken newToken = tokenService.reissueToken(refreshToken);
             tokenResponseHelper.setTokenResponse(response, newToken);
 

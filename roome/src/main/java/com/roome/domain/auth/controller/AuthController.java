@@ -97,7 +97,7 @@ public class AuthController {
 
             // 토큰이 유효하지 않아도 로그아웃은 처리
             if (accessToken != null && !accessToken.isBlank()) {
-                if (jwtTokenProvider.validateToken(accessToken)) {
+                if (jwtTokenProvider.validateAccessToken(accessToken)) {
                     log.info("유효한 토큰으로 로그아웃: {}", accessToken);
                 } else {
                     log.warn("만료된 토큰으로 로그아웃: {}", accessToken);
@@ -128,15 +128,9 @@ public class AuthController {
 
             String accessToken = authHeader.substring(7);
 
-            // 액세스 토큰 빈 값 체크
-            if (accessToken.isBlank()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new MessageResponse("유효하지 않은 토큰입니다."));
-            }
-
-            // 토큰 검증 및 재발급 처리
-            if (!jwtTokenProvider.validateToken(accessToken)) {
-                if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) {
+            if (accessToken.isBlank() || !jwtTokenProvider.validateAccessToken(accessToken)) {
+                // 리프레시 토큰 검증
+                if (refreshToken == null || !jwtTokenProvider.validateRefreshToken(refreshToken)) {
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                             .body(new MessageResponse("리프레시 토큰이 없거나 유효하지 않습니다."));
                 }

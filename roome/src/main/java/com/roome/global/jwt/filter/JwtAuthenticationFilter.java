@@ -6,12 +6,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collections;
 
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -25,8 +27,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = resolveToken(request);
 
         // 유효한 토큰이면 인증 정보 설정
-        if (token != null && jwtTokenProvider.validateToken(token)) {
-            Authentication authentication = jwtTokenProvider.getAuthentication(token);
+        if (token != null && jwtTokenProvider.validateAccessToken(token)) {
+            String userId = jwtTokenProvider.parseClaims(token).getSubject();
+            Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 

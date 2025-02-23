@@ -24,21 +24,13 @@ public class TokenService {
     private final UserRepository userRepository;
 
     public JwtToken reissueToken(String refreshToken) {
-        validateRefreshToken(refreshToken);
-        User user = findUserByRefreshToken(refreshToken);
-
-        Authentication authentication = new UsernamePasswordAuthenticationToken(
-                user.getId().toString(), null, Collections.emptyList()
-        );
-
-        return jwtTokenProvider.createToken(authentication);
-    }
-
-    private void validateRefreshToken(String refreshToken) {
-        if (!jwtTokenProvider.validateToken(refreshToken)) {
-            log.warn("Refresh Token 검증 실패: {}", refreshToken);
+        if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
             throw new InvalidRefreshTokenException();
         }
+
+        User user = findUserByRefreshToken(refreshToken);
+
+        return jwtTokenProvider.createToken(user.getId().toString());
     }
 
     private User findUserByRefreshToken(String refreshToken) {
@@ -50,13 +42,6 @@ public class TokenService {
     }
 
     public Long getUserIdFromToken(String accessToken) {
-        return Long.valueOf(jwtTokenProvider.getAuthentication(accessToken).getName());
-    }
-
-    public Long validateAndGetUserId(String accessToken) {
-        if (!jwtTokenProvider.validateToken(accessToken)) {
-            throw new InvalidJwtTokenException();
-        }
-        return getUserIdFromToken(accessToken);
+        return Long.valueOf(jwtTokenProvider.parseClaims(accessToken).getSubject());
     }
 }
