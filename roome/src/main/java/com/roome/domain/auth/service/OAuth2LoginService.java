@@ -145,10 +145,7 @@ public class OAuth2LoginService {
     }
 
     private JwtToken generateJwtToken(User user) {
-        Authentication authentication = new UsernamePasswordAuthenticationToken(
-                user.getId().toString(), null, Collections.emptyList()
-        );
-        return jwtTokenProvider.createToken(authentication);
+        return jwtTokenProvider.createToken(user.getId().toString());
     }
 
     private LoginResponse buildLoginResponse(User user, JwtToken jwtToken) {
