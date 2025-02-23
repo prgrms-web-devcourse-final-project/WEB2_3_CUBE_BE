@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: test
+    active: local
   config:
     import: optional:file:.env[.properties]
   security:
@@ -63,6 +63,20 @@ springdoc:
     groups-order: DESC
     operationsSorter: method
     disable-swagger-default-url: true
+
+cloud:
+  aws:
+    credentials:
+      access-key: ${AWS_ACCESS_KEY}  # 월요일에 발급받을 액세스 키
+      secret-key: ${AWS_SECRET_KEY}  # 월요일에 발급받을 시크릿 키
+    s3:
+      bucket: ${AWS_BUCKET_NAME} # 월요일 설정
+    region:
+      static: ap-northeast-2  # 서울 리전
+    stack:
+      auto: false
+    endpoint:
+        uri: ${CLOUD_AWS_ENDPOINT_URI} # 재설정 필요
 
 ---
 spring:

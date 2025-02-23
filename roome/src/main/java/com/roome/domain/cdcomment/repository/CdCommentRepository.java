@@ -14,7 +14,7 @@ public interface CdCommentRepository extends JpaRepository<CdComment, Long> {
 
   Long countByUserId(Long userId);
 
-  Page<CdComment> findByMyCdId(Long myCdId, PageRequest pageRequest);
+  Page<CdComment> findByMyCdId(Long myCdId, Pageable pageable);
 
   @Query("SELECT c FROM CdComment c " + "WHERE c.myCd.id = :myCdId "
       + "AND (LOWER(c.content) LIKE LOWER(CONCAT('%', :keyword, '%')) "

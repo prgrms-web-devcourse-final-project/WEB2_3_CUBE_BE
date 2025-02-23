@@ -4,37 +4,41 @@ import com.roome.domain.mycd.entity.MyCd;
 import com.roome.domain.user.entity.User;
 import com.roome.global.entity.BaseEntity;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Getter
 @Entity
-@Table(name = "cd_comment")
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CdComment extends BaseEntity {
+public class CdComment {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id", nullable = false)
-  private User user; // 댓글 작성자
+  private User user;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "my_cd_id", nullable = false)
-  private MyCd myCd; // 댓글이 달린 CD
+  private MyCd myCd;
 
-  @Column(nullable = false, length = 10)
-  private String timestamp; // 댓글이 달린 타임스탬프 (예: "3:40")
+  private String timestamp;
+  private String content;
 
-  @Column(nullable = false, length = 255)
-  private String content; // 댓글 내용
+  @Column(updatable = false)
+  private LocalDateTime createdAt;
+
+  @PrePersist
+  protected void onCreate() {
+    this.createdAt = LocalDateTime.now();
+  }
 
   @Builder
-  public CdComment(User user, MyCd myCd, String timestamp, String content) {
+  public CdComment(Long id, User user, MyCd myCd, String timestamp, String content) {
+    this.id = id;
     this.user = user;
     this.myCd = myCd;
     this.timestamp = timestamp;

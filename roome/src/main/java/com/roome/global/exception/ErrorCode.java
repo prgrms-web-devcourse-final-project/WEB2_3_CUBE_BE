@@ -63,6 +63,7 @@ public enum ErrorCode {
   CD_COMMENT_SEARCH_EMPTY(HttpStatus.NOT_FOUND, "검색된 댓글이 없습니다."),
   CD_TEMPLATE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 CD 템플릿을 찾을 수 없습니다."),
   CD_COMMENT_ACCESS_DENIED(HttpStatus.BAD_REQUEST, "해당 CD 댓글에 대한 권한이 없습니다."),
+  UNAUTHORIZED_CD_TEMPLATE_ACCESS(HttpStatus.BAD_REQUEST, "해당 CD 템플릿에 대한 권한이 없습니다."),
 
   // 알림 관련 예외
   NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림 데이터가 존재하지 않습니다."),
@@ -70,10 +71,18 @@ public enum ErrorCode {
   NOTIFICATION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 알림에 접근 권한이 없습니다."),
   NOTIFICATION_EXPIRED(HttpStatus.GONE, "만료된 알림입니다."),
   INVALID_NOTIFICATION_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 알림 타입입니다."),
-  INVALID_NOTIFICATION_REQUEST(HttpStatus.BAD_REQUEST, "알림 생성 요청이 유효하지 않습니다."),
-
-  // 서버 에러
-  INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 에러가 발생했습니다.");
+  // 알림 생성 요청 검증
+    INVALID_NOTIFICATION_REQUEST(HttpStatus.BAD_REQUEST, "알림 생성 요청이 유효하지 않습니다."),
+  //서버 에러
+  INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 에러가 발생했습니다."),
+  // User 프로필 관련 예외
+  INVALID_NICKNAME_FORMAT(HttpStatus.BAD_REQUEST, "닉네임 형식이 올바르지 않습니다."),
+  INVALID_BIO_LENGTH(HttpStatus.BAD_REQUEST, "자기소개는 30자를 초과할 수 없습니다."),
+  // 유저 Genre 관련 예외 추가
+  GENRE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "장르는 최대 3개까지만 선택할 수 있습니다."),
+  DUPLICATE_GENRE(HttpStatus.BAD_REQUEST, "이미 선택된 장르입니다."),
+  INVALID_GENRE_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 장르 타입입니다."),
+  ;
 
   private final HttpStatus status;
   private final String message;

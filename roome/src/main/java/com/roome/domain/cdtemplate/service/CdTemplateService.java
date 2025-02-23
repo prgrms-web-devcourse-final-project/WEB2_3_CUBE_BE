@@ -3,6 +3,8 @@ package com.roome.domain.cdtemplate.service;
 import com.roome.domain.cdtemplate.dto.CdTemplateRequest;
 import com.roome.domain.cdtemplate.dto.CdTemplateResponse;
 import com.roome.domain.cdtemplate.entity.CdTemplate;
+import com.roome.domain.cdtemplate.exception.CdTemplateNotFoundException;
+import com.roome.domain.cdtemplate.exception.UnauthorizedCdTemplateAccessException;
 import com.roome.domain.cdtemplate.repository.CdTemplateRepository;
 import com.roome.domain.mycd.entity.MyCd;
 import com.roome.domain.mycd.repository.MyCdRepository;
@@ -17,15 +19,13 @@ public class CdTemplateService {
   private final CdTemplateRepository cdTemplateRepository;
   private final MyCdRepository myCdRepository;
 
-  // CD 템플릿 작성
   @Transactional
   public CdTemplateResponse createTemplate(Long myCdId, Long userId, CdTemplateRequest request) {
     MyCd myCd = myCdRepository.findById(myCdId)
-        .orElseThrow(() -> new IllegalArgumentException("CD 템플릿을 찾을 수 없습니다."));
+        .orElseThrow(CdTemplateNotFoundException::new);
 
-    // 본인 CD인지 검증
     if (!myCd.getUser().getId().equals(userId)) {
-      throw new IllegalStateException("해당 작업을 수행할 권한이 없습니다.");
+      throw new UnauthorizedCdTemplateAccessException();
     }
 
     CdTemplate cdTemplate = CdTemplate.builder()
@@ -40,37 +40,32 @@ public class CdTemplateService {
     return CdTemplateResponse.from(cdTemplate);
   }
 
-  // CD 템플릿 조회
   public CdTemplateResponse getTemplate(Long myCdId) {
     CdTemplate cdTemplate = cdTemplateRepository.findByMyCdId(myCdId)
-        .orElseThrow(() -> new IllegalArgumentException("CD 템플릿을 찾을 수 없습니다."));
+        .orElseThrow(CdTemplateNotFoundException::new);
     return CdTemplateResponse.from(cdTemplate);
   }
 
-  // 🔥 CD 템플릿 수정
   @Transactional
   public CdTemplateResponse updateTemplate(Long myCdId, Long userId, CdTemplateRequest request) {
     CdTemplate cdTemplate = cdTemplateRepository.findByMyCdId(myCdId)
-        .orElseThrow(() -> new IllegalArgumentException("CD 템플릿을 찾을 수 없습니다."));
+        .orElseThrow(CdTemplateNotFoundException::new);
 
-    // 방 주인(본인)만 수정 가능
     if (!cdTemplate.getMyCd().getUser().getId().equals(userId)) {
-      throw new IllegalStateException("해당 작업을 수행할 권한이 없습니다.");
+      throw new UnauthorizedCdTemplateAccessException();
     }
 
     cdTemplate.update(request.getComment1(), request.getComment2(), request.getComment3(), request.getComment4());
     return CdTemplateResponse.from(cdTemplate);
   }
 
-  // 🔥 CD 템플릿 삭제
   @Transactional
   public void deleteTemplate(Long myCdId, Long userId) {
     CdTemplate cdTemplate = cdTemplateRepository.findByMyCdId(myCdId)
-        .orElseThrow(() -> new IllegalArgumentException("CD 템플릿을 찾을 수 없습니다."));
+        .orElseThrow(CdTemplateNotFoundException::new);
 
-    // 방 주인(본인)만 삭제 가능
     if (!cdTemplate.getMyCd().getUser().getId().equals(userId)) {
-      throw new IllegalStateException("해당 작업을 수행할 권한이 없습니다.");
+      throw new UnauthorizedCdTemplateAccessException();
     }
 
     cdTemplateRepository.delete(cdTemplate);
