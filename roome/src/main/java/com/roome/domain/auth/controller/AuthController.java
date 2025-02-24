@@ -142,9 +142,10 @@ public class AuthController {
             Long userId = tokenService.getUserIdFromToken(accessToken);
             userService.deleteUser(userId);
 
+            redisService.deleteRefreshToken(userId.toString());
+
             // 토큰 무효화
             tokenResponseHelper.removeTokenResponse(response);
-
             return ResponseEntity.ok(new MessageResponse("회원 탈퇴가 완료되었습니다."));
 
         } catch (InvalidRefreshTokenException e) {
