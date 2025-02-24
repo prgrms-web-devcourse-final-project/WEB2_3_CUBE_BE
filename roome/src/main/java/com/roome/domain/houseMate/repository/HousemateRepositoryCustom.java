@@ -5,6 +5,6 @@ import com.roome.domain.houseMate.dto.HousemateInfo;
 import java.util.List;
 
 public interface HousemateRepositoryCustom {
-    List<HousemateInfo> findByUserId(Long userId, String cursor, int limit, String nickname);
-    List<HousemateInfo> findByAddedId(Long addedId, String cursor, int limit, String nickname);
+    List<HousemateInfo> findByUserId(Long userId, Long cursor, int limit, String nickname);
+    List<HousemateInfo> findByAddedId(Long addedId, Long cursor, int limit, String nickname);
 }
