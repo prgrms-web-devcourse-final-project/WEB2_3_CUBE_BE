@@ -134,6 +134,7 @@ public class AuthController {
                             .body(new MessageResponse("리프레시 토큰이 없거나 유효하지 않습니다."));
                 }
 
+                // 유효하지 않은 액세스 토큰을 사용한 경우 새로운 액세스 토큰 발급
                 JwtToken newToken = tokenService.reissueToken(refreshToken);
                 accessToken = newToken.getAccessToken();
             }
@@ -142,9 +143,13 @@ public class AuthController {
             Long userId = tokenService.getUserIdFromToken(accessToken);
             userService.deleteUser(userId);
 
+            // Refresh Token 삭제
             redisService.deleteRefreshToken(userId.toString());
 
-            // 토큰 무효화
+            // Access Token 블랙리스트 추가
+            redisService.addToBlacklist(accessToken, jwtTokenProvider.getAccessTokenExpirationTime());
+
+            // 클라이언트 측 토큰 삭제
             tokenResponseHelper.removeTokenResponse(response);
             return ResponseEntity.ok(new MessageResponse("회원 탈퇴가 완료되었습니다."));
 
