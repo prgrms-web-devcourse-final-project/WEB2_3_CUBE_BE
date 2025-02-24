@@ -1,4 +1,3 @@
-/*
 package com.roome.global.config;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -43,6 +42,7 @@ public class RedisConfig {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
 
+        // JSON 직렬화 설정
         GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer();
 
         template.setKeySerializer(new StringRedisSerializer());
@@ -55,4 +55,3 @@ public class RedisConfig {
         return template;
     }
 }
-*/
