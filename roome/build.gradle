@@ -1,29 +1,29 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.4.2'
-	id 'io.spring.dependency-management' version '1.1.7'
-	// .env 파일을 사용하기 위한 플러그인
-	id 'com.github.johnrengelman.processes' version '0.5.0'
-	id 'org.springdoc.openapi-gradle-plugin' version '1.8.0'
+    id 'java'
+    id 'org.springframework.boot' version '3.4.2'
+    id 'io.spring.dependency-management' version '1.1.7'
+    // .env 파일을 사용하기 위한 플러그인
+    id 'com.github.johnrengelman.processes' version '0.5.0'
+    id 'org.springdoc.openapi-gradle-plugin' version '1.8.0'
 }
 
 group = 'com.roome'
 version = '0.0.1-SNAPSHOT'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 dependencies {
@@ -77,16 +77,21 @@ dependencies {
 	// Redis
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
+
+}
+
+jar {
+    enabled = false
 }
 
 bootJar {
-	archiveFileName = 'app.jar'
-	manifest {
-		attributes 'Main-Class': 'org.springframework.boot.loader.JarLauncher'
-		attributes 'Start-Class': 'com.roome.RoomeApplication'
-	}
+    archiveFileName = 'app.jar'
+}
+
+springBoot {
+    mainClass.set('com.roome.RoomeApplication')
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
 }

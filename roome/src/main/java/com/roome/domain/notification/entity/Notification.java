@@ -33,8 +33,8 @@ public class Notification extends BaseTimeEntity {
     @Column(name = "receiver_id", nullable = false)
     private Long receiverId;
 
-    @Column(nullable = false)
-    private boolean read;
+    @Column(name = "is_read", nullable = false)
+    private boolean isRead;
 
     @Builder
     public Notification(NotificationType type, String title, String content,
@@ -43,10 +43,10 @@ public class Notification extends BaseTimeEntity {
         this.senderId = senderId;
         this.targetId = targetId;
         this.receiverId = receiverId;
-        this.read = false;
+        this.isRead = false;
     }
 
     public void markAsRead() {
-        this.read = true;
+        this.isRead = true;
     }
 }
