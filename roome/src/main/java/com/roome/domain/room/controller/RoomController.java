@@ -3,6 +3,7 @@ package com.roome.domain.room.controller;
 import com.roome.domain.room.dto.RoomResponseDto;
 import com.roome.domain.room.dto.UpdateRoomThemeRequestDto;
 import com.roome.domain.room.service.RoomService;
+import com.roome.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,16 +30,15 @@ public class RoomController {
 
     @GetMapping
     public ResponseEntity<RoomResponseDto> getRoomByUserId(
-            @AuthenticationPrincipal Long userId
+            @RequestParam("userId") Long userId
     ){
         RoomResponseDto roomResponseDto = roomService.getRoomByUserId(userId);
         return ResponseEntity.ok(roomResponseDto);
     }
 
-    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{roomId}")
     public ResponseEntity<Map<String, Object>> updateRoomTheme(
-            @AuthenticationPrincipal Long userId,
+            @RequestParam("userId") Long userId,
             @PathVariable Long roomId,
             @RequestBody UpdateRoomThemeRequestDto requestDto
     ) {
