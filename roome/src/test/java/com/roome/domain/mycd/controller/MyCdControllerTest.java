@@ -49,7 +49,7 @@ class MyCdControllerTest {
     BDDMockito.given(myCdService.addCdToMyList(any(Long.class), any(MyCdCreateRequest.class)))
         .willReturn(response);
 
-    mockMvc.perform(post("/api/mycd")
+    mockMvc.perform(post("/api/my-cd")
             .param("userId", "1")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request))
@@ -68,7 +68,7 @@ class MyCdControllerTest {
     BDDMockito.given(myCdService.addCdToMyList(any(Long.class), any(MyCdCreateRequest.class)))
         .willThrow(new MyCdAlreadyExistsException());
 
-    mockMvc.perform(post("/api/mycd")
+    mockMvc.perform(post("/api/my-cd")
             .param("userId", "1")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request))
@@ -88,15 +88,11 @@ class MyCdControllerTest {
     BDDMockito.given(myCdService.getMyCdList(eq(1L), any(Long.class), any(Integer.class)))
         .willReturn(response);
 
-    String responseBody = mockMvc.perform(get("/api/mycd")
+    mockMvc.perform(get("/api/my-cd")
             .param("userId", "1")
             .param("size", "10")
             .accept(MediaType.APPLICATION_JSON))
-        .andExpect(status().isOk())
-        .andReturn()
-        .getResponse()
-        .getContentAsString();
-
+        .andExpect(status().isOk());
   }
 
   @DisplayName("특정 CD 조회 성공")
@@ -108,7 +104,7 @@ class MyCdControllerTest {
     BDDMockito.given(myCdService.getMyCd(eq(1L), eq(1L)))
         .willReturn(response);
 
-    mockMvc.perform(get("/api/mycd/1")
+    mockMvc.perform(get("/api/my-cd/1")
             .param("userId", "1"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.title").value("Palette"));
@@ -121,18 +117,17 @@ class MyCdControllerTest {
     BDDMockito.given(myCdService.getMyCd(eq(1L), eq(999L)))
         .willThrow(new MyCdNotFoundException());
 
-    mockMvc.perform(get("/api/mycd/999")
+    mockMvc.perform(get("/api/my-cd/999")
             .param("userId", "1"))
         .andExpect(status().isNotFound())
         .andExpect(content().string(containsString(ErrorCode.MYCD_NOT_FOUND.getMessage())));
   }
 
-
   @DisplayName("CD 삭제 성공")
   @WithMockUser
   @Test
   void deleteMyCd_Success() throws Exception {
-    mockMvc.perform(delete("/api/mycd")
+    mockMvc.perform(delete("/api/my-cd")
             .param("userId", "1")
             .param("myCdIds", "1,2,3")
             .with(csrf()))
@@ -149,7 +144,7 @@ class MyCdControllerTest {
         .when(myCdService).delete(eq(1L), eq("999"));
 
     // when & then: 요청 후 404 응답을 기대
-    mockMvc.perform(delete("/api/mycd")
+    mockMvc.perform(delete("/api/my-cd")
             .param("userId", "1")
             .param("myCdIds", "999")
             .with(csrf()))
