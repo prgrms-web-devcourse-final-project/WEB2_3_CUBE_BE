@@ -3,11 +3,8 @@ package com.roome.domain.room.controller;
 import com.roome.domain.room.dto.RoomResponseDto;
 import com.roome.domain.room.dto.UpdateRoomThemeRequestDto;
 import com.roome.domain.room.service.RoomService;
-import com.roome.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
