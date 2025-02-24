@@ -2,11 +2,9 @@ package com.roome.domain.guestbook.controller;
 
 import com.roome.domain.guestbook.dto.*;
 import com.roome.domain.guestbook.service.GuestbookService;
-import com.roome.domain.user.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
