@@ -119,12 +119,6 @@ public class AuthController {
             HttpServletResponse response
     ) {
         try {
-            // Authorization 헤더 검증
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new MessageResponse("인증 토큰이 필요합니다."));
-            }
-
             String accessToken = authHeader.substring(7);
 
             if (accessToken.isBlank() || !jwtTokenProvider.validateAccessToken(accessToken)) {
