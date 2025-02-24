@@ -15,7 +15,7 @@ import java.util.Random;
 
 @Tag(name = "Mock - CdComment", description = "댓글 등록/조회/검색/삭제")
 @RestController
-@RequestMapping("/mock/mycd")
+@RequestMapping("/mock/my-cd")
 public class MockCdCommentController {
 
   @Operation(summary = "Mock - CD 댓글 작성", description = "CD에 댓글을 작성합니다.")

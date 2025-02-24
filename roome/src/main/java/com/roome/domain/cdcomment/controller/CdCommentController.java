@@ -16,7 +16,7 @@ public class CdCommentController {
 
   private final CdCommentService cdCommentService;
 
-  @PostMapping("/api/mycd/{myCdId}/comment")
+  @PostMapping("/api/my-cd/{myCdId}/comment")
   public ResponseEntity<CdCommentResponse> create(
       @PathVariable Long myCdId,
       @RequestBody @Valid CdCommentCreateRequest request
@@ -26,7 +26,7 @@ public class CdCommentController {
     return ResponseEntity.ok(response);
   }
 
-  @GetMapping("/api/mycd/{myCdId}/comments")
+  @GetMapping("/api/my-cd/{myCdId}/comments")
   public ResponseEntity<CdCommentListResponse> getComments(
       @PathVariable Long myCdId,
       @RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -36,7 +36,7 @@ public class CdCommentController {
     return ResponseEntity.ok(response);
   }
 
-  @GetMapping("/api/mycd/{myCdId}/comments/search")
+  @GetMapping("/api/my-cd/{myCdId}/comments/search")
   public ResponseEntity<CdCommentListResponse> searchComments(
       @PathVariable Long myCdId,
       @RequestParam("query") String keyword,
@@ -47,13 +47,13 @@ public class CdCommentController {
     return ResponseEntity.ok(response);
   }
 
-  @DeleteMapping("/api/mycd/comments/{commentId}")
+  @DeleteMapping("/api/my-cd/comments/{commentId}")
   public ResponseEntity<Void> deleteComment(@PathVariable Long commentId) {
     cdCommentService.deleteComment(commentId);
     return ResponseEntity.noContent().build();
   }
 
-  @DeleteMapping("/api/mycd/comments")
+  @DeleteMapping("/api/my-cd/comments")
   public ResponseEntity<Void> deleteMultipleComments(@RequestParam List<Long> commentIds) {
     cdCommentService.deleteMultipleComments(commentIds);
     return ResponseEntity.noContent().build();

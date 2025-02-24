@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @Tag(name = "Mock - CD Template", description = "CD 템플릿 작성/조회/수정/삭제")
 @RestController
-@RequestMapping("/mock/api/mycd/{myCdId}/template")
+@RequestMapping("/mock/api/my-cd/{myCdId}/template")
 public class MockCdTemplateController {
 
   private final AtomicLong templateIdCounter = new AtomicLong(1);
