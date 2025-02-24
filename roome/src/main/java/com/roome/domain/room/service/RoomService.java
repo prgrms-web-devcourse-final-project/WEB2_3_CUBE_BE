@@ -1,6 +1,9 @@
 package com.roome.domain.room.service;
 
 import com.roome.domain.cdcomment.repository.CdCommentRepository;
+import com.roome.domain.furniture.entity.Furniture;
+import com.roome.domain.furniture.entity.FurnitureType;
+import com.roome.domain.furniture.repository.FurnitureRepository;
 import com.roome.domain.mybook.entity.MyBookCount;
 import com.roome.domain.mybook.entity.repository.MyBookCountRepository;
 import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
@@ -19,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +30,7 @@ public class RoomService {
 
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
+    private final FurnitureRepository furnitureRepository;
     private final MyCdCountRepository myCdCountRepository;
     private final MyBookCountRepository myBookCountRepository;
     private final MyBookReviewRepository myBookReviewRepository;
@@ -43,6 +48,24 @@ public class RoomService {
                 .build();
 
         Room savedRoom = roomRepository.save(newRoom);
+
+        // 기본 가구 추가 (책꽂이 & CD 랙)
+        List<Furniture> defaultFurnitures = List.of(
+                Furniture.builder()
+                        .room(savedRoom)
+                        .furnitureType(FurnitureType.BOOKSHELF)
+                        .isVisible(false)  // 기본값: 보이지 않음
+                        .level(1)  // 기본값: 1레벨
+                        .build(),
+                Furniture.builder()
+                        .room(savedRoom)
+                        .furnitureType(FurnitureType.CD_RACK)
+                        .isVisible(false)
+                        .level(1)
+                        .build()
+        );
+
+        furnitureRepository.saveAll(defaultFurnitures);
 
         Long savedMusic = 0L;
         Long savedBooks = 0L;
