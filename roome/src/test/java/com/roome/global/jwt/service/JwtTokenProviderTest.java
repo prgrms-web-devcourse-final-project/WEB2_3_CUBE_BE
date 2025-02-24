@@ -88,7 +88,7 @@ class JwtTokenProviderTest {
         OAuth2Response oAuth2Response = OAuth2Provider.KAKAO.createOAuth2Response(attributes);
         OAuth2UserPrincipal userPrincipal = new OAuth2UserPrincipal(user, oAuth2Response);
 
-        String email = userPrincipal.getEmail();
+        String email = userPrincipal.getUsername();
         assertThat(email).isEqualTo(testEmail);
     }
 }
