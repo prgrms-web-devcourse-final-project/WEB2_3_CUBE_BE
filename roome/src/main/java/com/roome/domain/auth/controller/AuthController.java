@@ -15,6 +15,7 @@ import com.roome.global.jwt.exception.InvalidRefreshTokenException;
 import com.roome.global.jwt.helper.TokenResponseHelper;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.jwt.service.TokenService;
+import com.roome.global.service.RedisService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.servlet.http.HttpServletResponse;
@@ -38,6 +39,7 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenService tokenService;
     private final UserService userService;
+    private final RedisService redisService;
 
     @SecurityRequirements
     @PostMapping("/login/{provider}")
@@ -63,12 +65,12 @@ public class AuthController {
                 throw new OAuth2AuthenticationProcessingException();
             }
 
-            // JWT 발급 후 응답 헤더와 쿠키 설정
-            tokenResponseHelper.setTokenResponse(response, new JwtToken(
-                    loginResponse.getAccessToken(),
+            // Redis에 Refresh Token 저장
+            redisService.saveRefreshToken(
+                    loginResponse.getUser().getUserId().toString(),
                     loginResponse.getRefreshToken(),
-                    "Bearer"
-            ));
+                    jwtTokenProvider.getRefreshTokenExpirationTime()
+            );
 
             return ResponseEntity.ok(loginResponse);
         } catch (InvalidProviderException e) {
@@ -83,25 +85,22 @@ public class AuthController {
         }
     }
 
-    // TODO: Redis 도입 후 블랙리스트 활용 예정
     @PostMapping("/logout")
     public ResponseEntity<?> logout(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             HttpServletResponse response
     ) {
         try {
-            String accessToken = null;
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                accessToken = authHeader.substring(7);
-            }
+                String accessToken = authHeader.substring(7);
+                String userId = jwtTokenProvider.getUserIdFromToken(accessToken);
 
-            // 토큰이 유효하지 않아도 로그아웃은 처리
-            if (accessToken != null && !accessToken.isBlank()) {
-                if (jwtTokenProvider.validateAccessToken(accessToken)) {
-                    log.info("유효한 토큰으로 로그아웃: {}", accessToken);
-                } else {
-                    log.warn("만료된 토큰으로 로그아웃: {}", accessToken);
-                }
+                // Refresh Token 삭제
+                redisService.deleteRefreshToken(userId);
+
+                // Access Token 블랙리스트 추가
+                redisService.addToBlacklist(accessToken,
+                        jwtTokenProvider.getAccessTokenExpirationTime());
             }
 
             tokenResponseHelper.removeTokenResponse(response);
