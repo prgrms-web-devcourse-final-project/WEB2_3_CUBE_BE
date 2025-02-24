@@ -11,6 +11,7 @@ import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.entity.RoomTheme;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
+import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,8 @@ public class GuestbookServiceTest {
     private GuestbookRepository guestbookRepository;
     @Mock
     private RoomRepository roomRepository;
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private GuestbookService guestbookService;
@@ -117,11 +120,12 @@ public class GuestbookServiceTest {
     @Test
     void testAddGuestbook_Success() {
         Long roomId = 1L;
+        Long userId = 1L;
         GuestbookRequestDto requestDto = new GuestbookRequestDto();
-
         ReflectionTestUtils.setField(requestDto, "message", "Test guestbook message");
 
         when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         when(guestbookRepository.save(any(Guestbook.class))).thenAnswer(invocation -> {
             Guestbook saved = invocation.getArgument(0);
@@ -129,7 +133,7 @@ public class GuestbookServiceTest {
             return saved;
         });
 
-        GuestbookResponseDto responseDto = guestbookService.addGuestbook(roomId, user, requestDto);
+        GuestbookResponseDto responseDto = guestbookService.addGuestbook(roomId, userId, requestDto);
         assertNotNull(responseDto);
         assertEquals(1L, responseDto.getGuestbookId());
         assertEquals(user.getId(), responseDto.getUserId());
@@ -144,21 +148,24 @@ public class GuestbookServiceTest {
     @Test
     void testAddGuestbook_RoomNotFound() {
         Long roomId = 1L;
+        Long userId = 1L;
         GuestbookRequestDto requestDto = new GuestbookRequestDto();
         ReflectionTestUtils.setField(requestDto, "message", "Test guestbook message");
 
         when(roomRepository.findById(roomId)).thenReturn(Optional.empty());
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> guestbookService.addGuestbook(roomId, user, requestDto));
+                () -> guestbookService.addGuestbook(roomId, userId, requestDto));
         assertEquals(ErrorCode.ROOM_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test
     void testDeleteGuestbook_Success() {
         Long guestbookId = 1L;
+        Long userId = 1L;
+
         when(guestbookRepository.findById(guestbookId)).thenReturn(Optional.of(guestbook));
 
-        guestbookService.deleteGuestbook(guestbookId, user);
+        guestbookService.deleteGuestbook(guestbookId, userId);
         verify(guestbookRepository).findById(guestbookId);
         verify(guestbookRepository).delete(guestbook);
     }
@@ -166,24 +173,23 @@ public class GuestbookServiceTest {
     @Test
     void testDeleteGuestbook_GuestbookNotFound() {
         Long guestbookId = 1L;
+        Long userId = 1L;
         when(guestbookRepository.findById(guestbookId)).thenReturn(Optional.empty());
 
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> guestbookService.deleteGuestbook(guestbookId, user));
+                () -> guestbookService.deleteGuestbook(guestbookId, userId));
         assertEquals(ErrorCode.GUESTBOOK_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test
     void testDeleteGuestbook_DeleteForbidden() {
         Long guestbookId = 1L;
-
-        User otherUser = User.builder().build();
-        ReflectionTestUtils.setField(otherUser, "id", 2L);
+        Long otherUserId = 2L;
 
         when(guestbookRepository.findById(guestbookId)).thenReturn(Optional.of(guestbook));
 
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> guestbookService.deleteGuestbook(guestbookId, otherUser));
+                () -> guestbookService.deleteGuestbook(guestbookId, otherUserId));
         assertEquals(ErrorCode.GUESTBOOK_DELETE_FORBIDDEN, exception.getErrorCode());
     }
 }

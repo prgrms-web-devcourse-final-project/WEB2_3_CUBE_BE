@@ -7,6 +7,7 @@ import com.roome.domain.guestbook.repository.GuestbookRepository;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
+import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import jakarta.transaction.Transactional;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 public class GuestbookService {
     private final GuestbookRepository guestbookRepository;
     private final RoomRepository roomRepository;
+    private final UserRepository userRepository;
 
     public GuestbookListResponseDto getGuestbook(Long roomId, int page, int size) {
         Room room = roomRepository.findById(roomId)
@@ -46,9 +48,12 @@ public class GuestbookService {
     }
 
     @Transactional
-    public GuestbookResponseDto addGuestbook(Long roomId, User user, GuestbookRequestDto requestDto) {
+    public GuestbookResponseDto addGuestbook(Long roomId, Long userId, GuestbookRequestDto requestDto) {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         Guestbook guestbook = Guestbook.builder()
                 .room(room)
@@ -64,9 +69,12 @@ public class GuestbookService {
     }
 
     @Transactional
-    public void deleteGuestbook(Long guestbookId, User user) {
+    public void deleteGuestbook(Long guestbookId, Long userId) {
         Guestbook guestbook = guestbookRepository.findById(guestbookId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.GUESTBOOK_NOT_FOUND));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         if (!guestbook.getUser().equals(user)) {
             throw new BusinessException(ErrorCode.GUESTBOOK_DELETE_FORBIDDEN);
