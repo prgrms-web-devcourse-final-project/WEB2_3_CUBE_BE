@@ -37,16 +37,50 @@ class MockHouseMateControllerTest {
                                                    .contentType(MediaType.APPLICATION_JSON))
                                   .andExpect(status().isOk())
                                   .andExpect(jsonPath("$.housemates").isArray())
-                                  .andExpect(jsonPath("$.housemates.length()").value(3))
+                                  .andExpect(jsonPath("$.housemates.length()").value(20))
                                   .andExpect(jsonPath("$.housemates[0].userId").value(1))
-                                  .andExpect(jsonPath("$.housemates[0].nickname").value("John Doe"))
-                                  .andExpect(jsonPath("$.nextCursor").value("mock_next_cursor"))
-                                  .andExpect(jsonPath("$.hasNext").value(false))
+                                  .andExpect(jsonPath("$.housemates[0].nickname").value("사용자 1"))
+                                  .andExpect(jsonPath("$.hasNext").value(true))
                                   .andReturn();
 
         String content = result.getResponse().getContentAsString();
         HousemateListResponse response = objectMapper.readValue(content, HousemateListResponse.class);
-        assertEquals(3, response.getHousemates().size());
+        assertEquals(20, response.getHousemates().size());
+    }
+
+    @Test
+    @DisplayName("팔로워 목록 조회 - 닉네임 필터링 테스트")
+    void getFollowersWithNicknameTest() throws Exception {
+        // given
+        String url = "/mock/mates/followers";
+        String nickname = "사용자 1"; // Mock 데이터에 있는 닉네임 패턴 사용
+
+        // when & then
+        mockMvc.perform(get(url)
+                                .param("nickname", nickname)
+                                .param("limit", "20")
+                                .contentType(MediaType.APPLICATION_JSON))
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$.housemates").isArray())
+               .andExpect(jsonPath("$.housemates[0].nickname").value("사용자 1"))
+               .andExpect(jsonPath("$.housemates[0].bio").value("사용자 1의 상태메시지입니다."));
+    }
+
+    @Test
+    @DisplayName("팔로워 목록 조회 - 커서 기반 페이징 테스트")
+    void getFollowersWithCursorTest() throws Exception {
+        // given
+        String url = "/mock/mates/followers";
+        String cursor = "20"; // 20번째 유저 이후의 데이터를 요청
+
+        // when & then
+        mockMvc.perform(get(url)
+                                .param("cursor", cursor)
+                                .param("limit", "20")
+                                .contentType(MediaType.APPLICATION_JSON))
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$.housemates[0].userId").value(21))
+               .andExpect(jsonPath("$.housemates[0].nickname").value("사용자 21"));
     }
 
     @Test
@@ -61,9 +95,8 @@ class MockHouseMateControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON))
                .andExpect(status().isOk())
                .andExpect(jsonPath("$.housemates").isArray())
-               .andExpect(jsonPath("$.housemates.length()").value(3))
-               .andExpect(jsonPath("$.nextCursor").value("mock_next_cursor"))
-               .andExpect(jsonPath("$.hasNext").value(false));
+               .andExpect(jsonPath("$.housemates.length()").value(20))
+               .andExpect(jsonPath("$.hasNext").value(true));
     }
 
     @Test
@@ -88,37 +121,5 @@ class MockHouseMateControllerTest {
         mockMvc.perform(delete(url)
                                 .contentType(MediaType.APPLICATION_JSON))
                .andExpect(status().isNoContent());
-    }
-
-    @Test
-    @DisplayName("팔로워 목록 조회 - 닉네임 필터링 테스트")
-    void getFollowersWithNicknameTest() throws Exception {
-        // given
-        String url = "/mock/mates/followers";
-        String nickname = "John";
-
-        // when & then
-        mockMvc.perform(get(url)
-                                .param("nickname", nickname)
-                                .param("limit", "20")
-                                .contentType(MediaType.APPLICATION_JSON))
-               .andExpect(status().isOk())
-               .andExpect(jsonPath("$.housemates").isArray());
-    }
-
-    @Test
-    @DisplayName("팔로워 목록 조회 - 커서 기반 페이징 테스트")
-    void getFollowersWithCursorTest() throws Exception {
-        // given
-        String url = "/mock/mates/followers";
-        String cursor = "mock_cursor";
-
-        // when & then
-        mockMvc.perform(get(url)
-                                .param("cursor", cursor)
-                                .param("limit", "20")
-                                .contentType(MediaType.APPLICATION_JSON))
-               .andExpect(status().isOk())
-               .andExpect(jsonPath("$.nextCursor").value("mock_next_cursor"));
     }
 }
