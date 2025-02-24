@@ -77,6 +77,10 @@ dependencies {
 
 bootJar {
 	archiveFileName = 'app.jar'
+	manifest {
+		attributes 'Main-Class': 'org.springframework.boot.loader.JarLauncher'
+		attributes 'Start-Class': 'com.roome.RoomeApplication'
+	}
 }
 
 tasks.named('test') {
