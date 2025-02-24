@@ -53,6 +53,6 @@ public class NotificationRepositoryImpl implements NotificationRepositoryCustom 
     }
 
     private BooleanExpression isReadEq(Boolean isRead) {
-        return isRead != null ? notification.read.eq(isRead) : null;
+        return isRead != null ? notification.isRead.eq(isRead) : null;
     }
 }
