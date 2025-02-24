@@ -10,7 +10,7 @@ WORKDIR /app
 # 4. JAR 파일을 컨테이너 내부로 복사
 COPY build/libs/*.jar app.jar
 
-COPY .env .
+COPY ../.env .
 
 # 5. Spring Boot 실행 명령어
 ENTRYPOINT ["java", "-jar", "app.jar"]
