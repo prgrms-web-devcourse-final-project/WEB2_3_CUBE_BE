@@ -7,9 +7,11 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+@Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Entity
+@AllArgsConstructor
+@Builder
 @Table(name = "guestbook")
 public class Guestbook {
 
