@@ -26,8 +26,8 @@ public class GuestbookController {
 
     @PostMapping("/{roomId}")
     public ResponseEntity<GuestbookResponseDto> addGuestbook(
-            @PathVariable("userId") Long roomId,
-            @RequestParam Long userId, // JWT 인증된 사용자 정보
+            @PathVariable Long roomId,
+            @RequestParam("userId") Long userId, // JWT 인증된 사용자 정보
             @Valid @RequestBody GuestbookRequestDto requestDto
     ) {
         return ResponseEntity.ok(guestbookService.addGuestbook(roomId, userId, requestDto));
@@ -35,8 +35,8 @@ public class GuestbookController {
 
     @DeleteMapping("/{guestbookId}")
     public ResponseEntity<Void> deleteGuestbook(
-            @PathVariable("userId") Long guestbookId,
-            @RequestParam Long userId
+            @PathVariable Long guestbookId,
+            @RequestParam("userId") Long userId
     ) {
         guestbookService.deleteGuestbook(guestbookId, userId);
         return ResponseEntity.ok().build();
