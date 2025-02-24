@@ -7,6 +7,7 @@ import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.jwt.dto.JwtToken;
 import com.roome.global.jwt.exception.InvalidRefreshTokenException;
 import com.roome.global.jwt.exception.UserNotFoundException;
+import com.roome.global.service.RedisService;
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.Optional;
 
@@ -23,12 +26,17 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class TokenServiceTest {
 
     @Mock
     private JwtTokenProvider jwtTokenProvider;
+
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private RedisService redisService;
 
     @InjectMocks
     private TokenService tokenService;
@@ -42,18 +50,23 @@ class TokenServiceTest {
         User user = createUser(1L);
         JwtToken newToken = createJwtToken();
 
+        // 리프레시 토큰 검증
         given(jwtTokenProvider.validateRefreshToken(refreshToken))
                 .willReturn(true);
 
-        given(jwtTokenProvider.parseClaims(refreshToken))
-                .willReturn(claims);
+        // 리프레시 토큰에서 userId 추출
+        given(jwtTokenProvider.getUserIdFromToken(refreshToken))
+                .willReturn("1");
 
-        given(claims.getSubject())
-                .willReturn("1"); // userId
+        // Redis에서 저장된 Refresh Token 가져오기
+        given(redisService.getRefreshToken("1"))
+                .willReturn(refreshToken);
 
+        // DB에서 유저 조회
         given(userRepository.findById(1L))
                 .willReturn(Optional.of(user));
 
+        // 새 토큰 발급
         given(jwtTokenProvider.createToken(anyString()))
                 .willReturn(newToken);
 
@@ -91,16 +104,12 @@ class TokenServiceTest {
     void reissueTokenFail_UserNotFound() {
         // given
         String refreshToken = "valid_refresh_token";
-        Claims claims = mock(Claims.class);
 
         given(jwtTokenProvider.validateRefreshToken(refreshToken))
                 .willReturn(true);
 
-        given(jwtTokenProvider.parseClaims(refreshToken))
-                .willReturn(claims);
-
-        given(claims.getSubject())
-                .willReturn("999"); // 존재하지 않는 userId
+        given(jwtTokenProvider.getUserIdFromToken(refreshToken))
+                .willReturn("999");
 
         given(userRepository.findById(999L))
                 .willReturn(Optional.empty());

@@ -4,6 +4,8 @@ import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.jwt.dto.JwtToken;
 import com.roome.global.jwt.exception.InvalidRefreshTokenException;
+import com.roome.global.jwt.exception.InvalidUserIdFormatException;
+import com.roome.global.jwt.exception.MissingUserIdFromTokenException;
 import com.roome.global.jwt.exception.UserNotFoundException;
 import com.roome.global.service.RedisService;
 import lombok.RequiredArgsConstructor;
@@ -45,12 +47,31 @@ public class TokenService {
 
     private User findUserByRefreshToken(String refreshToken) {
         String userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
-        return userRepository.findById(Long.valueOf(userId))
-                .orElseThrow(UserNotFoundException::new);
+
+        if (userId == null || userId.isBlank()) {
+            throw new MissingUserIdFromTokenException();
+        }
+
+        try {
+            return userRepository.findById(Long.valueOf(userId))
+                    .orElseThrow(UserNotFoundException::new);
+        } catch (NumberFormatException e) {
+            throw new InvalidUserIdFormatException();
+        }
     }
 
+
     public Long getUserIdFromToken(String accessToken) {
-        String userId = jwtTokenProvider.getUserIdFromToken(accessToken);
-        return Long.valueOf(userId);
+        String userIdStr = jwtTokenProvider.getUserIdFromToken(accessToken);
+
+        if (userIdStr == null || userIdStr.trim().isEmpty()) {
+            throw new MissingUserIdFromTokenException();
+        }
+
+        try {
+            return Long.valueOf(userIdStr);
+        } catch (NumberFormatException e) {
+            throw new InvalidUserIdFormatException();
+        }
     }
 }
