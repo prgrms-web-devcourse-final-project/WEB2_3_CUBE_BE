@@ -100,18 +100,14 @@ public class GuestbookControllerTest {
     @Test
     void addGuestbook() throws Exception {
         Long roomId = 1L;
-        User user = User.builder().build();
-        setField(user, "id", 1L);
+        Long userId = 1L;
 
         GuestbookRequestDto requestDto = new GuestbookRequestDto();
-        // requestDto는 message 필드만 존재하므로 setter가 없으면 JSON 문자열을 직접 생성할 수도 있음.
-        // 여기서는 테스트 코드 예시로 setter가 있다고 가정하거나, ReflectionTestUtils를 활용할 수 있음.
-        // 예시로 아래와 같이 직접 JSON 문자열로 생성합니다.
         String jsonRequest = "{\"message\":\"Test guestbook message\"}";
 
         GuestbookResponseDto responseDto = GuestbookResponseDto.builder()
                 .guestbookId(1L)
-                .userId(user.getId())
+                .userId(userId)
                 .nickname("John")
                 .profileImage("profile.jpg")
                 .message("Test guestbook message")
@@ -119,23 +115,23 @@ public class GuestbookControllerTest {
                 .relation("FRIEND")
                 .build();
 
-        given(guestbookService.addGuestbook(roomId, user, requestDto))
+        given(guestbookService.addGuestbook(roomId, userId, requestDto))
                 .willReturn(responseDto);
 
         mockMvc.perform(post("/api/guestbooks/{roomId}", roomId)
+                        .param("userId", String.valueOf(userId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest)
-                        .with(csrf())
-                        .with(authentication(new TestingAuthenticationToken(user, null))))
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.guestbookId").value(1))
-                .andExpect(jsonPath("$.userId").value(user.getId()))
+                .andExpect(jsonPath("$.userId").value(userId))
                 .andExpect(jsonPath("$.nickname").value("John"))
                 .andExpect(jsonPath("$.profileImage").value("profile.jpg"))
                 .andExpect(jsonPath("$.message").value("Test guestbook message"))
                 .andExpect(jsonPath("$.relation").value("FRIEND"));
 
-        verify(guestbookService).addGuestbook(roomId, user, requestDto);
+        verify(guestbookService).addGuestbook(roomId, userId, requestDto);
     }
 
     @DisplayName("게스트북 글을 삭제할 수 있다.")
@@ -143,14 +139,13 @@ public class GuestbookControllerTest {
     @Test
     void deleteGuestbook() throws Exception {
         Long guestbookId = 1L;
-        User user = User.builder().build();
-        setField(user, "id", 1L);
+        Long userId = 1L;
 
         mockMvc.perform(delete("/api/guestbooks/{guestbookId}", guestbookId)
-                        .with(csrf())
-                        .with(authentication(new TestingAuthenticationToken(user, null))))
+                        .param("userId", String.valueOf(userId))
+                        .with(csrf()))
                 .andExpect(status().isOk());
 
-        verify(guestbookService).deleteGuestbook(guestbookId, user);
+        verify(guestbookService).deleteGuestbook(guestbookId, userId);
     }
 }
