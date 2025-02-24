@@ -8,7 +8,7 @@ LABEL authors="jhyngu"
 WORKDIR /app
 
 # 4. JAR 파일을 컨테이너 내부로 복사
-COPY *.jar app.jar
+COPY build/libs/*.jar app.jar
 
 COPY .env .
 
