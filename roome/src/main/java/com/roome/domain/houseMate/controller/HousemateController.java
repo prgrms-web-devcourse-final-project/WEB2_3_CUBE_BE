@@ -107,7 +107,7 @@ public class HousemateController {
         validateFollowTarget(principal.getId(), targetId);
 
         housemateService.removeHousemate(principal.getId(), targetId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     // 팔로우 대상 유효성 검증
