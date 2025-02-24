@@ -2,6 +2,7 @@ package com.roome.global.config;
 
 import com.roome.global.jwt.filter.JwtAuthenticationFilter;
 import com.roome.global.jwt.service.JwtTokenProvider;
+import com.roome.global.service.RedisService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -25,7 +26,7 @@ public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, RedisService redisService) throws Exception {
         http
 
                 // CSRF 보호 비활성화
@@ -69,7 +70,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .anyRequest().authenticated());
 
-        http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
+        http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, redisService),
                 UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

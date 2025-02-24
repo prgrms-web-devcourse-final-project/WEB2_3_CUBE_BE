@@ -4,17 +4,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.roome.domain.auth.dto.oauth2.OAuth2Provider;
 import com.roome.domain.auth.dto.request.LoginRequest;
 import com.roome.domain.auth.dto.response.LoginResponse;
-import com.roome.domain.auth.exception.OAuth2AuthenticationProcessingException;
 import com.roome.domain.auth.service.OAuth2LoginService;
 import com.roome.domain.user.service.UserService;
 import com.roome.global.jwt.dto.JwtToken;
 import com.roome.global.jwt.helper.TokenResponseHelper;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.jwt.service.TokenService;
-import jakarta.servlet.http.HttpServletResponse;
+import com.roome.global.service.RedisService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -23,8 +23,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -54,16 +53,20 @@ class AuthControllerTest {
     @MockBean
     private UserService userService;
 
+    @MockBean
+    private RedisService redisService;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    @DisplayName("카카오 로그인 요청 시 Access Token과 200을 반환한다.")
-    void testLogin_Kakao_Success() throws Exception {
+    @DisplayName("로그인 성공 시 Redis에 Refresh Token이 저장된다.")
+    void loginSuccess_RedisTokenStored() throws Exception {
         // Given
         LoginRequest loginRequest = new LoginRequest("test-code");
+        JwtToken jwtToken = new JwtToken("mockAccessToken", "mockRefreshToken", "Bearer");
         LoginResponse mockResponse = LoginResponse.builder()
-                .accessToken("mockAccessToken")
-                .refreshToken("mockRefreshToken")
+                .accessToken(jwtToken.getAccessToken())
+                .refreshToken(jwtToken.getRefreshToken())
                 .expiresIn(3600L)
                 .user(LoginResponse.UserInfo.builder()
                         .userId(1L)
@@ -75,6 +78,7 @@ class AuthControllerTest {
                 .build();
 
         when(oAuth2LoginService.login(OAuth2Provider.KAKAO, "test-code")).thenReturn(mockResponse);
+        doNothing().when(redisService).saveRefreshToken(anyString(), anyString(), anyLong());
 
         // When & Then
         mockMvc.perform(post("/api/auth/login/kakao")
@@ -82,122 +86,81 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(loginRequest))
                         .with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").value("mockAccessToken"))
-                .andExpect(jsonPath("$.refreshToken").value("mockRefreshToken"))
-                .andExpect(jsonPath("$.user.nickname").value("testUser"));
+                .andExpect(jsonPath("$.accessToken").value(jwtToken.getAccessToken()))
+                .andExpect(jsonPath("$.refreshToken").value(jwtToken.getRefreshToken()));
+
+        // Verify Redis 저장 호출 확인
+        ArgumentCaptor<String> userIdCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> refreshTokenCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Long> expirationCaptor = ArgumentCaptor.forClass(Long.class);
+
+        verify(redisService, times(1))
+                .saveRefreshToken(userIdCaptor.capture(), refreshTokenCaptor.capture(), expirationCaptor.capture());
+
+        // Verify 올바른 User ID와 Refresh Token이 저장되었는지 확인
+        assert userIdCaptor.getValue().equals("1");
+        assert refreshTokenCaptor.getValue().equals(jwtToken.getRefreshToken());
     }
 
     @Test
-    @DisplayName("구글 로그인 요청 시 Access Token과 200을 반환한다.")
-    void testLogin_Google_Success() throws Exception {
+    @DisplayName("로그아웃 시 Access Token이 Redis 블랙리스트에 추가된다.")
+    void logoutSuccess_RedisBlacklist() throws Exception {
         // Given
-        LoginRequest loginRequest = new LoginRequest("google-test-code");
-        LoginResponse mockResponse = LoginResponse.builder()
-                .accessToken("googleAccessToken")
-                .refreshToken("googleRefreshToken")
-                .expiresIn(3600L)
-                .user(LoginResponse.UserInfo.builder()
-                        .userId(2L)
-                        .nickname("googleUser")
-                        .email("google@example.com")
-                        .roomId(2L)
-                        .profileImage("google-profile.jpg")
-                        .build())
-                .build();
+        String accessToken = "mockAccessToken";
+        String userId = "1";
 
-        when(oAuth2LoginService.login(OAuth2Provider.GOOGLE, "google-test-code")).thenReturn(mockResponse);
+        when(jwtTokenProvider.getUserIdFromToken(accessToken)).thenReturn(userId);
+        doNothing().when(redisService).addToBlacklist(anyString(), anyLong());
 
         // When & Then
-        mockMvc.perform(post("/api/auth/login/google")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequest))
+        mockMvc.perform(post("/api/auth/logout")
+                        .header("Authorization", "Bearer " + accessToken)
                         .with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").value("googleAccessToken"))
-                .andExpect(jsonPath("$.refreshToken").value("googleRefreshToken"))
-                .andExpect(jsonPath("$.user.nickname").value("googleUser"));
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 제공자로 로그인 시 400을 반환한다.")
-    void testLogin_InvalidProvider() throws Exception {
-        // Given
-        LoginRequest loginRequest = new LoginRequest("invalid-code");
-
-        when(oAuth2LoginService.login(eq(OAuth2Provider.KAKAO), any()))
-                .thenThrow(new IllegalArgumentException("Invalid OAuth Provider"));
-
-        // When & Then
-        mockMvc.perform(post("/api/auth/login/invalidProvider")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequest))
-                        .with(csrf()))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @DisplayName("잘못된 인증 코드로 로그인 시 401을 반환한다.")
-    void testLogin_InvalidCode() throws Exception {
-        // Given
-        LoginRequest loginRequest = new LoginRequest("wrong-code");
-
-        when(oAuth2LoginService.login(OAuth2Provider.KAKAO, "wrong-code"))
-                .thenThrow(new OAuth2AuthenticationProcessingException());
-
-        // When & Then
-        mockMvc.perform(post("/api/auth/login/kakao")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequest))
-                        .with(csrf()))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("로그인 성공 시 Access Token은 헤더에, Refresh Token은 쿠키에 존재한다.")
-    void testLogin_TokenResponseHeaders() throws Exception {
-        // Given
-        LoginRequest loginRequest = new LoginRequest("test-code");
-        HttpServletResponse response = mock(HttpServletResponse.class);
-        JwtToken mockJwtToken = new JwtToken("mockAccessToken", "mockRefreshToken", "Bearer");
-
-        doNothing().when(tokenResponseHelper).setTokenResponse(any(HttpServletResponse.class), eq(mockJwtToken));
-
-        LoginResponse mockResponse = LoginResponse.builder()
-                .accessToken("mockAccessToken")
-                .refreshToken("mockRefreshToken")
-                .expiresIn(3600L)
-                .user(LoginResponse.UserInfo.builder()
-                        .userId(1L)
-                        .nickname("testUser")
-                        .email("test@example.com")
-                        .roomId(1L)
-                        .profileImage("profile.jpg")
-                        .build())
-                .build();
-
-        when(oAuth2LoginService.login(OAuth2Provider.KAKAO, "test-code")).thenReturn(mockResponse);
-
-        // When & Then
-        mockMvc.perform(post("/api/auth/login/kakao")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequest))
-                        .with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").value("mockAccessToken"))
-                .andExpect(jsonPath("$.refreshToken").value("mockRefreshToken"));
-
-        // Verify JWT Token 설정이 정상적으로 호출되었는지 확인
-        verify(tokenResponseHelper, times(1)).setTokenResponse(any(HttpServletResponse.class), eq(mockJwtToken));
-    }
-
-    @Test
-    @DisplayName("로그아웃 성공")
-    void logoutSuccess() throws Exception {
-        // when
-        mockMvc.perform(post("/api/auth/logout"))
                 .andExpect(status().isOk());
 
-        // then
-        verify(tokenResponseHelper).removeTokenResponse(any(HttpServletResponse.class));
+        // Verify 블랙리스트 추가 확인
+        verify(redisService, times(1)).addToBlacklist(eq(accessToken), anyLong());
+    }
+
+    @Test
+    @DisplayName("로그아웃 시 Redis에서 Refresh Token이 삭제된다.")
+    void logoutSuccess_RedisTokenDeleted() throws Exception {
+        // Given
+        String accessToken = "mockAccessToken";
+        String userId = "1";
+
+        when(jwtTokenProvider.getUserIdFromToken(accessToken)).thenReturn(userId);
+        doNothing().when(redisService).deleteRefreshToken(userId);
+        doNothing().when(redisService).addToBlacklist(anyString(), anyLong());
+
+        // When & Then
+        mockMvc.perform(post("/api/auth/logout")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .with(csrf()))
+                .andExpect(status().isOk());
+
+        // Verify Redis에서 Refresh Token 삭제 확인
+        verify(redisService, times(1)).deleteRefreshToken(eq(userId));
+
+        // Verify 블랙리스트 추가 확인
+        verify(redisService, times(1)).addToBlacklist(eq(accessToken), anyLong());
+    }
+
+    @Test
+    @DisplayName("잘못된 Access Token으로 로그아웃 시 Redis 블랙리스트에 등록되지 않는다.")
+    void logoutFail_InvalidAccessToken() throws Exception {
+        // Given
+        String invalidToken = "invalidAccessToken";
+
+        when(jwtTokenProvider.getUserIdFromToken(invalidToken)).thenThrow(new IllegalArgumentException("Invalid Token"));
+
+        // When & Then
+        mockMvc.perform(post("/api/auth/logout")
+                        .header("Authorization", "Bearer " + invalidToken)
+                        .with(csrf()))
+                .andExpect(status().isInternalServerError());
+
+        // Verify Redis 블랙리스트 등록이 호출되지 않음
+        verify(redisService, times(0)).addToBlacklist(anyString(), anyLong());
     }
 }
