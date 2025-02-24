@@ -37,13 +37,13 @@ public class OAuth2UserPrincipal implements OAuth2User, UserDetails {
         return Collections.emptySet();
     }
 
+    public Long getId() {
+        return user.getId();
+    }
+
     @Override
     public String getName() {
         return user.getName();
-    }
-
-    public String getEmail() {
-        return user.getEmail();
     }
 
     @Override
@@ -53,7 +53,7 @@ public class OAuth2UserPrincipal implements OAuth2User, UserDetails {
 
     @Override
     public String getUsername() {
-        return String.valueOf(user.getId());
+        return user.getEmail();         // 이메일을 username으로 사용
     }
 
     @Override

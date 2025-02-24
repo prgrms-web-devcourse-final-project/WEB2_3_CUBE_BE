@@ -14,7 +14,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.Authentication;
 
 import java.util.Optional;
 
@@ -43,7 +42,7 @@ class TokenServiceTest {
         User user = createUser(1L);
         JwtToken newToken = createJwtToken();
 
-        given(jwtTokenProvider.validateToken(refreshToken))
+        given(jwtTokenProvider.validateRefreshToken(refreshToken))
                 .willReturn(true);
 
         given(jwtTokenProvider.parseClaims(refreshToken))
@@ -55,7 +54,7 @@ class TokenServiceTest {
         given(userRepository.findById(1L))
                 .willReturn(Optional.of(user));
 
-        given(jwtTokenProvider.createToken(any(Authentication.class)))
+        given(jwtTokenProvider.createToken(anyString()))
                 .willReturn(newToken);
 
         // when
@@ -65,7 +64,7 @@ class TokenServiceTest {
         assertNotNull(result);
         assertEquals(newToken.getAccessToken(), result.getAccessToken());
         assertEquals(newToken.getRefreshToken(), result.getRefreshToken());
-        verify(jwtTokenProvider).validateToken(refreshToken);
+        verify(jwtTokenProvider).validateRefreshToken(refreshToken);
         verify(userRepository).findById(1L);
     }
 
@@ -75,14 +74,14 @@ class TokenServiceTest {
         // given
         String invalidRefreshToken = "invalid_refresh_token";
 
-        given(jwtTokenProvider.validateToken(invalidRefreshToken))
+        given(jwtTokenProvider.validateRefreshToken(invalidRefreshToken))
                 .willReturn(false);
 
         // when & then
         assertThrows(InvalidRefreshTokenException.class, () ->
                 tokenService.reissueToken(invalidRefreshToken));
 
-        verify(jwtTokenProvider).validateToken(invalidRefreshToken);
+        verify(jwtTokenProvider).validateRefreshToken(invalidRefreshToken);
         verify(jwtTokenProvider, never()).parseClaims(any());
         verify(userRepository, never()).findById(any());
     }
@@ -94,7 +93,7 @@ class TokenServiceTest {
         String refreshToken = "valid_refresh_token";
         Claims claims = mock(Claims.class);
 
-        given(jwtTokenProvider.validateToken(refreshToken))
+        given(jwtTokenProvider.validateRefreshToken(refreshToken))
                 .willReturn(true);
 
         given(jwtTokenProvider.parseClaims(refreshToken))

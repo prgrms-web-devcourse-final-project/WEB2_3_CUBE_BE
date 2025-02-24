@@ -126,7 +126,7 @@ class OAuth2LoginServiceTest {
                     .willReturn(Optional.empty());
             given(userRepository.save(any(User.class)))
                     .willReturn(newUser);
-            given(jwtTokenProvider.createToken(any(Authentication.class)))
+            given(jwtTokenProvider.createToken(anyString()))
                     .willReturn(jwtToken);
             given(roomService.getRoomByUserId(anyLong()))
                     .willReturn(roomResponse);
@@ -151,7 +151,7 @@ class OAuth2LoginServiceTest {
 
             given(userRepository.findByEmail(anyString()))
                     .willReturn(Optional.of(existingUser));
-            given(jwtTokenProvider.createToken(any(Authentication.class)))
+            given(jwtTokenProvider.createToken(anyString()))
                     .willReturn(jwtToken);
             given(roomService.getRoomByUserId(anyLong()))
                     .willReturn(roomResponse);
