@@ -30,13 +30,13 @@ public class HousemateService {
     }
 
     // 팔로잉 목록 조회 (내가 추가한 유저 목록)
-    public HousemateListResponse getFollowingList(Long userId, String cursor, int limit, String nickname) {
+    public HousemateListResponse getFollowingList(Long userId, Long cursor, int limit, String nickname) {
         List<HousemateInfo> housemates = housemateRepository.findByUserId(userId, cursor, limit + 1, nickname);
         return createHousemateListResponse(housemates, limit);
     }
 
     // 팔로워 목록 조회 (나를 추가한 유저 목록)
-    public HousemateListResponse getFollowerList(Long userId, String cursor, int limit, String nickname) {
+    public HousemateListResponse getFollowerList(Long userId, Long cursor, int limit, String nickname) {
         List<HousemateInfo> housemates = housemateRepository.findByAddedId(userId, cursor, limit + 1, nickname);
         return createHousemateListResponse(housemates, limit);
     }

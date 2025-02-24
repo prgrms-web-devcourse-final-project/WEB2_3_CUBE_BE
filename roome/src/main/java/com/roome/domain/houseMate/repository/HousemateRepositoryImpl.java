@@ -18,7 +18,7 @@ public class HousemateRepositoryImpl implements HousemateRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<HousemateInfo> findByUserId(Long userId, String cursor, int limit, String nickname) {
+    public List<HousemateInfo> findByUserId(Long userId, Long cursor, int limit, String nickname) {
         QUser addedUser = new QUser("addedUser");
 
         return queryFactory
@@ -41,7 +41,7 @@ public class HousemateRepositoryImpl implements HousemateRepositoryCustom {
     }
 
     @Override
-    public List<HousemateInfo> findByAddedId(Long addedId, String cursor, int limit, String nickname) {
+    public List<HousemateInfo> findByAddedId(Long addedId, Long cursor, int limit, String nickname) {
         QUser addedUser = new QUser("addedUser");
 
         return queryFactory
@@ -63,8 +63,8 @@ public class HousemateRepositoryImpl implements HousemateRepositoryCustom {
                 .fetch();
     }
 
-    private BooleanExpression cursorGt(String cursor) {
-        return StringUtils.hasText(cursor) ? addedHousemate.id.gt(Long.parseLong(cursor)) : null;
+    private BooleanExpression cursorGt(Long cursor) {
+        return cursor != null ? addedHousemate.id.gt(cursor) : null;
     }
 
     private BooleanExpression nicknameContains(String nickname, QUser targetUser) {
