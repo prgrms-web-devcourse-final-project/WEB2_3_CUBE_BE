@@ -14,7 +14,7 @@ import java.util.List;
 
 @Tag(name = "Mock - MyCd", description = "CD 등록/조회/삭제")
 @RestController
-@RequestMapping("/mock/mycd")
+@RequestMapping("/mock/my-cd")
 public class MockMyCdController {
 
   @Operation(summary = "Mock - CD 추가", description = "사용자의 MyCd 목록에 CD를 추가")

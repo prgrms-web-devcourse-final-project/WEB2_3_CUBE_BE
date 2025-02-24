@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/mycd/{myCdId}/template")
+@RequestMapping("/api/my-cd/{myCdId}/template")
 @RequiredArgsConstructor
 public class CdTemplateController {
 
