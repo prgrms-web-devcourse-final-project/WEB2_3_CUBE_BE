@@ -58,7 +58,7 @@ class WithdrawControllerTest {
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(authController).build();
 
-        lenient().when(jwtTokenProvider.validateToken(anyString())).thenReturn(true);
+        lenient().when(jwtTokenProvider.validateAccessToken(anyString())).thenReturn(true);
         lenient().when(tokenService.getUserIdFromToken(anyString())).thenReturn(1L);
     }
 
@@ -66,7 +66,7 @@ class WithdrawControllerTest {
     @DisplayName("회원 탈퇴 - 정상 요청")
     void withdraw_Success() throws Exception {
         // Given
-        when(jwtTokenProvider.validateToken(validAccessToken)).thenReturn(true);
+        when(jwtTokenProvider.validateAccessToken(validAccessToken)).thenReturn(true);
         when(tokenService.getUserIdFromToken(validAccessToken)).thenReturn(1L);
         doNothing().when(userService).deleteUser(1L);
 
@@ -81,7 +81,7 @@ class WithdrawControllerTest {
     @DisplayName("회원 탈퇴 - 유효하지 않은 액세스 토큰 요청")
     void withdraw_InvalidAccessToken() throws Exception {
         // Given
-        when(jwtTokenProvider.validateToken(validAccessToken)).thenReturn(false);
+        when(jwtTokenProvider.validateAccessToken(validAccessToken)).thenReturn(false);
 
         // When & Then
         mockMvc.perform(delete("/api/auth/withdraw")
@@ -96,8 +96,8 @@ class WithdrawControllerTest {
         // Given
         JwtToken newToken = new JwtToken("newAccessToken", validRefreshToken, "Bearer");
 
-        when(jwtTokenProvider.validateToken(expiredAccessToken)).thenReturn(false);
-        when(jwtTokenProvider.validateToken(validRefreshToken)).thenReturn(true);
+        when(jwtTokenProvider.validateAccessToken(expiredAccessToken)).thenReturn(false);
+        when(jwtTokenProvider.validateRefreshToken(validRefreshToken)).thenReturn(true);
         when(tokenService.reissueToken(validRefreshToken)).thenReturn(newToken);
         doReturn(1L).when(tokenService).getUserIdFromToken(anyString());
 
@@ -121,8 +121,8 @@ class WithdrawControllerTest {
     @DisplayName("회원 탈퇴 - 유효하지 않은 리프레시 토큰 사용 시 실패")
     void withdraw_InvalidRefreshToken() throws Exception {
         // Given
-        when(jwtTokenProvider.validateToken(expiredAccessToken)).thenReturn(false);
-        when(jwtTokenProvider.validateToken(invalidRefreshToken)).thenReturn(false);
+        when(jwtTokenProvider.validateAccessToken(expiredAccessToken)).thenReturn(false);
+        when(jwtTokenProvider.validateRefreshToken(invalidRefreshToken)).thenReturn(false);
 
         // When & Then
         mockMvc.perform(delete("/api/auth/withdraw")
@@ -138,7 +138,7 @@ class WithdrawControllerTest {
     @DisplayName("회원 탈퇴 - 존재하지 않는 사용자 ID 요청 시 실패")
     void withdraw_UserNotFound() throws Exception {
         // Given
-        when(jwtTokenProvider.validateToken(validAccessToken)).thenReturn(true);
+        when(jwtTokenProvider.validateAccessToken(validAccessToken)).thenReturn(true);
         when(tokenService.getUserIdFromToken(validAccessToken)).thenReturn(99L); // 존재하지 않는 ID
         doThrow(new BusinessException(ErrorCode.USER_NOT_FOUND)).when(userService).deleteUser(99L);
 
@@ -153,7 +153,7 @@ class WithdrawControllerTest {
     @DisplayName("회원 탈퇴 - 탈퇴 시 토큰 삭제 확인")
     void withdraw_TokenRemoval() throws Exception {
         // Given
-        when(jwtTokenProvider.validateToken(validAccessToken)).thenReturn(true);
+        when(jwtTokenProvider.validateAccessToken(validAccessToken)).thenReturn(true);
         when(tokenService.getUserIdFromToken(validAccessToken)).thenReturn(1L);
         doNothing().when(userService).deleteUser(1L);
         doNothing().when(tokenResponseHelper).removeTokenResponse(any(HttpServletResponse.class));

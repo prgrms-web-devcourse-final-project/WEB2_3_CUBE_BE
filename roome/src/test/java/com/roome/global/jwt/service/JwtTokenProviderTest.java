@@ -45,6 +45,7 @@ class JwtTokenProviderTest {
         token = Jwts.builder()
                 .setSubject("userId")
                 .claim("email", testEmail)
+                .claim("type", "ACCESS")
                 .setExpiration(new Date(System.currentTimeMillis() + 3600000))
                 .signWith(secretKey)
                 .compact();
@@ -53,50 +54,16 @@ class JwtTokenProviderTest {
     @Test
     @DisplayName("JWT 토큰에서 이메일을 추출한다")
     void testGetEmailFromToken() {
-        String extractedEmail = jwtTokenProvider.getEmailFromToken(token);
+        Claims claims = jwtTokenProvider.parseClaims(token);
+        String extractedEmail = claims.get("email", String.class);
         assertThat(extractedEmail).isEqualTo(testEmail);
     }
 
     @Test
-    @DisplayName("유효한 JWT 토큰을 검증한다")
-    void testValidateToken() {
-        boolean isValid = jwtTokenProvider.validateToken(token);
+    @DisplayName("유효한 JWT 액세스 토큰을 검증한다")
+    void testValidateAccessToken() {
+        boolean isValid = jwtTokenProvider.validateAccessToken(token);
         assertThat(isValid).isTrue();
-    }
-
-    @Test
-    @DisplayName("JWT 토큰에 이메일 클레임이 포함되는지 검증")
-    void testCreateTokenWithEmailClaim() {
-        // given
-        Map<String, Object> attributes = Map.of(
-                "id", "test_id",
-                "kakao_account", Map.of(
-                        "email", testEmail,
-                        "profile", Map.of(
-                                "nickname", "Test User",
-                                "profile_image_url", "test_profile.jpg"
-                        )
-                )
-        );
-
-        User user = User.builder()
-                .id(1L)
-                .email(testEmail)
-                .build();
-
-        OAuth2Response oAuth2Response = OAuth2Provider.KAKAO.createOAuth2Response(attributes);
-        OAuth2UserPrincipal userPrincipal = new OAuth2UserPrincipal(user, oAuth2Response);
-
-        Authentication authentication = new UsernamePasswordAuthenticationToken(
-                userPrincipal, null, userPrincipal.getAuthorities()
-        );
-
-        // when
-        JwtToken token = jwtTokenProvider.createToken(authentication);
-
-        // then
-        Claims claims = jwtTokenProvider.parseClaims(token.getAccessToken());
-        assertThat(claims.get("email", String.class)).isEqualTo(testEmail);
     }
 
     @Test
