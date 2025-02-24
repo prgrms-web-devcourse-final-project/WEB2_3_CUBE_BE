@@ -66,4 +66,5 @@ jobs:
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/roome:latest
             docker stop roome || true
             docker rm roome || true
-            docker run -d --name roome --force-recreate -p 8080:8080 ${{ secrets.DOCKER_HUB_USERNAME }}/roome:latest
+            docker system prune -f  # 사용하지 않는 컨테이너, 이미지 등을 정리
+            docker run -d --name roome -p 8080:8080 ${{ secrets.DOCKER_HUB_USERNAME }}/roome:latest
