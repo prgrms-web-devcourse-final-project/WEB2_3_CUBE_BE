@@ -87,6 +87,19 @@ public class JwtTokenProvider {
         }
     }
 
+    // 액세스 토큰에서 유저 ID 추출
+    public String getUserIdFromToken(String accessToken) {
+        return parseClaims(accessToken).getSubject();
+    }
+
+    public long getRefreshTokenExpirationTime() {
+        return REFRESH_TOKEN_EXPIRE_TIME;
+    }
+
+    public long getAccessTokenExpirationTime() {
+        return ACCESS_TOKEN_EXPIRE_TIME;
+    }
+
     // Claims 파싱
     public Claims parseClaims(String accessToken) {
         try {

@@ -1,6 +1,7 @@
 package com.roome.global.jwt.filter;
 
 import com.roome.global.jwt.service.JwtTokenProvider;
+import com.roome.global.service.RedisService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +20,7 @@ import java.util.Collections;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final RedisService redisService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -26,11 +28,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = resolveToken(request);
 
-        // 유효한 토큰이면 인증 정보 설정
-        if (token != null && jwtTokenProvider.validateAccessToken(token)) {
-            String userId = jwtTokenProvider.parseClaims(token).getSubject();
-            Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+        if (token != null) {
+            // 블랙리스트 체크
+            if (redisService.isBlacklisted(token)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            // 유효한 토큰이면 인증 정보 설정
+            if (token != null && jwtTokenProvider.validateAccessToken(token)) {
+                String userId = jwtTokenProvider.parseClaims(token).getSubject();
+                Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
         }
 
         filterChain.doFilter(request, response);
