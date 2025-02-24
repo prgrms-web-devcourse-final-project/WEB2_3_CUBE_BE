@@ -28,10 +28,10 @@ jobs:
           echo "NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}" >> .env
           echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}" >> .env
           echo "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}" >> .env
-#          echo "AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }}" >> .env
-#          echo "AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}" >> .env
-#          echo "AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }}" >> .env
-#          echo "CLOUD_AWS_ENDPOINT_URI=${{ secrets.CLOUD_AWS_ENDPOINT_URI }}" >> .env
+      #          echo "AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }}" >> .env
+      #          echo "AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}" >> .env
+      #          echo "AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }}" >> .env
+      #          echo "CLOUD_AWS_ENDPOINT_URI=${{ secrets.CLOUD_AWS_ENDPOINT_URI }}" >> .env
 
       - name: Grant execute permission for gradlew
         run: |
@@ -66,4 +66,4 @@ jobs:
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/roome:latest
             docker stop roome || true
             docker rm roome || true
-            docker run -d --name roome -p 8080:8080 ${{ secrets.DOCKER_HUB_USERNAME }}/roome:latest
+            docker run -d --name roome --force-recreate -p 8080:8080 ${{ secrets.DOCKER_HUB_USERNAME }}/roome:latest
