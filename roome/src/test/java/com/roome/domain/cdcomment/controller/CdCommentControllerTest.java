@@ -48,7 +48,7 @@ class CdCommentControllerTest {
     BDDMockito.given(cdCommentService.addComment(any(Long.class), any(Long.class), any(CdCommentCreateRequest.class)))
         .willReturn(response);
 
-    mockMvc.perform(post("/api/mycd/1/comment")
+    mockMvc.perform(post("/api/my-cd/1/comment")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request))
             .with(csrf()))
@@ -68,7 +68,7 @@ class CdCommentControllerTest {
     BDDMockito.given(cdCommentService.getComments(eq(1L), any(Integer.class), any(Integer.class)))
         .willReturn(response);
 
-    mockMvc.perform(get("/api/mycd/1/comments")
+    mockMvc.perform(get("/api/my-cd/1/comments")
             .param("page", "0")
             .param("size", "5")
             .accept(MediaType.APPLICATION_JSON))
@@ -87,7 +87,7 @@ class CdCommentControllerTest {
     BDDMockito.given(cdCommentService.searchComments(eq(1L), eq("최고"), any(Integer.class), any(Integer.class)))
         .willReturn(response);
 
-    mockMvc.perform(get("/api/mycd/1/comments/search")
+    mockMvc.perform(get("/api/my-cd/1/comments/search")
             .param("query", "최고")
             .param("page", "0")
             .param("size", "5")
@@ -100,7 +100,7 @@ class CdCommentControllerTest {
   @WithMockUser
   @Test
   void deleteComment_Success() throws Exception {
-    mockMvc.perform(delete("/api/mycd/comments/1")
+    mockMvc.perform(delete("/api/my-cd/comments/1")
             .with(csrf()))
         .andExpect(status().isNoContent());
 
@@ -111,7 +111,7 @@ class CdCommentControllerTest {
   @WithMockUser
   @Test
   void deleteMultipleComments_Success() throws Exception {
-    mockMvc.perform(delete("/api/mycd/comments")
+    mockMvc.perform(delete("/api/my-cd/comments")
             .param("commentIds", "1", "2", "3")
             .with(csrf()))
         .andExpect(status().isNoContent());
