@@ -23,9 +23,11 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class JwtTokenProvider {
 
-    private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60;
-    private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 14; // 14일
+    @Value("${jwt.access-token.expiration-time:3600000}")
+    private long ACCESS_TOKEN_EXPIRE_TIME; // 1시간
 
+    @Value("${jwt.refresh-token.expiration-time:1209600000}")
+    private long REFRESH_TOKEN_EXPIRE_TIME; // 14일
     private SecretKey secretKey;
     private final RedisService redisService;
 
@@ -108,9 +110,15 @@ public class JwtTokenProvider {
 
     // 액세스 토큰의 남은 유효시간 계산
     public long getTokenTimeToLive(String accessToken) {
-        Claims claims = parseClaims(accessToken);
-        Date expiration = claims.getExpiration();
-        return expiration.getTime() - System.currentTimeMillis();
+        try {
+            Claims claims = parseClaims(accessToken);
+            Date expiration = claims.getExpiration();
+            long timeToLive = expiration.getTime() - System.currentTimeMillis();
+            // 음수가 되지 않도록
+            return Math.max(0, timeToLive);
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     // Claims 파싱
