@@ -1,6 +1,7 @@
 package com.roome.domain.cd.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import lombok.*;
 
@@ -27,6 +28,9 @@ public class Cd {
   private String album;
 
   @Column(nullable = false)
+  private LocalDate releaseDate;
+
+  @Column(nullable = false)
   private String coverUrl;
 
   @Column(nullable = false)
@@ -38,12 +42,13 @@ public class Cd {
   @Builder.Default
   private List<CdGenre> cdGenres = new ArrayList<>();
 
-  public static Cd create(String title, String artist, String album, String coverUrl,
+  public static Cd create(String title, String artist, String album, LocalDate releaseDate, String coverUrl,
       String youtubeUrl, long duration) {
     return Cd.builder()
         .title(title)
         .artist(artist)
         .album(album)
+        .releaseDate(releaseDate)
         .coverUrl(coverUrl)
         .youtubeUrl(youtubeUrl)
         .duration(duration)

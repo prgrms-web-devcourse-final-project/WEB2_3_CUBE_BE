@@ -1,5 +1,6 @@
 package com.roome.domain.user.entity;
 
+import com.roome.domain.point.entity.Point;
 import com.roome.global.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -59,6 +60,9 @@ public class User extends BaseTimeEntity {
     @Column(length = 1000)
     private String refreshToken;
 
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Point point;
+
     public void updateLastLogin() {
         if (this.lastLogin == null) {  // 에러 처리
             this.lastLogin = LocalDateTime.now();
@@ -113,6 +117,10 @@ public class User extends BaseTimeEntity {
         }
 
         LocalDateTime midnight = now.with(LocalTime.MIDNIGHT);
-        return lastLogin.isEqual(midnight) || lastLogin.isAfter(midnight);
+        return midnight.isEqual(lastLogin) || midnight.isAfter(lastLogin);
+    }
+
+    public void accumulatePoints(int amount) {
+        this.point.addPoints(amount);
     }
 }

@@ -8,6 +8,7 @@ import com.roome.domain.mycd.exception.MyCdAlreadyExistsException;
 import com.roome.domain.mycd.exception.MyCdNotFoundException;
 import com.roome.domain.mycd.service.MyCdService;
 import com.roome.global.exception.ErrorCode;
+import java.time.LocalDate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.BDDMockito;
@@ -155,6 +156,7 @@ class MyCdControllerTest {
   private MyCdCreateRequest createMyCdCreateRequest() {
     return new MyCdCreateRequest(
         "Palette", "IU", "Palette",
+        LocalDate.of(2019, 11, 1),
         List.of("K-Pop", "Ballad"), "https://example.com/image1.jpg",
         "https://youtube.com/watch?v=asdf5678", 215
     );
@@ -162,7 +164,7 @@ class MyCdControllerTest {
 
   private MyCdResponse createMyCdResponse(Long myCdId, MyCdCreateRequest request) {
     return new MyCdResponse(
-        myCdId, 1L, request.getTitle(), request.getArtist(), request.getAlbum(),
+        myCdId, request.getTitle(), request.getArtist(), request.getAlbum(), request.getReleaseDate(),
         request.getGenres(), request.getCoverUrl(), request.getYoutubeUrl(), request.getDuration()
     );
   }
