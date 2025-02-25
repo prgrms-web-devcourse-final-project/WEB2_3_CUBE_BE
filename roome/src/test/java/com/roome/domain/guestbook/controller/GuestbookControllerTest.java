@@ -1,6 +1,9 @@
 package com.roome.domain.guestbook.controller;
 
-import com.roome.domain.guestbook.dto.*;
+import com.roome.domain.guestbook.dto.GuestbookListResponseDto;
+import com.roome.domain.guestbook.dto.GuestbookRequestDto;
+import com.roome.domain.guestbook.dto.GuestbookResponseDto;
+import com.roome.domain.guestbook.dto.PaginationDto;
 import com.roome.domain.guestbook.service.GuestbookService;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;

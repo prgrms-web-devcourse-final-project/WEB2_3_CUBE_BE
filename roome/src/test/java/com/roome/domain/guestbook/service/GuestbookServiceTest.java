@@ -1,19 +1,15 @@
 package com.roome.domain.guestbook.service;
 
-import com.roome.domain.guestbook.dto.GuestbookListResponseDto;
-import com.roome.domain.guestbook.dto.GuestbookResponseDto;
 import com.roome.domain.guestbook.dto.GuestbookRequestDto;
-import com.roome.domain.guestbook.dto.PaginationDto;
 import com.roome.domain.guestbook.entity.Guestbook;
 import com.roome.domain.guestbook.entity.RelationType;
 import com.roome.domain.guestbook.repository.GuestbookRepository;
 import com.roome.domain.room.entity.Room;
-import com.roome.domain.user.entity.User;
 import com.roome.domain.room.repository.RoomRepository;
+import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
