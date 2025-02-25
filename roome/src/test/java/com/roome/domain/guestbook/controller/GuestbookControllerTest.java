@@ -1,147 +1,163 @@
 package com.roome.domain.guestbook.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.roome.domain.guestbook.dto.GuestbookListResponseDto;
-import com.roome.domain.guestbook.dto.GuestbookRequestDto;
-import com.roome.domain.guestbook.dto.GuestbookResponseDto;
-import com.roome.domain.guestbook.dto.PaginationDto;
+import com.roome.domain.guestbook.dto.*;
 import com.roome.domain.guestbook.service.GuestbookService;
+import com.roome.global.exception.BusinessException;
+import com.roome.global.exception.ErrorCode;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Collections;
 
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-@ActiveProfiles("test")
-@WebMvcTest(controllers = com.roome.domain.guestbook.controller.GuestbookController.class)
+
+
+@ExtendWith(MockitoExtension.class)
 public class GuestbookControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockitoBean
+    @Mock
     private GuestbookService guestbookService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @InjectMocks
+    private GuestbookController guestbookController;
 
-    @DisplayName("방 아이디로 게스트북 리스트를 조회할 수 있다.")
-    @WithMockUser
-    @Test
-    void getGuestbook() throws Exception {
-        Long roomId = 1L;
-        int page = 0;
-        int size = 10;
+    private Long roomId = 1L;
+    private Long userId = 1L;
+    private Long guestbookId = 1L;
 
-        GuestbookResponseDto entry = GuestbookResponseDto.builder()
-                .guestbookId(1L)
-                .userId(1L)
-                .nickname("John")
-                .profileImage("profile.jpg")
-                .message("Hello guestbook!")
-                .createdAt(LocalDateTime.now())
-                .relation("FRIEND")
-                .build();
-
-        PaginationDto pagination = PaginationDto.builder()
-                .page(page)
-                .size(size)
-                .totalPages(1)
-                .build();
-
-        GuestbookListResponseDto responseDto = GuestbookListResponseDto.builder()
-                .roomId(roomId)
-                .guestbook(List.of(entry))
-                .pagination(pagination)
-                .build();
-
-        given(guestbookService.getGuestbook(roomId, page, size)).willReturn(responseDto);
-
-        mockMvc.perform(get("/api/guestbooks/{roomId}", roomId)
-                        .param("page", String.valueOf(page))
-                        .param("size", String.valueOf(size))
-                        .with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.roomId").value(roomId))
-                // guestbook 리스트의 첫 번째 엔트리 검증
-                .andExpect(jsonPath("$.guestbook[0].guestbookId").value(1))
-                .andExpect(jsonPath("$.guestbook[0].nickname").value("John"))
-                .andExpect(jsonPath("$.guestbook[0].profileImage").value("profile.jpg"))
-                .andExpect(jsonPath("$.guestbook[0].message").value("Hello guestbook!"))
-                .andExpect(jsonPath("$.guestbook[0].relation").value("FRIEND"))
-                // Pagination 검증
-                .andExpect(jsonPath("$.pagination.page").value(page))
-                .andExpect(jsonPath("$.pagination.size").value(size))
-                .andExpect(jsonPath("$.pagination.totalPages").value(1));
+    @BeforeEach
+    public void setUp() {
+        // 초기화 작업, 예를 들어 데이터베이스나 서비스 객체 등이 필요할 경우
     }
 
-    @DisplayName("게스트북에 글을 추가할 수 있다.")
-    @WithMockUser
     @Test
-    void addGuestbook() throws Exception {
-        Long roomId = 1L;
+    @DisplayName("방명록을 조회할 수 있다")
+    public void testGetGuestbook_Success() {
+        // given
+        GuestbookListResponseDto guestbookListResponseDto = new GuestbookListResponseDto(
+                roomId, Collections.singletonList(new GuestbookResponseDto(guestbookId, userId, "User", "profile.jpg", "Great room!", LocalDateTime.now(), "하우스메이트")),
+                new PaginationDto(1, 10, 1)
+        );
+        when(guestbookService.getGuestbook(roomId, 1, 10)).thenReturn(guestbookListResponseDto);
+
+        // when
+        ResponseEntity<GuestbookListResponseDto> response = guestbookController.getGuestbook(roomId, 1, 10);
+
+        // then
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(roomId, response.getBody().getRoomId());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 방에 대한 방명록 조회 시 예외가 발생한다")
+    public void testGetGuestbook_RoomNotFound() {
+        // given
+        when(guestbookService.getGuestbook(roomId, 1, 10)).thenThrow(new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+
+        // when
+        BusinessException exception = assertThrows(BusinessException.class, () -> guestbookController.getGuestbook(roomId, 1, 10));
+
+        // then
+        assertEquals(ErrorCode.ROOM_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("방명록을 추가할 수 있다")
+    public void testAddGuestbook_Success() {
+        // given
+        GuestbookRequestDto requestDto = new GuestbookRequestDto("Nice place!");
+        GuestbookResponseDto guestbookResponseDto = new GuestbookResponseDto(guestbookId, userId, "User", "profile.jpg", "Nice place!", LocalDateTime.now(), "하우스메이트");
+        when(guestbookService.addGuestbook(roomId, userId, requestDto)).thenReturn(guestbookResponseDto);
+
+        // when
+        ResponseEntity<GuestbookResponseDto> response = guestbookController.addGuestbook(roomId, userId, requestDto);
+
+        // then
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals("Nice place!", response.getBody().getMessage());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 방에 방명록을 추가할 수 없다")
+    public void testAddGuestbook_RoomNotFound() {
+        // given
+        GuestbookRequestDto requestDto = new GuestbookRequestDto("Nice place!");
+        when(guestbookService.addGuestbook(roomId, userId, requestDto)).thenThrow(new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+
+        // when
+        BusinessException exception = assertThrows(BusinessException.class, () -> guestbookController.addGuestbook(roomId, userId, requestDto));
+
+        // then
+        assertEquals(ErrorCode.ROOM_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자에 대해 방명록을 추가할 수 없다")
+    public void testAddGuestbook_UserNotFound() {
+        // given
+        GuestbookRequestDto requestDto = new GuestbookRequestDto("Nice place!");
+        when(guestbookService.addGuestbook(roomId, 999L, requestDto)).thenThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // when
+        BusinessException exception = assertThrows(BusinessException.class, () -> guestbookController.addGuestbook(roomId, 999L, requestDto));
+
+        // then
+        assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("방명록을 삭제할 수 있다")
+    public void testDeleteGuestbook_Success() {
+        // when
+        ResponseEntity<Void> response = guestbookController.deleteGuestbook(guestbookId, userId);
+
+        // then
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCodeValue());
+        verify(guestbookService, times(1)).deleteGuestbook(guestbookId, userId);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 방명록을 삭제할 수 없다")
+    public void testDeleteGuestbook_GuestbookNotFound() {
+        Long guestbookId = 999L;
         Long userId = 1L;
 
-        GuestbookRequestDto requestDto = new GuestbookRequestDto();
-        String jsonRequest = "{\"message\":\"Test guestbook message\"}";
+        // given
+        doThrow(new BusinessException(ErrorCode.GUESTBOOK_NOT_FOUND))
+                .when(guestbookService).deleteGuestbook(guestbookId, userId);
 
-        GuestbookResponseDto responseDto = GuestbookResponseDto.builder()
-                .guestbookId(1L)
-                .userId(userId)
-                .nickname("John")
-                .profileImage("profile.jpg")
-                .message("Test guestbook message")
-                .createdAt(LocalDateTime.now())
-                .relation("FRIEND")
-                .build();
+        // when
+        BusinessException exception = assertThrows(BusinessException.class, () -> guestbookController.deleteGuestbook(guestbookId, userId));
 
-        given(guestbookService.addGuestbook(roomId, userId, requestDto))
-                .willReturn(responseDto);
-
-        mockMvc.perform(post("/api/guestbooks/{roomId}", roomId)
-                        .param("userId", String.valueOf(userId))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonRequest)
-                        .with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.guestbookId").value(1))
-                .andExpect(jsonPath("$.userId").value(userId))
-                .andExpect(jsonPath("$.nickname").value("John"))
-                .andExpect(jsonPath("$.profileImage").value("profile.jpg"))
-                .andExpect(jsonPath("$.message").value("Test guestbook message"))
-                .andExpect(jsonPath("$.relation").value("FRIEND"));
-
-        verify(guestbookService).addGuestbook(roomId, userId, requestDto);
+        // then
+        assertEquals(ErrorCode.GUESTBOOK_NOT_FOUND, exception.getErrorCode());
     }
 
-    @DisplayName("게스트북 글을 삭제할 수 있다.")
-    @WithMockUser
+
     @Test
-    void deleteGuestbook() throws Exception {
-        Long guestbookId = 1L;
-        Long userId = 1L;
+    @DisplayName("사용자가 권한이 없으면 방명록을 삭제할 수 없다")
+    public void testDeleteGuestbook_UserNotAuthorized() {
+        // given
+        doThrow(new BusinessException(ErrorCode.GUESTBOOK_DELETE_FORBIDDEN))
+                .when(guestbookService).deleteGuestbook(guestbookId, userId);
 
-        mockMvc.perform(delete("/api/guestbooks/{guestbookId}", guestbookId)
-                        .param("userId", String.valueOf(userId))
-                        .with(csrf()))
-                .andExpect(status().isOk());
+        // when
+        BusinessException exception = assertThrows(BusinessException.class, () -> guestbookController.deleteGuestbook(guestbookId, userId));
 
-        verify(guestbookService).deleteGuestbook(guestbookId, userId);
+        // then
+        assertEquals(ErrorCode.GUESTBOOK_DELETE_FORBIDDEN, exception.getErrorCode());
     }
+
 }
