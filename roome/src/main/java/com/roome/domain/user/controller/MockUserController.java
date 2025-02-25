@@ -82,16 +82,11 @@ public class MockUserController {
 
     @Operation(summary = "프로필 이미지 삭제")
     @DeleteMapping("/profile/image")
-    public ResponseEntity<ImageDeleteResponseDto> deleteMockProfileImage(@AuthenticationPrincipal OAuth2UserPrincipal principal, @RequestParam("imageUrl") String imageUrl) {
+    public ResponseEntity<?> deleteMockProfileImage(@AuthenticationPrincipal OAuth2UserPrincipal principal, @RequestParam("imageUrl") String imageUrl) {
         log.info("[Mock 프로필 이미지 삭제] URL: {}", imageUrl);
 
-        // 실제 삭제 로직 없이 성공 응답 반환
-        ImageDeleteResponseDto response = ImageDeleteResponseDto
-                .builder()
-                .imageUrl(imageUrl)
-                .build();
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(imageUrl);
     }
 
     @Operation(summary = "추천 유저 조회")
