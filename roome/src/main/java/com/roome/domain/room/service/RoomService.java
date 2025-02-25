@@ -111,7 +111,13 @@ public class RoomService {
     public RoomResponseDto getOrCreateRoomByUserId(Long userId) {
         return roomRepository.findByUserId(userId)
                 .map(this::buildRoomResponse)
-                .orElseGet(() -> createRoom(userId));
+                .orElseGet(() -> {
+                    try {
+                        return createRoom(userId);
+                    } catch (BusinessException e) {
+                        throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+                    }
+                });
     }
 
     @Transactional
