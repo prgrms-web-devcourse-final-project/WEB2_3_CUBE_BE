@@ -11,6 +11,7 @@ import com.roome.global.service.RedisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -21,8 +22,11 @@ public class TokenService {
     private final UserRepository userRepository;
     private final RedisService redisService;
 
+    @Transactional
     public JwtToken reissueToken(String refreshToken) {
+        // 리프레시 토큰 유효성 검증 (서명, 만료 등..)
         if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
+            log.warn("유효하지 않은 리프레시 토큰");
             throw new InvalidRefreshTokenException();
         }
 
@@ -32,6 +36,7 @@ public class TokenService {
         // Redis에 저장된 Refresh Token과 비교
         String savedRefreshToken = redisService.getRefreshToken(userId);
         if (!refreshToken.equals(savedRefreshToken)) {
+            log.warn("Redis에 저장된 토큰과 일치하지 않음");
             throw new InvalidRefreshTokenException();
         }
 
@@ -60,7 +65,7 @@ public class TokenService {
         }
     }
 
-
+    @Transactional(readOnly = true)
     public Long getUserIdFromToken(String accessToken) {
         String userIdStr = jwtTokenProvider.getUserIdFromToken(accessToken);
 
