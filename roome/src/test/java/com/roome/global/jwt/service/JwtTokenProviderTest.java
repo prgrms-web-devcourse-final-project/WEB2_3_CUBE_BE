@@ -1,11 +1,6 @@
 package com.roome.global.jwt.service;
 
-import com.roome.domain.auth.security.OAuth2UserPrincipal;
-import com.roome.domain.auth.dto.oauth2.OAuth2Response;
-import com.roome.domain.auth.dto.oauth2.OAuth2Provider;
-import com.roome.domain.user.entity.User;
-import com.roome.global.jwt.dto.JwtToken;
-import io.jsonwebtoken.Claims;
+import com.roome.global.service.RedisService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,19 +8,22 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class JwtTokenProviderTest {
+
+    @Mock
+    private RedisService redisService;
 
     @InjectMocks
     private JwtTokenProvider jwtTokenProvider;
@@ -52,43 +50,35 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("JWT 토큰에서 이메일을 추출한다")
-    void testGetEmailFromToken() {
-        Claims claims = jwtTokenProvider.parseClaims(token);
-        String extractedEmail = claims.get("email", String.class);
-        assertThat(extractedEmail).isEqualTo(testEmail);
-    }
-
-    @Test
     @DisplayName("유효한 JWT 액세스 토큰을 검증한다")
     void testValidateAccessToken() {
+        when(redisService.isBlacklisted(anyString())).thenReturn(false);
+
         boolean isValid = jwtTokenProvider.validateAccessToken(token);
         assertThat(isValid).isTrue();
     }
 
     @Test
-    @DisplayName("OAuth2UserPrincipal에서 이메일 추출")
-    void testGetEmailFromOAuth2UserPrincipal() {
-        Map<String, Object> attributes = Map.of(
-                "id", "test_id",
-                "kakao_account", Map.of(
-                        "email", testEmail,
-                        "profile", Map.of(
-                                "nickname", "Test User",
-                                "profile_image_url", "test_profile.jpg"
-                        )
-                )
-        );
+    @DisplayName("블랙리스트에 등록된 토큰은 유효하지 않음")
+    void testBlacklistedTokenIsInvalid() {
+        // 블랙리스트에 등록된 것으로 설정
+        when(redisService.isBlacklisted(token)).thenReturn(true);
 
-        User user = User.builder()
-                .id(1L)
-                .email(testEmail)
-                .build();
+        boolean isValid = jwtTokenProvider.validateAccessToken(token);
+        assertThat(isValid).isFalse();
+    }
 
-        OAuth2Response oAuth2Response = OAuth2Provider.KAKAO.createOAuth2Response(attributes);
-        OAuth2UserPrincipal userPrincipal = new OAuth2UserPrincipal(user, oAuth2Response);
+    @Test
+    @DisplayName("만료된 토큰의 남은 시간은 0이다")
+    void testExpiredTokenTimeToLiveIsZero() {
+        String expiredToken = Jwts.builder()
+                .setSubject("userId")
+                .claim("type", "ACCESS")
+                .setExpiration(new Date(System.currentTimeMillis() - 1000)) // 이미 만료됨
+                .signWith(secretKey)
+                .compact();
 
-        String email = userPrincipal.getUsername();
-        assertThat(email).isEqualTo(testEmail);
+        long timeToLive = jwtTokenProvider.getTokenTimeToLive(expiredToken);
+        assertThat(timeToLive).isEqualTo(0);
     }
 }
