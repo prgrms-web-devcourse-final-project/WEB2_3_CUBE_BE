@@ -101,7 +101,7 @@ public class User extends BaseTimeEntity {
 
     public boolean isAttendanceToday(LocalDateTime now) {
         LocalDateTime midnight = now.with(LocalTime.MIDNIGHT);
-        return lastLogin.isEqual(midnight) || lastLogin.isAfter(midnight);
+        return midnight.isEqual(lastLogin) || midnight.isAfter(lastLogin);
     }
 
     public void accumulatePoints(int amount) {

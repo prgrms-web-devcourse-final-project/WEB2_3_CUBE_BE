@@ -25,7 +25,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Modifying
     @Query(
             value = """
-                    update attendance set last_login = :now where user_id = :userId
+                    update users set last_login = :now where user_id = :userId
                     """,
             nativeQuery = true
     )
