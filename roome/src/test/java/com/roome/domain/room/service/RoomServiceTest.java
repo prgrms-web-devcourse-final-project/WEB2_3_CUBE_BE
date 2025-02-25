@@ -31,6 +31,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -416,5 +417,67 @@ public class RoomServiceTest {
 
         BusinessException exception = assertThrows(BusinessException.class, () -> roomService.toggleFurnitureVisibility(user.getId(), room.getId(), "NON_EXISTENT_FURNITURE"));
         assertEquals(ErrorCode.INVALID_FURNITURE_TYPE, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("가구 상태 변경 시 방에 해당 가구가 없으면 예외가 발생한다")
+    void shouldThrowExceptionWhenFurnitureNotFound() {
+        Long userId = 1L;
+        Long roomId = 1L;
+        String furnitureType = "BOOKSHELF";
+
+        room.setFurnitures(new ArrayList<>());
+
+        when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
+
+        BusinessException exception = assertThrows(BusinessException.class, () -> {
+            roomService.toggleFurnitureVisibility(userId, roomId, furnitureType);
+        });
+
+        assertEquals(ErrorCode.FURNITURE_NOT_FOUND, exception.getErrorCode());
+    }
+
+
+
+
+
+    @Test
+    @DisplayName("음악 저장 개수 조회 중 예외가 발생하면 0을 반환한다")
+    void shouldReturnZeroWhenFetchingSavedMusicCountThrowsException() {
+        when(myCdCountRepository.findByRoom(any())).thenThrow(new RuntimeException("DB 조회 오류"));
+
+        Long result = roomService.fetchSavedMusicCount(room);
+
+        assertEquals(0L, result);
+    }
+
+    @Test
+    @DisplayName("책 저장 개수 조회 중 예외가 발생하면 0을 반환한다")
+    void shouldReturnZeroWhenFetchingSavedBooksCountThrowsException() {
+        when(myBookCountRepository.findByRoomId(anyLong())).thenThrow(new RuntimeException("DB 조회 오류"));
+
+        Long result = roomService.fetchSavedBooksCount(1L);
+
+        assertEquals(0L, result);
+    }
+
+    @Test
+    @DisplayName("작성한 리뷰 개수 조회 중 예외가 발생하면 0을 반환한다")
+    void shouldReturnZeroWhenFetchingWrittenReviewsCountThrowsException() {
+        when(myBookReviewRepository.countByUserId(anyLong())).thenThrow(new RuntimeException("DB 조회 오류"));
+
+        Long result = roomService.fetchWrittenReviewsCount(1L);
+
+        assertEquals(0L, result);
+    }
+
+    @Test
+    @DisplayName("작성한 음악 로그 개수 조회 중 예외가 발생하면 0을 반환한다")
+    void shouldReturnZeroWhenFetchingWrittenMusicLogsCountThrowsException() {
+        when(cdCommentRepository.countByUserId(anyLong())).thenThrow(new RuntimeException("DB 조회 오류"));
+
+        Long result = roomService.fetchWrittenMusicLogsCount(1L);
+
+        assertEquals(0L, result);
     }
 }
