@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Tag(name = "Mock - MyCd", description = "CD 등록/조회/삭제")
@@ -18,16 +19,18 @@ import java.util.List;
 @RequestMapping("/mock/my-cd")
 public class MockMyCdController {
 
+  private static final String DEFAULT_COVER_URL = "https://i.scdn.co/image/ab67616d0000b273a49a8bb234f8741c80d8ec5a";
+
   @Operation(summary = "Mock - CD 추가", description = "사용자의 MyCd 목록에 CD를 추가")
   @PostMapping
   public ResponseEntity<MyCdResponse> addMyCd(
       @Parameter(description = "사용자 ID", required = true) @RequestParam("userId") Long userId,
       @RequestBody MyCdCreateRequest request) {
-    MyCdResponse mockCd = new MyCdResponse(1L, // 등록된 myCdId (임시 데이터)
-        100L, // 새롭게 등록된 CD의 ID (임시 데이터)
-        request.getTitle(), request.getArtist(), request.getAlbum(), request.getReleaseDate(),
-        request.getGenres(), request.getCoverUrl(), request.getYoutubeUrl(), request.getDuration());
-
+    MyCdResponse mockCd = new MyCdResponse(
+        1L, 100L, request.getTitle(), request.getArtist(), request.getAlbum(),
+        request.getReleaseDate(), request.getGenres(), DEFAULT_COVER_URL,
+        request.getYoutubeUrl(), request.getDuration()
+    );
     return ResponseEntity.status(HttpStatus.CREATED).body(mockCd);
   }
 
@@ -35,22 +38,39 @@ public class MockMyCdController {
   @GetMapping
   public ResponseEntity<MyCdListResponse> getMyCdList(
       @Parameter(description = "사용자 ID", required = true) @RequestParam("userId") Long userId,
-      @Parameter(description = "커서 기반 페이지네이션 (마지막 조회한 myCdId)") @RequestParam(value = "cursor", required = false) Long cursor,
-      @Parameter(description = "한 번에 가져올 개수 (기본값: 10)") @RequestParam(value = "size", defaultValue = "10") int size) {
-    List<MyCdResponse> mockData = List.of(
-        new MyCdResponse(1L, 1L, "Palette", "IU", "Palette",
-            LocalDate.of(2017, 4, 21),
-            List.of("K-Pop", "Ballad"), "https://example.com/image1.jpg",
-            "https://youtube.com/watch?v=asdf5678", 215000),
+      @Parameter(description = "커서 기반 페이지네이션 (마지막 조회한 myCdId)")
+      @RequestParam(value = "cursor", required = false) Long cursor,
+      @Parameter(description = "한 번에 가져올 개수 (기본값: 15)")
+      @RequestParam(value = "size", defaultValue = "15") int size) {
 
-        new MyCdResponse(2L, 2L, "The Red Shoes", "IU", "Modern Times",
-            LocalDate.of(2013, 10, 8),
-            List.of("Jazz"), "https://example.com/image2.jpg",
-            "https://youtube.com/watch?v=zxcv1234", 245000));
+    // 더미 데이터 30개 생성
+    List<MyCdResponse> mockData = new ArrayList<>();
+    for (int i = 1; i <= 30; i++) {
+      mockData.add(new MyCdResponse(
+          (long) i, (long) i, "Song " + i, "Artist " + i, "Album " + i,
+          LocalDate.of(2020, (i % 12) + 1, (i % 28) + 1),
+          List.of("Genre " + (i % 5 + 1)), DEFAULT_COVER_URL,
+          "https://youtube.com/watch?v=video" + i, 180000 + (i * 1000)
+      ));
+    }
 
-    Long nextCursor = mockData.isEmpty() ? null : mockData.get(mockData.size() - 1).getMyCdId();
+    // 커서 기반 페이지네이션 적용
+    List<MyCdResponse> filteredData;
+    if (cursor == null || cursor == 0) {
+      // 첫 페이지 요청 (cursor 없음 또는 0일 경우)
+      filteredData = mockData.stream().limit(size).toList();
+    } else {
+      // cursor 이후 데이터 중 size 개수만큼 필터링
+      filteredData = mockData.stream()
+          .filter(cd -> cd.getMyCdId() > cursor) // cursor보다 큰 ID만 선택
+          .limit(size) // size만큼 제한
+          .toList();
+    }
 
-    return ResponseEntity.ok(new MyCdListResponse(mockData, nextCursor));
+    // nextCursor 설정 (마지막 요소의 ID)
+    Long nextCursor = filteredData.isEmpty() ? null : filteredData.get(filteredData.size() - 1).getMyCdId();
+
+    return ResponseEntity.ok(new MyCdListResponse(filteredData, nextCursor));
   }
 
   @Operation(summary = "Mock - 특정 CD 조회", description = "사용자의 특정 CD 정보를 조회")
@@ -58,10 +78,13 @@ public class MockMyCdController {
   public ResponseEntity<MyCdResponse> getMyCd(
       @Parameter(description = "사용자 ID", required = true) @RequestParam("userId") Long userId,
       @Parameter(description = "조회할 CD의 ID") @PathVariable Long myCdId) {
-    MyCdResponse mockCd = new MyCdResponse(myCdId, 1L, "Love Poem", "IU", "Love Poem",
+
+    MyCdResponse mockCd = new MyCdResponse(
+        myCdId, 1L, "Love Poem", "IU", "Love Poem",
         LocalDate.of(2019, 11, 1),
-        List.of("Ballad", "Pop"), "https://example.com/image6.jpg",
-        "https://youtube.com/watch?v=mnop9876", 240000);
+        List.of("Ballad", "Pop"), DEFAULT_COVER_URL,
+        "https://youtube.com/watch?v=mnop9876", 240000
+    );
 
     return ResponseEntity.ok(mockCd);
   }
