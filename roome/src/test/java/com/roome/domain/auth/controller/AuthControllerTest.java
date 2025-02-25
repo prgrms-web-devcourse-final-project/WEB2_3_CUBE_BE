@@ -63,7 +63,7 @@ class AuthControllerTest {
     void loginSuccess_RedisTokenStored() throws Exception {
         // Given
         LoginRequest loginRequest = new LoginRequest("test-code");
-        JwtToken jwtToken = new JwtToken("mockAccessToken", "mockRefreshToken", "Bearer");
+        JwtToken jwtToken = new JwtToken("Bearer", "mockAccessToken", "mockRefreshToken");
         LoginResponse mockResponse = LoginResponse.builder()
                 .accessToken(jwtToken.getAccessToken())
                 .refreshToken(jwtToken.getRefreshToken())
@@ -108,8 +108,11 @@ class AuthControllerTest {
         // Given
         String accessToken = "mockAccessToken";
         String userId = "1";
+        long expiration = 3600000L; // 1시간
 
         when(jwtTokenProvider.getUserIdFromToken(accessToken)).thenReturn(userId);
+        when(jwtTokenProvider.getTokenTimeToLive(accessToken)).thenReturn(expiration);
+        doNothing().when(redisService).deleteRefreshToken(anyString());
         doNothing().when(redisService).addToBlacklist(anyString(), anyLong());
 
         // When & Then
@@ -119,7 +122,8 @@ class AuthControllerTest {
                 .andExpect(status().isOk());
 
         // Verify 블랙리스트 추가 확인
-        verify(redisService, times(1)).addToBlacklist(eq(accessToken), anyLong());
+        verify(redisService, times(1)).addToBlacklist(eq(accessToken), eq(expiration));
+        verify(redisService, times(1)).deleteRefreshToken(eq(userId));
     }
 
     @Test
@@ -128,9 +132,11 @@ class AuthControllerTest {
         // Given
         String accessToken = "mockAccessToken";
         String userId = "1";
+        long expiration = 3600000L; // 1시간
 
         when(jwtTokenProvider.getUserIdFromToken(accessToken)).thenReturn(userId);
-        doNothing().when(redisService).deleteRefreshToken(userId);
+        when(jwtTokenProvider.getTokenTimeToLive(accessToken)).thenReturn(expiration);
+        doNothing().when(redisService).deleteRefreshToken(anyString());
         doNothing().when(redisService).addToBlacklist(anyString(), anyLong());
 
         // When & Then
@@ -141,9 +147,7 @@ class AuthControllerTest {
 
         // Verify Redis에서 Refresh Token 삭제 확인
         verify(redisService, times(1)).deleteRefreshToken(eq(userId));
-
-        // Verify 블랙리스트 추가 확인
-        verify(redisService, times(1)).addToBlacklist(eq(accessToken), anyLong());
+        verify(redisService, times(1)).addToBlacklist(eq(accessToken), eq(expiration));
     }
 
     @Test
