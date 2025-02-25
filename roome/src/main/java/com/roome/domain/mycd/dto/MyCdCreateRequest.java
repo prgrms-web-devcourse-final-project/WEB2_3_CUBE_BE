@@ -2,6 +2,7 @@ package com.roome.domain.mycd.dto;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,6 +22,9 @@ public class MyCdCreateRequest {
 
   @NotEmpty
   private String album;
+
+  @NotNull
+  private LocalDate releaseDate;
 
   @NotEmpty
   private List<String> genres;

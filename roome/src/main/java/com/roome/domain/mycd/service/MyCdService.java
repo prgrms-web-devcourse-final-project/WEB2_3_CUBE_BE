@@ -53,6 +53,7 @@ public class MyCdService {
               request.getTitle(),
               request.getArtist(),
               request.getAlbum(),
+              request.getReleaseDate(),
               request.getCoverUrl(),
               request.getYoutubeUrl(),
               request.getDuration()
