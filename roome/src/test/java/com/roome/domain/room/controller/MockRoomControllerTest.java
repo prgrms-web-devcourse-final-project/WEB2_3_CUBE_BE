@@ -25,7 +25,16 @@ public class MockRoomControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private MockRoomController mockRoomController;
+
     private static final String BASE_URL = "/mock/rooms";
+
+    @Test
+    @DisplayName("mockRoomController가 정상적으로 주입된다")
+    void testRequiredArgsConstructor() {
+        assert mockRoomController != null;
+    }
 
     @Test
     @WithMockUser(username = "testUser", roles = {"USER"})
@@ -74,4 +83,42 @@ public class MockRoomControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.furnitureType").value("BOOKSHELF"));
     }
+
+    @Test
+    @WithMockUser(username = "testUser", roles = {"USER"})
+    @DisplayName("가구 상태 변경 시 furnitureType이 없는 경우 400 오류를 반환한다")
+    void toggleFurnitureVisibility_FurnitureTypeMissing() throws Exception {
+        mockMvc.perform(put(BASE_URL + "/1/furniture")
+                        .param("userId", "1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(username = "testUser", roles = {"USER"})
+    @DisplayName("가구 상태 변경 시 잘못된 furnitureType이 제공되면 400 오류를 반환한다")
+    void toggleFurnitureVisibility_InvalidFurnitureType() throws Exception {
+        mockMvc.perform(put(BASE_URL + "/1/furniture")
+                        .param("userId", "1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"furnitureType\":\"INVALID_TYPE\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(username = "testUser", roles = {"USER"})
+    @DisplayName("가구 상태 변경 시 해당 가구가 존재하지 않으면 400 오류를 반환한다")
+    void toggleFurnitureVisibility_FurnitureNotFound() throws Exception {
+        mockMvc.perform(put(BASE_URL + "/1/furniture")
+                        .param("userId", "1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"furnitureType\":\"TABLE\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+
 }
