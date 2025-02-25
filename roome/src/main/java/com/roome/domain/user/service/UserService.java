@@ -44,6 +44,29 @@ public class UserService {
     private final MyCdCountRepository myCdCountRepository;
     private final MyBookCountRepository myBookCountRepository;
 
+    // 프로필 이미지 변경
+    @Transactional
+    public void updateProfileImage(Long userId, String profileImage) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        user.setProfileImage(profileImage);
+    }
+
+    // 프로필 이미지 삭제
+    @Transactional
+    public void deleteProfileImage(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        user.setProfileImage(null);
+    }
+
+    //프로필 이미지 조회
+    public String getProfileImageUrl(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND))
+                .getProfileImage();
+    }
+
     public void deleteUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -123,4 +146,5 @@ public class UserService {
         List<Guestbook> guestbooks = guestbookRepository.findAllByRoomOrUserId(room, userId);
         guestbookRepository.deleteAll(guestbooks);
     }
+
 }
