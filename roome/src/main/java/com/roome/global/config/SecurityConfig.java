@@ -61,6 +61,7 @@ public class SecurityConfig {
                 // 접근 제어 설정
                 .authorizeHttpRequests((auth) -> auth
                         .requestMatchers(
+                                "/**",
                                 "/api/auth/**",
                                 "/error",
                                 "/v3/api-docs/**",
