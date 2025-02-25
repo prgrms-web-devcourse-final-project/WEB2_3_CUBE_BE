@@ -2,6 +2,7 @@ package com.roome.global.jwt.service;
 
 import com.roome.global.jwt.dto.JwtToken;
 import com.roome.global.jwt.exception.InvalidJwtTokenException;
+import com.roome.global.service.RedisService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -26,6 +27,7 @@ public class JwtTokenProvider {
     private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 14; // 14일
 
     private SecretKey secretKey;
+    private final RedisService redisService;
 
     // 테스트를 위한 setter
     public void setSecretKey(SecretKey secretKey) {
@@ -63,6 +65,10 @@ public class JwtTokenProvider {
 
     // 액세스 토큰 검증
     public boolean validateAccessToken(String token) {
+        if (redisService.isBlacklisted(token)) {
+            log.warn("[JWT 검증 실패] 블랙리스트에 등록된 토큰 사용 시도");
+            return false;
+        }
         return validateToken(token, "ACCESS");
     }
 
@@ -98,6 +104,13 @@ public class JwtTokenProvider {
 
     public long getAccessTokenExpirationTime() {
         return ACCESS_TOKEN_EXPIRE_TIME;
+    }
+
+    // 액세스 토큰의 남은 유효시간 계산
+    public long getTokenTimeToLive(String accessToken) {
+        Claims claims = parseClaims(accessToken);
+        Date expiration = claims.getExpiration();
+        return expiration.getTime() - System.currentTimeMillis();
     }
 
     // Claims 파싱
