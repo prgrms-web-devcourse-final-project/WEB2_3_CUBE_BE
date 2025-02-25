@@ -93,13 +93,24 @@ public class RoomService {
         Room room = roomRepository.findByUserId(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
+        return buildRoomResponse(room);
+    }
+
+    private RoomResponseDto buildRoomResponse(Room room) {
         Long savedMusic = fetchSavedMusicCount(room);
         Long savedBooks = fetchSavedBooksCount(room.getId());
-        Long writtenReviews = fetchWrittenReviewsCount(userId);
-        Long writtenMusicLogs = fetchWrittenMusicLogsCount(userId);
+        Long writtenReviews = fetchWrittenReviewsCount(room.getUser().getId());
+        Long writtenMusicLogs = fetchWrittenMusicLogsCount(room.getUser().getId());
 
         return RoomResponseDto.from(room, savedMusic, savedBooks, writtenReviews, writtenMusicLogs);
+    }
 
+    // 에러 처리 중
+    @Transactional
+    public RoomResponseDto getOrCreateRoomByUserId(Long userId) {
+        return roomRepository.findByUserId(userId)
+                .map(this::buildRoomResponse)
+                .orElseGet(() -> createRoom(userId));
     }
 
     @Transactional

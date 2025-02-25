@@ -45,14 +45,26 @@ public class User extends BaseTimeEntity {
     @Column(nullable = false, length = 10)
     private Status status;
 
+    @Column(nullable = true)  // 에러 처리
     private LocalDateTime lastLogin;
+
+    @PrePersist // 에러 처리
+    public void prePersist() {
+        if (this.lastLogin == null) {
+            this.lastLogin = LocalDateTime.now();
+        }
+    }
 
     // TODO: 추후 Redis 사용
     @Column(length = 1000)
     private String refreshToken;
 
     public void updateLastLogin() {
-        this.lastLogin = LocalDateTime.now();
+        if (this.lastLogin == null) {  // 에러 처리
+            this.lastLogin = LocalDateTime.now();
+        } else {
+            this.lastLogin = LocalDateTime.now();
+        }
     }
 
     public void updateProfile(String nickname, String profileImage, String bio) {
@@ -96,6 +108,10 @@ public class User extends BaseTimeEntity {
     }
 
     public boolean isAttendanceToday(LocalDateTime now) {
+        if (lastLogin == null) { // 에러 처리
+            return false;
+        }
+
         LocalDateTime midnight = now.with(LocalTime.MIDNIGHT);
         return lastLogin.isEqual(midnight) || lastLogin.isAfter(midnight);
     }
