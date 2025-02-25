@@ -8,6 +8,5 @@ import lombok.*;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class MockUpdateProfileRequest {
     private String nickname;
-    private String profileImage;
     private String bio;
 }
