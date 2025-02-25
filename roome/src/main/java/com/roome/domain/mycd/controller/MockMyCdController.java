@@ -6,6 +6,7 @@ import com.roome.domain.mycd.dto.MyCdResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.LocalDate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,19 +22,11 @@ public class MockMyCdController {
   @PostMapping
   public ResponseEntity<MyCdResponse> addMyCd(
       @Parameter(description = "사용자 ID", required = true) @RequestParam("userId") Long userId,
-      @RequestBody MyCdCreateRequest request
-  ) {
-    MyCdResponse mockCd = new MyCdResponse(
-        1L, // 등록된 myCdId (임시 데이터)
+      @RequestBody MyCdCreateRequest request) {
+    MyCdResponse mockCd = new MyCdResponse(1L, // 등록된 myCdId (임시 데이터)
         100L, // 새롭게 등록된 CD의 ID (임시 데이터)
-        request.getTitle(),
-        request.getArtist(),
-        request.getAlbum(),
-        request.getGenres(),
-        request.getCoverUrl(),
-        request.getYoutubeUrl(),
-        request.getDuration()
-    );
+        request.getTitle(), request.getArtist(), request.getAlbum(), request.getReleaseDate(),
+        request.getGenres(), request.getCoverUrl(), request.getYoutubeUrl(), request.getDuration());
 
     return ResponseEntity.status(HttpStatus.CREATED).body(mockCd);
   }
@@ -43,16 +36,17 @@ public class MockMyCdController {
   public ResponseEntity<MyCdListResponse> getMyCdList(
       @Parameter(description = "사용자 ID", required = true) @RequestParam("userId") Long userId,
       @Parameter(description = "커서 기반 페이지네이션 (마지막 조회한 myCdId)") @RequestParam(value = "cursor", required = false) Long cursor,
-      @Parameter(description = "한 번에 가져올 개수 (기본값: 10)") @RequestParam(value = "size", defaultValue = "10") int size
-  ) {
+      @Parameter(description = "한 번에 가져올 개수 (기본값: 10)") @RequestParam(value = "size", defaultValue = "10") int size) {
     List<MyCdResponse> mockData = List.of(
         new MyCdResponse(1L, 1L, "Palette", "IU", "Palette",
+            LocalDate.of(2017, 4, 21),
             List.of("K-Pop", "Ballad"), "https://example.com/image1.jpg",
             "https://youtube.com/watch?v=asdf5678", 215000),
+
         new MyCdResponse(2L, 2L, "The Red Shoes", "IU", "Modern Times",
+            LocalDate.of(2013, 10, 8),
             List.of("Jazz"), "https://example.com/image2.jpg",
-            "https://youtube.com/watch?v=zxcv1234", 245000)
-    );
+            "https://youtube.com/watch?v=zxcv1234", 245000));
 
     Long nextCursor = mockData.isEmpty() ? null : mockData.get(mockData.size() - 1).getMyCdId();
 
@@ -63,13 +57,11 @@ public class MockMyCdController {
   @GetMapping("/{myCdId}")
   public ResponseEntity<MyCdResponse> getMyCd(
       @Parameter(description = "사용자 ID", required = true) @RequestParam("userId") Long userId,
-      @Parameter(description = "조회할 CD의 ID") @PathVariable Long myCdId
-  ) {
-    MyCdResponse mockCd = new MyCdResponse(
-        myCdId, 1L, "Love Poem", "IU", "Love Poem",
+      @Parameter(description = "조회할 CD의 ID") @PathVariable Long myCdId) {
+    MyCdResponse mockCd = new MyCdResponse(myCdId, 1L, "Love Poem", "IU", "Love Poem",
+        LocalDate.of(2019, 11, 1),
         List.of("Ballad", "Pop"), "https://example.com/image6.jpg",
-        "https://youtube.com/watch?v=mnop9876", 240000
-    );
+        "https://youtube.com/watch?v=mnop9876", 240000);
 
     return ResponseEntity.ok(mockCd);
   }
@@ -78,8 +70,7 @@ public class MockMyCdController {
   @DeleteMapping
   public ResponseEntity<String> deleteMyCds(
       @Parameter(description = "사용자 ID", required = true) @RequestParam("userId") Long userId,
-      @Parameter(description = "삭제할 CD ID 목록 (예: 1,2,3)") @RequestParam List<Long> myCdIds
-  ) {
+      @Parameter(description = "삭제할 CD ID 목록 (예: 1,2,3)") @RequestParam List<Long> myCdIds) {
     return ResponseEntity.ok("userId=" + userId + " 삭제된 CD ID 목록: " + myCdIds);
   }
 
@@ -87,8 +78,7 @@ public class MockMyCdController {
   @DeleteMapping("/{myCdId}")
   public ResponseEntity<String> deleteMyCd(
       @Parameter(description = "사용자 ID", required = true) @RequestParam("userId") Long userId,
-      @Parameter(description = "삭제할 CD의 ID") @PathVariable Long myCdId
-  ) {
+      @Parameter(description = "삭제할 CD의 ID") @PathVariable Long myCdId) {
     return ResponseEntity.ok("userId=" + userId + " 삭제된 CD ID: " + myCdId);
   }
 }
