@@ -27,7 +27,7 @@ public class MockMyCdController {
       @Parameter(description = "사용자 ID", required = true) @RequestParam("userId") Long userId,
       @RequestBody MyCdCreateRequest request) {
     MyCdResponse mockCd = new MyCdResponse(
-        1L, 100L, request.getTitle(), request.getArtist(), request.getAlbum(),
+        1L, request.getTitle(), request.getArtist(), request.getAlbum(),
         request.getReleaseDate(), request.getGenres(), DEFAULT_COVER_URL,
         request.getYoutubeUrl(), request.getDuration()
     );
@@ -47,7 +47,7 @@ public class MockMyCdController {
     List<MyCdResponse> mockData = new ArrayList<>();
     for (int i = 1; i <= 30; i++) {
       mockData.add(new MyCdResponse(
-          (long) i, (long) i, "Song " + i, "Artist " + i, "Album " + i,
+          (long) i, "Song " + i, "Artist " + i, "Album " + i,
           LocalDate.of(2020, (i % 12) + 1, (i % 28) + 1),
           List.of("Genre " + (i % 5 + 1)), DEFAULT_COVER_URL,
           "https://youtube.com/watch?v=video" + i, 180000 + (i * 1000)
@@ -80,7 +80,7 @@ public class MockMyCdController {
       @Parameter(description = "조회할 CD의 ID") @PathVariable Long myCdId) {
 
     MyCdResponse mockCd = new MyCdResponse(
-        myCdId, 1L, "Love Poem", "IU", "Love Poem",
+        myCdId, "Love Poem", "IU", "Love Poem",
         LocalDate.of(2019, 11, 1),
         List.of("Ballad", "Pop"), DEFAULT_COVER_URL,
         "https://youtube.com/watch?v=mnop9876", 240000
