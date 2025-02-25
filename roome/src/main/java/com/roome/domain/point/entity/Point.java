@@ -1,6 +1,7 @@
 package com.roome.domain.point.entity;
 
 import com.roome.domain.point.exception.InsufficientPointsException;
+import com.roome.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,8 +17,9 @@ public class Point {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false, unique = true)
-  private Long userId;
+  @OneToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id")
+  private User user;
 
   @Column(nullable = false)
   private int balance; // 현재 보유 포인트
@@ -38,8 +40,8 @@ public class Point {
   private LocalDateTime updatedAt;
 
   @Builder
-  public Point(Long userId, int balance, int totalEarned, int totalUsed) {
-    this.userId = userId;
+  public Point(User user, int balance, int totalEarned, int totalUsed) {
+    this.user = user;
     this.balance = balance;
     this.totalEarned = totalEarned;
     this.totalUsed = totalUsed;

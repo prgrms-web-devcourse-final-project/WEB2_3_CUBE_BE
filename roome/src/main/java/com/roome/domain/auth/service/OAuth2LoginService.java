@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.Random;
 
 @Slf4j
 @Service
@@ -58,7 +59,8 @@ public class OAuth2LoginService {
             // 하루 한 번 로그인시 포인트 획득
             LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS);
             if (!user.isAttendanceToday(now)) {
-                // todo 포인트 획득
+                Random rand = new Random();
+                user.accumulatePoints(rand.nextInt(50) + 1);
             }
             userRepository.updateLastLogin(user.getId(), now);
 
