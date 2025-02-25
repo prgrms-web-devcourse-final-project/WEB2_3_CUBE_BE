@@ -63,7 +63,7 @@ class WithdrawControllerTest {
         Long userId = 1L;
 
         when(jwtTokenProvider.validateAccessToken(accessToken)).thenReturn(true);
-        when(jwtTokenProvider.getAccessTokenExpirationTime()).thenReturn(3600000L); // 1시간 설정
+        when(jwtTokenProvider.getAccessTokenExpirationTime()).thenReturn(3600000L); // 1시간
         when(tokenService.getUserIdFromToken(accessToken)).thenReturn(userId);
         doNothing().when(redisService).deleteRefreshToken(userId.toString());
         doNothing().when(redisService).addToBlacklist(eq(accessToken), anyLong());
@@ -91,7 +91,7 @@ class WithdrawControllerTest {
         Long userId = 1L;
         JwtToken newToken = new JwtToken("newAccessToken", "newRefreshToken", "Bearer");
 
-        when(jwtTokenProvider.validateAccessToken(accessToken)).thenReturn(false); // 액세스 토큰 만료
+        when(jwtTokenProvider.validateAccessToken(accessToken)).thenReturn(false);  // 액세스 토큰 만료
         when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(true); // 리프레시 토큰 유효
         when(jwtTokenProvider.getAccessTokenExpirationTime()).thenReturn(3600000L);
         when(tokenService.reissueToken(refreshToken)).thenReturn(newToken);
@@ -121,7 +121,7 @@ class WithdrawControllerTest {
         String refreshToken = "invalidRefreshToken";
 
         when(jwtTokenProvider.validateAccessToken(accessToken)).thenReturn(false);
-        when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(false); // 리프레시 토큰도 유효하지 않음
+        when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(false);
 
         // When & Then
         mockMvc.perform(delete("/api/auth/withdraw")
@@ -143,7 +143,7 @@ class WithdrawControllerTest {
 
         // When & Then
         mockMvc.perform(delete("/api/auth/withdraw")
-                        .cookie(new Cookie("refresh_token", refreshToken)) // ✅ 쿠키는 있지만 Authorization 없음
+                        .cookie(new Cookie("refresh_token", refreshToken))
                         .with(csrf()))
                 .andExpect(status().isUnauthorized());
     }

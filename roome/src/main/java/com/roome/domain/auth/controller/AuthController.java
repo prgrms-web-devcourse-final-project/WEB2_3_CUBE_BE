@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -85,6 +86,7 @@ public class AuthController {
         }
     }
 
+    @Transactional
     @PostMapping("/logout")
     public ResponseEntity<?> logout(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
@@ -95,12 +97,16 @@ public class AuthController {
                 String accessToken = authHeader.substring(7);
                 String userId = jwtTokenProvider.getUserIdFromToken(accessToken);
 
+                // 남은 유효 시간 계산
+                long expiration = jwtTokenProvider.getTokenTimeToLive(accessToken);
+
                 // Refresh Token 삭제
                 redisService.deleteRefreshToken(userId);
 
-                // Access Token 블랙리스트 추가
-                redisService.addToBlacklist(accessToken,
-                        jwtTokenProvider.getAccessTokenExpirationTime());
+                // Access Token 블랙리스트 추가 (남은 유효 시간만큼 유지)
+                if (expiration > 0) {
+                    redisService.addToBlacklist(accessToken, expiration);
+                }
             }
 
             tokenResponseHelper.removeTokenResponse(response);
