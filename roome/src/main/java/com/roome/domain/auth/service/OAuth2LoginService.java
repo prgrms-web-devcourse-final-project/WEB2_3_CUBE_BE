@@ -15,8 +15,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientProperties;
 import org.springframework.http.*;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
@@ -26,7 +24,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
 @Slf4j
@@ -55,6 +54,13 @@ public class OAuth2LoginService {
             if (user.getLastLogin() == null) {
                 roomService.createRoom(user.getId());
             }
+
+            // 하루 한 번 로그인시 포인트 획득
+            LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS);
+            if (!user.isAttendanceToday(now)) {
+                // todo 포인트 획득
+            }
+            userRepository.updateLastLogin(user.getId(), now);
 
             // JWT 토큰 발급
             JwtToken jwtToken = generateJwtToken(user);

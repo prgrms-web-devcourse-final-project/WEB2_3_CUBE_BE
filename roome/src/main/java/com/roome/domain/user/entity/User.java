@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -92,5 +93,10 @@ public class User extends BaseTimeEntity {
 
     public void updateProviderId(String providerId) {
         this.providerId = providerId;
+    }
+
+    public boolean isAttendanceToday(LocalDateTime now) {
+        LocalDateTime midnight = now.with(LocalTime.MIDNIGHT);
+        return lastLogin.isEqual(midnight) || lastLogin.isAfter(midnight);
     }
 }
