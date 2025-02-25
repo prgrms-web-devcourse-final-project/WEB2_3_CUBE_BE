@@ -3,11 +3,13 @@ package com.roome.global.jwt.helper;
 import com.roome.global.jwt.dto.JwtToken;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class TokenResponseHelper {
-    private static final int REFRESH_TOKEN_EXPIRE_TIME = 14 * 24 * 60 * 60; // 14일
+    @Value("${jwt.refresh-token.expiration-time-seconds:1209600}")
+    private int REFRESH_TOKEN_EXPIRE_TIME; // 14일
 
     public void setTokenResponse(HttpServletResponse response, JwtToken token) {
         setRefreshTokenCookie(response, token.getRefreshToken());
