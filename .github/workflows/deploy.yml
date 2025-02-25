@@ -28,6 +28,10 @@ jobs:
           echo "NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}" >> .env
           echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}" >> .env
           echo "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}" >> .env
+          echo "REDIS_HOST=localhost" >> .env
+          echo "REDIS_PORT=6379" >> .env
+          echo "REDIS_PASSWORD=!12345678" >> .env
+
       #          echo "AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }}" >> .env
       #          echo "AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}" >> .env
       #          echo "AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }}" >> .env
@@ -41,7 +45,7 @@ jobs:
       - name: Build with Gradle
         run: |
           cd roome
-          ./gradlew build -x test
+          ./gradlew bootJar -x test 
 
       - name: Login to Docker Hub
         uses: docker/login-action@v1
