@@ -40,6 +40,9 @@ public class TokenService {
             throw new InvalidRefreshTokenException();
         }
 
+        // 기존 Refresh Token을 삭제하여 무효화
+        redisService.deleteRefreshToken(userId);
+
         // 새 토큰 발급
         JwtToken newToken = jwtTokenProvider.createToken(userId);
 
