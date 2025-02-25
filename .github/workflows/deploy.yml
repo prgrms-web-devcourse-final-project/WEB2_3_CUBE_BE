@@ -17,10 +17,8 @@ jobs:
           java-version: '17'
           distribution: 'adopt'
 
-      - name: Create .env file
+      - name: Create .env file for Docker Compose
         run: |
-          cd roome
-          touch .env
           echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
           echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
           echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
@@ -28,9 +26,10 @@ jobs:
           echo "NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}" >> .env
           echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}" >> .env
           echo "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}" >> .env
-          echo "REDIS_HOST=localhost" >> .env
-          echo "REDIS_PORT=6379" >> .env
-          echo "REDIS_PASSWORD=!12345678" >> .env
+          echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
+          echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
+          echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> .env
+          echo "DOCKER_HUB_USERNAME=${{ secrets.DOCKER_HUB_USERNAME }}" >> .env
 
       #          echo "AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }}" >> .env
       #          echo "AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}" >> .env
@@ -60,6 +59,15 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/roome:latest
 
+      - name: Copy files to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "docker-compose.yml,.env"
+          target: "~/"
+
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
         with:
@@ -70,5 +78,8 @@ jobs:
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/roome:latest
             docker stop roome || true
             docker rm roome || true
-            docker system prune -f  
-            docker run -d --name roome -p 8080:8080 ${{ secrets.DOCKER_HUB_USERNAME }}/roome:latest
+            docker stop my-redis || true
+            docker rm my-redis || true
+            docker-compose down || true
+            docker system prune -f
+            docker-compose up -d
