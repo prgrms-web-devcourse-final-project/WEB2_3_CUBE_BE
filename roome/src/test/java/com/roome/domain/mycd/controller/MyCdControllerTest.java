@@ -164,7 +164,7 @@ class MyCdControllerTest {
 
   private MyCdResponse createMyCdResponse(Long myCdId, MyCdCreateRequest request) {
     return new MyCdResponse(
-        myCdId, 1L, request.getTitle(), request.getArtist(), request.getAlbum(), request.getReleaseDate(),
+        myCdId, request.getTitle(), request.getArtist(), request.getAlbum(), request.getReleaseDate(),
         request.getGenres(), request.getCoverUrl(), request.getYoutubeUrl(), request.getDuration()
     );
   }

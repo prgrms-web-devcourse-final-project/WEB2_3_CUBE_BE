@@ -12,7 +12,6 @@ import lombok.Getter;
 @Builder
 public class MyCdResponse {
   private Long myCdId;
-  private Long cdId;
   private String title;
   private String artist;
   private String album;
@@ -25,7 +24,6 @@ public class MyCdResponse {
   public static MyCdResponse fromEntity(MyCd myCd) {
     return MyCdResponse.builder()
         .myCdId(myCd.getId())
-        .cdId(myCd.getCd().getId())
         .title(myCd.getCd().getTitle())
         .artist(myCd.getCd().getArtist())
         .album(myCd.getCd().getAlbum())
