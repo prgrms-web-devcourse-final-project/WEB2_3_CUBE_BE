@@ -13,6 +13,7 @@ import java.time.LocalTime;
 @AllArgsConstructor
 @Builder
 @Entity
+@Setter
 @Table(name = "users")
 public class User extends BaseTimeEntity {
 
