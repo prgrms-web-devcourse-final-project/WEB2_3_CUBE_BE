@@ -2,7 +2,6 @@ package com.roome.domain.user.controller;
 
 import com.roome.domain.auth.security.OAuth2UserPrincipal;
 import com.roome.domain.user.dto.request.MockUpdateProfileRequest;
-import com.roome.domain.user.dto.response.ImageDeleteResponseDto;
 import com.roome.domain.user.dto.response.ImageUploadResponseDto;
 import com.roome.domain.user.dto.response.MockUserProfileResponse;
 import com.roome.domain.user.dto.response.UserProfileResponse;
