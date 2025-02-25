@@ -52,4 +52,8 @@ public class Furniture {
     public int getMaxCapacity(){
         return FurnitureCapacity.getCapacity(furnitureType, level);
     }
+
+    public void setVisible(Boolean isVisible) {
+        this.isVisible = isVisible;
+    }
 }

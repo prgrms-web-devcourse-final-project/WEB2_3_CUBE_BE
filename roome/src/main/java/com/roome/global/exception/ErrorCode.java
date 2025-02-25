@@ -42,6 +42,10 @@ public enum ErrorCode {
   INVALID_ROOM_THEME(HttpStatus.BAD_REQUEST, "해당 테마가 유효하지 않거나 입력 값이 비어 있습니다."),
   ROOM_ACCESS_DENIED(HttpStatus.UNAUTHORIZED, "해당 방의 소유주가 아닙니다."),
 
+  // 가구 관련 예외
+  INVALID_FURNITURE_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 가구 타입입니다."),
+  FURNITURE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 방에서 요청한 가구를 찾을 수 없습니다."),
+
   // 방명록 관련 예외
   GUESTBOOK_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 방명록을 찾을 수 없습니다."),
   GUESTBOOK_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "방의 주인이거나 방명록 작성자가 아닙니다."),
