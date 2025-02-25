@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class TokenResponseHelper {
     @Value("${jwt.refresh-token.expiration-time-seconds:1209600}")
-    private int REFRESH_TOKEN_EXPIRE_TIME; // 14일
+    private int REFRESH_TOKEN_EXPIRE_TIME_SECONDS;
 
     public void setTokenResponse(HttpServletResponse response, JwtToken token) {
         setRefreshTokenCookie(response, token.getRefreshToken());
@@ -21,7 +21,7 @@ public class TokenResponseHelper {
         refreshTokenCookie.setHttpOnly(true);
         refreshTokenCookie.setSecure(true);
         refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setMaxAge(REFRESH_TOKEN_EXPIRE_TIME);
+        refreshTokenCookie.setMaxAge(REFRESH_TOKEN_EXPIRE_TIME_SECONDS);
         response.addCookie(refreshTokenCookie);
     }
 

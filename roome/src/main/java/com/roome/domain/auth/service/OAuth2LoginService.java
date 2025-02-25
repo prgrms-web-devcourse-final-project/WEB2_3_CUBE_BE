@@ -136,7 +136,11 @@ public class OAuth2LoginService {
                     user.updateProfile(response.getName(), response.getProfileImageUrl(), user.getBio());
                     user.updateProvider(Provider.valueOf(response.getProvider().name()));
                     user.updateProviderId(response.getProviderId());
-                    user.updateLastLogin();
+
+                    if (user.getLastLogin() == null) {
+                        user.updateLastLogin();
+                    }
+
                     return user;
                 })
                 .orElseGet(() -> userRepository.save(
@@ -148,6 +152,7 @@ public class OAuth2LoginService {
                                 .provider(Provider.valueOf(response.getProvider().name()))
                                 .providerId(response.getProviderId())
                                 .status(Status.OFFLINE)
+                                .lastLogin(LocalDateTime.now())  // 신규 생성 시 lastLogin 설정
                                 .build()
                 ));
     }
@@ -165,7 +170,7 @@ public class OAuth2LoginService {
                         .userId(user.getId())
                         .nickname(user.getNickname())
                         .email(user.getEmail())
-                        .roomId(roomService.getRoomByUserId(user.getId()).getRoomId())
+                        .roomId(roomService.getOrCreateRoomByUserId(user.getId()).getRoomId())
                         .profileImage(user.getProfileImage())
                         .build())
                 .build();
