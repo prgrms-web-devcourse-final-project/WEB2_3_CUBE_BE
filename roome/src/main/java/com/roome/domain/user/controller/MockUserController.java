@@ -59,7 +59,7 @@ public class MockUserController {
     }
 
     @Operation(summary = "프로필 이미지 업로드")
-    @PostMapping("/profile/image")
+    @RequestMapping(method = {RequestMethod.POST, RequestMethod.PUT})
     public ResponseEntity<ImageUploadResponseDto> uploadMockProfileImage(@AuthenticationPrincipal OAuth2UserPrincipal principal, @RequestParam("image") MultipartFile image) {
         log.info("[Mock 프로필 이미지 업로드] 파일명: {}, 크기: {}", image.getOriginalFilename(), image.getSize());
 

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -32,4 +33,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
             nativeQuery = true
     )
     void updateLastLogin(Long userId, LocalDateTime now);
+
+    List<User> findByIdNot(Long id);
 }
