@@ -17,6 +17,7 @@ import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
+import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -55,6 +56,7 @@ class MyCdServiceTest {
   void addCdToMyList_Success() {
     Long userId = 1L;
     MyCdCreateRequest request = new MyCdCreateRequest("Palette", "IU", "Palette",
+        LocalDate.of(2019, 11, 1),
         List.of("K-Pop", "Ballad"), "https://example.com/image1.jpg",
         "https://youtube.com/watch?v=asdf5678", 215);
 
@@ -85,6 +87,7 @@ class MyCdServiceTest {
     // Given
     Long userId = 1L;
     MyCdCreateRequest request = new MyCdCreateRequest("Palette", "IU", "Palette",
+        LocalDate.of(2019, 11, 1),
         List.of("K-Pop", "Ballad"), "https://example.com/image1.jpg",
         "https://youtube.com/watch?v=asdf5678", 215);
 
