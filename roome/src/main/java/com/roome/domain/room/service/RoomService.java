@@ -1,6 +1,7 @@
 package com.roome.domain.room.service;
 
 import com.roome.domain.cdcomment.repository.CdCommentRepository;
+import com.roome.domain.furniture.dto.FurnitureResponseDto;
 import com.roome.domain.furniture.entity.Furniture;
 import com.roome.domain.furniture.entity.FurnitureType;
 import com.roome.domain.furniture.repository.FurnitureRepository;
@@ -115,6 +116,32 @@ public class RoomService {
         room.updateTheme(theme);
 
         return theme.name();
+    }
+
+    @Transactional
+    public FurnitureResponseDto toggleFurnitureVisibility(Long userId, Long roomId, String furnitureTypeStr) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+
+        if (!room.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.ROOM_ACCESS_DENIED);
+        }
+
+        FurnitureType furnitureType;
+        try {
+            furnitureType = FurnitureType.valueOf(furnitureTypeStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException(ErrorCode.INVALID_FURNITURE_TYPE);
+        }
+
+        Furniture furniture = room.getFurnitures().stream()
+                .filter(f -> f.getFurnitureType() == furnitureType)
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.FURNITURE_NOT_FOUND));
+
+        furniture.setVisible(!furniture.getIsVisible()); // 활성화/비활성화 토글
+
+        return FurnitureResponseDto.from(furniture);
     }
 
     private Long fetchSavedMusicCount(Room room) {

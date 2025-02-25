@@ -20,7 +20,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/mock/rooms")
 @RequiredArgsConstructor
-@Tag(name = "Room", description = "방 조회/테마 업데이트")
+@Tag(name = "Room", description = "방 조회/테마 업데이트/가구 활성화 및 비활성화")
 public class MockRoomController {
     @GetMapping("/{roomId}")
     public ResponseEntity<RoomResponseDto> getRoom(
@@ -49,6 +49,51 @@ public class MockRoomController {
         response.put("updatedTheme", requestDto.getThemeName());
 
         return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{roomId}/furniture")
+    public ResponseEntity<FurnitureResponseDto> toggleFurnitureVisibility(
+            @RequestParam("userId") Long userId,
+            @PathVariable Long roomId,
+            @RequestBody Map<String, String> request
+    ) {
+        String furnitureTypeStr = request.get("furnitureType");
+
+        if (furnitureTypeStr == null) {
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        FurnitureType furnitureType;
+        try {
+            furnitureType = FurnitureType.valueOf(furnitureTypeStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        // 가구 리스트에서 해당 타입 찾기
+        List<FurnitureResponseDto> furnitureList = List.of(
+                new FurnitureResponseDto("BOOKSHELF", true, 3, FurnitureCapacity.getCapacity(FurnitureType.BOOKSHELF, 3)),
+                new FurnitureResponseDto("CD_RACK", false, 1, FurnitureCapacity.getCapacity(FurnitureType.CD_RACK, 1))
+        );
+
+        FurnitureResponseDto targetFurniture = furnitureList.stream()
+                .filter(f -> f.getFurnitureType().equals(furnitureType.name()))
+                .findFirst()
+                .orElse(null);
+
+        if (targetFurniture == null) {
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        // `isVisible` 값 토글 (true → false, false → true)
+        FurnitureResponseDto updatedFurniture = new FurnitureResponseDto(
+                targetFurniture.getFurnitureType(),
+                !targetFurniture.getIsVisible(),
+                targetFurniture.getLevel(),
+                targetFurniture.getMaxCapacity()
+        );
+
+        return ResponseEntity.ok(updatedFurniture);
     }
 
     private RoomResponseDto createMockRoomResponse(Long roomId, String theme) {
