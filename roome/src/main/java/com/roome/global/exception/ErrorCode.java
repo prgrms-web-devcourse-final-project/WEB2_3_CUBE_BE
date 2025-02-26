@@ -46,6 +46,8 @@ public enum ErrorCode {
   INVALID_FURNITURE_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 가구 타입입니다."),
   FURNITURE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 방에서 요청한 가구를 찾을 수 없습니다."),
   BOOKSHELF_FULL(HttpStatus.BAD_REQUEST, "책장에 더 이상 책을 추가할 수 없습니다. 책장을 업그레이드 해주세요."),
+  BOOKSHELF_MAX_LEVEL(HttpStatus.BAD_REQUEST, "책장 레벨을 더 이상 올릴 수 없습니다. 책장 레벨이 최대입니다."),
+  BOOKSHELF_UPGRADE_DENIED(HttpStatus.BAD_REQUEST, "책장 레벨을 업그레이드할 수 없습니다. 이전 레벨을 먼저 업그레이드 해야합니다."),
 
   // 방명록 관련 예외
   GUESTBOOK_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 방명록을 찾을 수 없습니다."),
