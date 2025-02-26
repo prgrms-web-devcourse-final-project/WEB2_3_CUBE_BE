@@ -1,8 +1,11 @@
 package com.roome.domain.room.controller;
 
+import com.roome.domain.furniture.dto.FurnitureRequestDto;
 import com.roome.domain.furniture.dto.FurnitureResponseDto;
+import com.roome.domain.furniture.dto.ToggleFurnitureResponseDto;
 import com.roome.domain.room.dto.RoomResponseDto;
 import com.roome.domain.room.dto.UpdateRoomThemeRequestDto;
+import com.roome.domain.room.dto.UpdateRoomThemeResponseDto;
 import com.roome.domain.room.service.RoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -35,33 +38,29 @@ public class RoomController {
     }
 
     @PutMapping("/{roomId}")
-    public ResponseEntity<Map<String, Object>> updateRoomTheme(
+    public ResponseEntity<UpdateRoomThemeResponseDto> updateRoomTheme(
             @RequestParam("userId") Long userId,
             @PathVariable Long roomId,
             @RequestBody UpdateRoomThemeRequestDto requestDto
     ) {
         String updatedTheme = roomService.updateRoomTheme(userId, roomId, requestDto.getThemeName());
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("roomId", roomId);
-        response.put("updatedTheme", updatedTheme);
+        UpdateRoomThemeResponseDto responseDto = new UpdateRoomThemeResponseDto(roomId, updatedTheme);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(responseDto);
     }
 
     @PutMapping("/{roomId}/furniture")
-    public ResponseEntity<Map<String, Object>> toggleFurnitureVisibility(
+    public ResponseEntity<ToggleFurnitureResponseDto> toggleFurnitureVisibility(
             @RequestParam("userId") Long userId,
             @PathVariable Long roomId,
-            @RequestBody Map<String, String> requestBody
-    ) {
-        String furnitureType = requestBody.get("furnitureType");
+            @RequestBody FurnitureRequestDto furnitureRequestDto
+            ) {
+        String furnitureType = furnitureRequestDto.getFurnitureType();
         FurnitureResponseDto updatedFurniture = roomService.toggleFurnitureVisibility(userId, roomId, furnitureType);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("roomId", roomId);
-        response.put("furniture", updatedFurniture);
+        ToggleFurnitureResponseDto responseDto = new ToggleFurnitureResponseDto(roomId, updatedFurniture);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(responseDto);
     }
 }
