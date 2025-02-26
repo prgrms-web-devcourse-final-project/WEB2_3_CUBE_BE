@@ -3,6 +3,9 @@ spring:
     active: test
   config:
     import: optional:file:.env[.properties]
+  autoconfigure:
+    exclude:
+      - io.awspring.cloud.autoconfigure.s3.S3AutoConfiguration
   security:
     oauth2:
       client:
@@ -50,6 +53,16 @@ spring:
             user-name-attribute: id
   jwt:
     secret: ${JWT_SECRET}
+    access-token:
+      expiration-time: 3600000  # 1시간
+    refresh-token:
+      expiration-time: 1209600000  # 14일
+
+  data:
+    redis:
+      port: ${REDIS_PORT}
+      host: ${REDIS_HOST}
+      password: ${REDIS_PASSWORD}
 
 server:
   shutdown: graceful
@@ -104,12 +117,6 @@ spring:
   config:
     activate:
       on-profile: test
-  jwt:
-    secret: ebe1d0e205c1ee44b8e1937f6baed2b069774d7c52fc1c7db419ff850148db89  # .env 파일의 값을 직접 넣어줍니다
-    access-token:
-      expiration-time: 3600000  # 1시간
-    refresh-token:
-      expiration-time: 1209600000  # 14일
 
   datasource:
     driver-class-name: org.h2.Driver
@@ -128,8 +135,3 @@ spring:
     properties:
       hibernate:
         format_sql: true
-  data:
-    redis:
-      port: ${REDIS_PORT}
-      host: ${REDIS_HOST}
-      password: ${REDIS_PASSWORD}

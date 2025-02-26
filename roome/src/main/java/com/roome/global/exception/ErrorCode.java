@@ -98,6 +98,7 @@ public enum ErrorCode {
   IMAGE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "이미지 크기가 제한을 초과했습니다."),
   S3_UPLOAD_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 업로드 중 오류가 발생했습니다."),
   INVALID_IMAGE_URL(HttpStatus.BAD_REQUEST, "잘못된 이미지 URL입니다."),
+  S3_DELETE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 삭제 중 오류가 발생했습니다."),
 
   // 서버 에러
   INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 에러가 발생했습니다.");

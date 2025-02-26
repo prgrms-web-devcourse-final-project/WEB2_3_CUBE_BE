@@ -5,8 +5,6 @@ import com.roome.domain.user.dto.request.MockUpdateProfileRequest;
 import com.roome.domain.user.dto.response.ImageUploadResponseDto;
 import com.roome.domain.user.dto.response.MockUserProfileResponse;
 import com.roome.domain.user.dto.response.UserProfileResponse;
-import com.roome.domain.user.entity.BookGenre;
-import com.roome.domain.user.entity.MusicGenre;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -41,8 +39,8 @@ public class MockUserController {
                 .nickname("Mock User " + userId)
                 .profileImage("https://github.com/user-attachments/assets/912a4bc2-da94-4551-8547-b8a47c6e6813")
                 .bio("안녕하세요. Mock입니다..")
-                .bookGenres(List.of(BookGenre.SF, BookGenre.LIFE_SCIENCE))
-                .musicGenres(List.of(MusicGenre.AFRO, MusicGenre.HIPHOP))
+                .bookGenres(List.of("NOVEL", "ESSAY"))
+                .musicGenres(List.of("POP", "ROCK"))
                 .isMyProfile(true)
                 .build();
 

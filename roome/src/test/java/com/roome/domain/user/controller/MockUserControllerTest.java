@@ -57,7 +57,6 @@ class MockUserControllerTest {
         MockUpdateProfileRequest request = MockUpdateProfileRequest
                 .builder()
                 .nickname("Updated Nickname")
-                .profileImage("https://updated-image.com/profile.png")
                 .bio("Updated bio")
                 .build();
 
@@ -70,7 +69,6 @@ class MockUserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(MOCK_USER_ID.toString()))
                 .andExpect(jsonPath("$.nickname").value(request.getNickname()))
-                .andExpect(jsonPath("$.profileImage").value(request.getProfileImage()))
                 .andExpect(jsonPath("$.bio").value(request.getBio()));
     }
 

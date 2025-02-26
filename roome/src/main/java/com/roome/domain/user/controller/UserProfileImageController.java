@@ -6,6 +6,7 @@ import com.roome.domain.user.service.UserService;
 import com.roome.global.exception.ControllerException;
 import com.roome.global.exception.ErrorCode;
 import com.roome.global.service.S3Service;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/users/image")
 public class UserProfileImageController {
@@ -43,9 +45,11 @@ public class UserProfileImageController {
             // 새로운 프로필 이미지 업로드
             String imageUrl = s3Service.uploadImage(image, "profile");
             userService.updateProfileImage(principal.getId(), imageUrl);
+            log.info("프로필 이미지 업로드 완료: {}", imageUrl);
             //기존 프로필 이미지 삭제
             if (originProfileImageUrl != null && !originProfileImageUrl.isEmpty()) {
                 s3Service.deleteImage(originProfileImageUrl);
+                log.info("기존 프로필 이미지 삭제 완료: {}", originProfileImageUrl);
             }
             // 응답 데이터 구성
             ImageUploadResponseDto response = ImageUploadResponseDto
@@ -76,7 +80,7 @@ public class UserProfileImageController {
 
             return ResponseEntity.ok(imageUrl);
         } catch (Exception e) {
-            throw new ControllerException(ErrorCode.S3_UPLOAD_ERROR);
+            throw new ControllerException(ErrorCode.S3_DELETE_ERROR);
         }
     }
 
