@@ -90,8 +90,7 @@ public class MyCdService {
     if (cursor == null) {
       myCds = myCdRepository.findByUserIdOrderByIdAsc(userId, PageRequest.of(0, size));
     } else {
-      myCds = myCdRepository.findByUserIdAndIdGreaterThanOrderByIdAsc(userId, cursor,
-          PageRequest.of(0, size));
+      myCds = myCdRepository.findByUserIdAndIdGreaterThanOrderByIdAsc(userId, cursor, PageRequest.of(0, size));
     }
 
     if (myCds.isEmpty()) {
@@ -110,18 +109,14 @@ public class MyCdService {
     return MyCdResponse.fromEntity(myCd);
   }
 
-  public void delete(Long userId, String myCdIds) {
+  public void delete(Long userId, List<Long> myCdIds) {
     validateUser(userId);
 
-    List<Long> ids = List.of(myCdIds.split(",")).stream()
-        .map(Long::parseLong)
-        .toList();
-
-    if (myCdRepository.findAllById(ids).isEmpty()) {
+    if (myCdRepository.findAllById(myCdIds).isEmpty()) {
       throw new MyCdNotFoundException();
     }
 
-    myCdRepository.deleteByUserIdAndIds(userId, ids);
+    myCdRepository.deleteByUserIdAndIds(userId, myCdIds);
   }
 
   private void validateUser(Long userId) {
