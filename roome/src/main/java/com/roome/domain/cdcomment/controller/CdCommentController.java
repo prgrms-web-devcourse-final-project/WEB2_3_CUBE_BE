@@ -4,6 +4,7 @@ import com.roome.domain.cdcomment.dto.CdCommentCreateRequest;
 import com.roome.domain.cdcomment.dto.CdCommentListResponse;
 import com.roome.domain.cdcomment.dto.CdCommentResponse;
 import com.roome.domain.cdcomment.service.CdCommentService;
+import com.roome.global.auth.AuthenticatedUser;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -12,21 +13,22 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/my-cd")
 public class CdCommentController {
 
   private final CdCommentService cdCommentService;
 
-  @PostMapping("/api/my-cd/{myCdId}/comment")
+  @PostMapping("/{myCdId}/comment")
   public ResponseEntity<CdCommentResponse> create(
+      @AuthenticatedUser Long userId,
       @PathVariable Long myCdId,
       @RequestBody @Valid CdCommentCreateRequest request
   ) {
-    Long userId = 1L; // 1주차에서는 임시로 userId = 1L 고정
     CdCommentResponse response = cdCommentService.addComment(userId, myCdId, request);
     return ResponseEntity.ok(response);
   }
 
-  @GetMapping("/api/my-cd/{myCdId}/comments")
+  @GetMapping("/{myCdId}/comments")
   public ResponseEntity<CdCommentListResponse> getComments(
       @PathVariable Long myCdId,
       @RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -36,7 +38,7 @@ public class CdCommentController {
     return ResponseEntity.ok(response);
   }
 
-  @GetMapping("/api/my-cd/{myCdId}/comments/search")
+  @GetMapping("/{myCdId}/comments/search")
   public ResponseEntity<CdCommentListResponse> searchComments(
       @PathVariable Long myCdId,
       @RequestParam("query") String keyword,
@@ -47,16 +49,21 @@ public class CdCommentController {
     return ResponseEntity.ok(response);
   }
 
-  @DeleteMapping("/api/my-cd/comments/{commentId}")
-  public ResponseEntity<Void> deleteComment(@PathVariable Long commentId) {
-    cdCommentService.deleteComment(commentId);
+  @DeleteMapping("/comments/{commentId}")
+  public ResponseEntity<Void> deleteComment(
+      @AuthenticatedUser Long userId,
+      @PathVariable Long commentId
+  ) {
+    cdCommentService.deleteComment(userId, commentId);
     return ResponseEntity.noContent().build();
   }
 
-  @DeleteMapping("/api/my-cd/comments")
-  public ResponseEntity<Void> deleteMultipleComments(@RequestParam List<Long> commentIds) {
-    cdCommentService.deleteMultipleComments(commentIds);
+  @DeleteMapping("/comments")
+  public ResponseEntity<Void> deleteMultipleComments(
+      @AuthenticatedUser Long userId,
+      @RequestParam List<Long> commentIds
+  ) {
+    cdCommentService.deleteMultipleComments(userId, commentIds);
     return ResponseEntity.noContent().build();
   }
-
 }
