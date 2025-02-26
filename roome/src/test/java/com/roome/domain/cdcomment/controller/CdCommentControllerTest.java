@@ -5,6 +5,7 @@ import com.roome.domain.cdcomment.dto.CdCommentCreateRequest;
 import com.roome.domain.cdcomment.dto.CdCommentListResponse;
 import com.roome.domain.cdcomment.dto.CdCommentResponse;
 import com.roome.domain.cdcomment.service.CdCommentService;
+import com.roome.global.auth.AuthenticatedUser;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.BDDMockito;
@@ -39,13 +40,13 @@ class CdCommentControllerTest {
   private ObjectMapper objectMapper;
 
   @DisplayName("댓글 추가 성공")
-  @WithMockUser
+  @WithMockUser(username = "1")
   @Test
   void addComment_Success() throws Exception {
     CdCommentCreateRequest request = createCdCommentCreateRequest();
     CdCommentResponse response = createCdCommentResponse(1L, request);
 
-    BDDMockito.given(cdCommentService.addComment(any(Long.class), any(Long.class), any(CdCommentCreateRequest.class)))
+    BDDMockito.given(cdCommentService.addComment(eq(1L), any(Long.class), any(CdCommentCreateRequest.class)))
         .willReturn(response);
 
     mockMvc.perform(post("/api/my-cd/1/comment")
@@ -97,18 +98,18 @@ class CdCommentControllerTest {
   }
 
   @DisplayName("CD 댓글 삭제 성공")
-  @WithMockUser
+  @WithMockUser(username = "1")
   @Test
   void deleteComment_Success() throws Exception {
     mockMvc.perform(delete("/api/my-cd/comments/1")
             .with(csrf()))
         .andExpect(status().isNoContent());
 
-    BDDMockito.verify(cdCommentService).deleteComment(1L);
+    BDDMockito.verify(cdCommentService).deleteComment(eq(1L), eq(1L));
   }
 
   @DisplayName("CD 댓글 다중 삭제 성공")
-  @WithMockUser
+  @WithMockUser(username = "1")
   @Test
   void deleteMultipleComments_Success() throws Exception {
     mockMvc.perform(delete("/api/my-cd/comments")
@@ -116,7 +117,7 @@ class CdCommentControllerTest {
             .with(csrf()))
         .andExpect(status().isNoContent());
 
-    BDDMockito.verify(cdCommentService).deleteMultipleComments(List.of(1L, 2L, 3L));
+    BDDMockito.verify(cdCommentService).deleteMultipleComments(eq(1L), eq(List.of(1L, 2L, 3L)));
   }
 
   private CdCommentCreateRequest createCdCommentCreateRequest() {
