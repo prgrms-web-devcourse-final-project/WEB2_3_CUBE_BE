@@ -6,7 +6,9 @@ import com.roome.domain.mycd.dto.MyCdResponse;
 import com.roome.domain.mycd.service.MyCdService;
 import com.roome.global.auth.AuthenticatedUser;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,7 +24,8 @@ public class MyCdController {
       @AuthenticatedUser Long userId,
       @RequestBody @Valid MyCdCreateRequest myCdRequest
   ) {
-    return ResponseEntity.ok(myCdService.addCdToMyList(userId, myCdRequest));
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(myCdService.addCdToMyList(userId, myCdRequest));
   }
 
   @GetMapping
