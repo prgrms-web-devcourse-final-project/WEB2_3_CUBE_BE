@@ -4,6 +4,7 @@ import com.roome.domain.mycd.dto.MyCdCreateRequest;
 import com.roome.domain.mycd.dto.MyCdListResponse;
 import com.roome.domain.mycd.dto.MyCdResponse;
 import com.roome.domain.mycd.service.MyCdService;
+import com.roome.global.auth.AuthenticatedUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,7 @@ public class MyCdController {
 
   @PostMapping
   public ResponseEntity<MyCdResponse> addMyCd(
-      @RequestParam Long userId,
+      @AuthenticatedUser Long userId,
       @RequestBody @Valid MyCdCreateRequest myCdRequest
   ) {
     return ResponseEntity.ok(myCdService.addCdToMyList(userId, myCdRequest));
