@@ -13,6 +13,7 @@ import com.roome.domain.mycd.exception.MyCdNotFoundException;
 import com.roome.domain.mycd.repository.MyCdRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
+import com.roome.global.exception.UnauthorizedException;
 import com.roome.global.jwt.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
 import java.util.List;
@@ -111,19 +112,29 @@ public class CdCommentService {
   }
 
   @Transactional
-  public void deleteComment(Long commentId) {
+  public void deleteComment(Long userId, Long commentId) {
     CdComment comment = cdCommentRepository.findById(commentId)
         .orElseThrow(CdCommentNotFoundException::new);
+
+    if (!comment.getUser().getId().equals(userId)) {
+      throw new UnauthorizedException();
+    }
 
     cdCommentRepository.delete(comment);
   }
 
   @Transactional
-  public void deleteMultipleComments(List<Long> commentIds) {
+  public void deleteMultipleComments(Long userId, List<Long> commentIds) {
     List<CdComment> comments = cdCommentRepository.findAllById(commentIds);
 
     if (comments.isEmpty()) {
       throw new CdCommentNotFoundException();
+    }
+
+    for (CdComment comment : comments) {
+      if (!comment.getUser().getId().equals(userId)) {
+        throw new UnauthorizedException();
+      }
     }
 
     cdCommentRepository.deleteAll(comments);
