@@ -1,5 +1,8 @@
 package com.roome.global.config;
 
+import com.roome.domain.auth.service.CustomOAuth2UserService;
+import com.roome.global.jwt.handler.OAuth2AuthenticationFailureHandler;
+import com.roome.global.jwt.handler.OAuth2AuthenticationSuccessHandler;
 import com.roome.global.jwt.filter.JwtAuthenticationFilter;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.service.RedisService;
@@ -23,10 +26,14 @@ import java.util.Arrays;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private final CustomOAuth2UserService oAuth2UserService;
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RedisService redisService;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, RedisService redisService) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
 
                 // CSRF 보호 비활성화
@@ -34,28 +41,22 @@ public class SecurityConfig {
 
                 // CORS 설정
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // 폼 로그인, HTTP 기본 인증 비활성화
-                .formLogin((form) -> form.disable())
-                .httpBasic((auth) -> auth.disable())
                 .sessionManagement((session) -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 예외 처리
-                .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "인증되지 않은 사용자입니다.");
-                        })
-                        .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            response.sendError(HttpServletResponse.SC_FORBIDDEN, "접근 권한이 없습니다.");
-                        })
-                )
-
-                // 헤더 설정
-                .headers(headers -> headers
-                        .frameOptions(frame -> frame.sameOrigin())
-                        .contentSecurityPolicy(csp ->
-                                csp.policyDirectives("default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' https:;"))
+                // OAuth2 로그인 설정
+                .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(endpoint -> endpoint
+                                .baseUri("/oauth2/authorization")
+                        )
+                        .redirectionEndpoint(endpoint -> endpoint
+                                .baseUri("/login/oauth2/code/*")
+                        )
+                        .userInfoEndpoint(endpoint -> endpoint
+                                .userService(oAuth2UserService)
+                        )
+                        .successHandler(oAuth2AuthenticationSuccessHandler)
+                        .failureHandler(oAuth2AuthenticationFailureHandler)
                 )
 
                 // 접근 제어 설정
@@ -69,8 +70,20 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/mock/**"
                         ).permitAll()
-                        .anyRequest().authenticated());
+                        .anyRequest().authenticated()
+                )
 
+                // 예외 처리
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "인증되지 않은 사용자입니다.");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.sendError(HttpServletResponse.SC_FORBIDDEN, "접근 권한이 없습니다.");
+                        })
+                );
+
+        // JWT 필터 추가
         http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, redisService),
                 UsernamePasswordAuthenticationFilter.class);
 
