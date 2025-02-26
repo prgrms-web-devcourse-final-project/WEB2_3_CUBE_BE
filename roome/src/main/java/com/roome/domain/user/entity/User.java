@@ -1,6 +1,9 @@
 package com.roome.domain.user.entity;
 
 import com.roome.domain.point.entity.Point;
+import com.roome.domain.point.entity.PointHistory;
+import com.roome.domain.room.entity.Room;
+import com.roome.domain.room.exception.RoomAuthorizationException;
 import com.roome.global.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -49,19 +52,25 @@ public class User extends BaseTimeEntity {
     @Column(nullable = true)  // 에러 처리
     private LocalDateTime lastLogin;
 
+    // TODO: 추후 Redis 사용
+    @Column(length = 1000)
+    private String refreshToken;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Room room;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Point point;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private PointHistory pointHistory;
+
     @PrePersist // 에러 처리
     public void prePersist() {
         if (this.lastLogin == null) {
             this.lastLogin = LocalDateTime.now();
         }
     }
-
-    // TODO: 추후 Redis 사용
-    @Column(length = 1000)
-    private String refreshToken;
-
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Point point;
 
     public void updateLastLogin() {
         if (this.lastLogin == null) {  // 에러 처리
@@ -122,5 +131,15 @@ public class User extends BaseTimeEntity {
 
     public void accumulatePoints(int amount) {
         this.point.addPoints(amount);
+    }
+
+    public void payPoints(int point) {
+        this.point.subtractPoints(point);
+    }
+
+    public void validateRoomOwner(Long roomId) {
+        if (room == null || !room.getId().equals(roomId)) {
+            throw new RoomAuthorizationException();
+        }
     }
 }
