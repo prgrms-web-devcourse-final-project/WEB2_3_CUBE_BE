@@ -42,6 +42,7 @@ public class MyBookService {
         User loginUser = userRepository.getById(loginUserId);
         Room room = roomRepository.getByUserId(roomOwnerId);
         room.validateOwner(loginUserId);
+        room.checkBookshelfIsFull(count(roomOwnerId));
 
         Book bookEntity = request.toBookEntity();
         Book book = bookRepository.findByIsbn(bookEntity.getIsbn())

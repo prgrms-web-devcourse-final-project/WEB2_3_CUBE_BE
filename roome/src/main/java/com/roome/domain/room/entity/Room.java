@@ -2,6 +2,7 @@ package com.roome.domain.room.entity;
 
 import com.roome.domain.furniture.entity.Furniture;
 import com.roome.domain.furniture.entity.FurnitureType;
+import com.roome.domain.furniture.exception.BookshelfFullException;
 import com.roome.domain.room.exception.RoomAuthorizationException;
 import com.roome.domain.user.entity.User;
 import jakarta.persistence.*;
@@ -65,6 +66,12 @@ public class Room {
     public void validateOwner(Long userId) {
         if (user == null || !user.getId().equals(userId)) {
             throw new RoomAuthorizationException();
+        }
+    }
+
+    public void checkBookshelfIsFull(Long myBookCount) {
+        if (getMaxBooks() == myBookCount) {
+            throw new BookshelfFullException();
         }
     }
 }
