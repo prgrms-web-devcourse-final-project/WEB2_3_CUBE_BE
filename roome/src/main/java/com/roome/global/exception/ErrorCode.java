@@ -28,6 +28,9 @@ public enum ErrorCode {
   INVALID_NICKNAME_FORMAT(HttpStatus.BAD_REQUEST, "닉네임 형식이 올바르지 않습니다."),
   INVALID_BIO_LENGTH(HttpStatus.BAD_REQUEST, "자기소개는 30자를 초과할 수 없습니다."),
 
+  // Auth 관련 예외
+  UNAUTHORIZED_ACCESS(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
+
   // 페이지네이션 관련 예외
   INVALID_LIMIT_VALUE(HttpStatus.BAD_REQUEST, "유효하지 않은 limit 값입니다. (1-100 사이의 값을 입력해주세요)"),
   INVALID_CURSOR_VALUE(HttpStatus.BAD_REQUEST, "유효하지 않은 cursor 값입니다."),
@@ -45,6 +48,9 @@ public enum ErrorCode {
   // 가구 관련 예외
   INVALID_FURNITURE_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 가구 타입입니다."),
   FURNITURE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 방에서 요청한 가구를 찾을 수 없습니다."),
+  BOOKSHELF_FULL(HttpStatus.BAD_REQUEST, "책장에 더 이상 책을 추가할 수 없습니다. 책장을 업그레이드 해주세요."),
+  BOOKSHELF_MAX_LEVEL(HttpStatus.BAD_REQUEST, "책장 레벨을 더 이상 올릴 수 없습니다. 책장 레벨이 최대입니다."),
+  BOOKSHELF_UPGRADE_DENIED(HttpStatus.BAD_REQUEST, "책장 레벨을 업그레이드할 수 없습니다. 이전 레벨을 먼저 업그레이드 해야합니다."),
 
   // 방명록 관련 예외
   GUESTBOOK_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 방명록을 찾을 수 없습니다."),
