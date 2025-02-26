@@ -36,6 +36,7 @@ public class Room {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Setter
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Furniture> furnitures = new ArrayList<>();
@@ -73,5 +74,9 @@ public class Room {
         if (getMaxBooks() == myBookCount) {
             throw new BookshelfFullException();
         }
+    }
+  
+    public void setFurnitures(List<Furniture> furnitures) {
+        this.furnitures = furnitures;
     }
 }

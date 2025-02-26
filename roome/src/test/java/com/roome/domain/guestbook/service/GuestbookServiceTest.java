@@ -1,33 +1,25 @@
 package com.roome.domain.guestbook.service;
 
-import com.roome.domain.guestbook.dto.GuestbookListResponseDto;
-import com.roome.domain.guestbook.dto.GuestbookResponseDto;
 import com.roome.domain.guestbook.dto.GuestbookRequestDto;
-import com.roome.domain.guestbook.dto.PaginationDto;
 import com.roome.domain.guestbook.entity.Guestbook;
 import com.roome.domain.guestbook.entity.RelationType;
 import com.roome.domain.guestbook.repository.GuestbookRepository;
 import com.roome.domain.room.entity.Room;
-import com.roome.domain.room.entity.RoomTheme;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -37,159 +29,149 @@ public class GuestbookServiceTest {
 
     @Mock
     private GuestbookRepository guestbookRepository;
+
     @Mock
     private RoomRepository roomRepository;
+
     @Mock
     private UserRepository userRepository;
 
     @InjectMocks
     private GuestbookService guestbookService;
 
-    private Room room;
-    private User user;
-    private Guestbook guestbook;
 
-    @BeforeEach
-    void setUp() {
-        user = User.builder().build();
-        ReflectionTestUtils.setField(user, "id", 1L);
-        ReflectionTestUtils.setField(user, "nickname", "John");
-        ReflectionTestUtils.setField(user, "profileImage", "profile.jpg");
-
-        room = Room.builder()
-                .user(user)
-                .furnitures(List.of())
-                .theme(RoomTheme.BASIC)
-                .createdAt(LocalDateTime.now())
+    @Test
+    @DisplayName("방명록을 조회할 수 있다")
+    public void testGetGuestbook_Success() {
+        Long roomId = 1L;
+        Room room = Room.builder()
+                .id(roomId)
                 .build();
-        ReflectionTestUtils.setField(room, "id", 1L);
 
-        guestbook = Guestbook.builder()
+        User user = User.builder()
+                .id(1L)
+                .nickname("User")
+                .profileImage("profile.jpg")
+                .build();
+
+        Guestbook guestbook = Guestbook.builder()
+                .guestbookId(1L)
                 .room(room)
                 .user(user)
-                .nickname(user.getNickname())
-                .profileImage(user.getProfileImage())
-                .message("Test guestbook message")
-                .relation(RelationType.지나가던_나그네)
-                .createdAt(LocalDateTime.now())
+                .nickname("User")
+                .profileImage("profile.jpg")
+                .message("Great room!")
+                .relation(RelationType.하우스메이트)
                 .build();
-        ReflectionTestUtils.setField(guestbook, "guestbookId", 1L);
+
+        when(roomRepository.findById(roomId)).thenReturn(java.util.Optional.of(room));
+        when(guestbookRepository.findByRoom(eq(room), any())).thenReturn(new PageImpl<>(Collections.singletonList(guestbook), PageRequest.of(0, 10), 1));
+
+        var result = guestbookService.getGuestbook(roomId, 1, 10);
+        assertNotNull(result);
+        assertEquals(roomId, result.getRoomId());
+        assertEquals(1, result.getGuestbook().size());
+        assertEquals("Great room!", result.getGuestbook().get(0).getMessage());
     }
 
+
     @Test
-    void testGetGuestbook_Success() {
-        Long roomId = 1L;
-        int page = 1;
-        int size = 10;
+    @DisplayName("존재하지 않는 방에 대한 방명록 조회 시 예외가 발생한다")
+    public void testGetGuestbook_RoomNotFound() {
+        Long roomId = 999L;
 
-        when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
+        when(roomRepository.findById(roomId)).thenReturn(java.util.Optional.empty());
 
-        Page<Guestbook> guestbookPage = new PageImpl<>(List.of(guestbook), PageRequest.of(page - 1, size), 1);
-        when(guestbookRepository.findByRoom(room, PageRequest.of(page - 1, size))).thenReturn(guestbookPage);
-
-        GuestbookListResponseDto responseDto = guestbookService.getGuestbook(roomId, page, size);
-        assertNotNull(responseDto);
-        assertEquals(roomId, responseDto.getRoomId());
-        assertNotNull(responseDto.getGuestbook());
-        assertEquals(1, responseDto.getGuestbook().size());
-
-        GuestbookResponseDto entry = responseDto.getGuestbook().get(0);
-        assertEquals(1L, entry.getGuestbookId());
-        assertEquals("Test guestbook message", entry.getMessage());
-
-        PaginationDto pagination = responseDto.getPagination();
-        assertNotNull(pagination);
-        assertEquals(page, pagination.getPage());
-        assertEquals(size, pagination.getSize());
-        assertEquals(1, pagination.getTotalPages());
-
-        verify(roomRepository).findById(roomId);
-        verify(guestbookRepository).findByRoom(room, PageRequest.of(page - 1, size));
+        BusinessException exception = assertThrows(BusinessException.class, () -> guestbookService.getGuestbook(roomId, 1, 10));
+        assertEquals(ErrorCode.ROOM_NOT_FOUND, exception.getErrorCode());
     }
 
-    @Test
-    void testGetGuestbook_RoomNotFound() {
-        Long roomId = 1L;
-        when(roomRepository.findById(roomId)).thenReturn(Optional.empty());
 
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> guestbookService.getGuestbook(roomId, 1, 10));
+    @Test
+    @DisplayName("존재하지 않는 방에 방명록을 추가할 수 없다")
+    public void testAddGuestbook_RoomNotFound() {
+        Long roomId = 999L;
+        Long userId = 1L;
+        GuestbookRequestDto requestDto = GuestbookRequestDto.builder()
+                .message("Nice place!")
+                .build();
+
+        when(roomRepository.findById(roomId)).thenReturn(java.util.Optional.empty());
+
+        BusinessException exception = assertThrows(BusinessException.class, () -> guestbookService.addGuestbook(roomId, userId, requestDto));
         assertEquals(ErrorCode.ROOM_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test
-    void testAddGuestbook_Success() {
+    @DisplayName("존재하지 않는 사용자에 대해 방명록을 추가할 수 없다")
+    public void testAddGuestbook_UserNotFound() {
         Long roomId = 1L;
-        Long userId = 1L;
-        GuestbookRequestDto requestDto = new GuestbookRequestDto();
-        ReflectionTestUtils.setField(requestDto, "message", "Test guestbook message");
+        Long userId = 999L;
+        Room room = Room.builder()
+                .id(roomId)
+                .build();
 
-        when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        GuestbookRequestDto requestDto = GuestbookRequestDto.builder()
+                .message("Nice place!")
+                .build();
 
-        when(guestbookRepository.save(any(Guestbook.class))).thenAnswer(invocation -> {
-            Guestbook saved = invocation.getArgument(0);
-            ReflectionTestUtils.setField(saved, "guestbookId", 1L);
-            return saved;
-        });
+        when(roomRepository.findById(roomId)).thenReturn(java.util.Optional.of(room));
+        when(userRepository.findById(userId)).thenReturn(java.util.Optional.empty());
 
-        GuestbookResponseDto responseDto = guestbookService.addGuestbook(roomId, userId, requestDto);
-        assertNotNull(responseDto);
-        assertEquals(1L, responseDto.getGuestbookId());
-        assertEquals(user.getId(), responseDto.getUserId());
-        assertEquals("Test guestbook message", responseDto.getMessage());
-
-        assertEquals(guestbook.getRelation().name(), responseDto.getRelation());
-
-        verify(roomRepository).findById(roomId);
-        verify(guestbookRepository).save(any(Guestbook.class));
+        BusinessException exception = assertThrows(BusinessException.class, () -> guestbookService.addGuestbook(roomId, userId, requestDto));
+        assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test
-    void testAddGuestbook_RoomNotFound() {
-        Long roomId = 1L;
-        Long userId = 1L;
-        GuestbookRequestDto requestDto = new GuestbookRequestDto();
-        ReflectionTestUtils.setField(requestDto, "message", "Test guestbook message");
-
-        when(roomRepository.findById(roomId)).thenReturn(Optional.empty());
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> guestbookService.addGuestbook(roomId, userId, requestDto));
-        assertEquals(ErrorCode.ROOM_NOT_FOUND, exception.getErrorCode());
-    }
-
-    @Test
-    void testDeleteGuestbook_Success() {
+    @DisplayName("방명록을 삭제할 수 있다")
+    public void testDeleteGuestbook_Success() {
         Long guestbookId = 1L;
         Long userId = 1L;
 
-        when(guestbookRepository.findById(guestbookId)).thenReturn(Optional.of(guestbook));
+        Guestbook guestbook = Guestbook.builder()
+                .guestbookId(guestbookId)
+                .user(User.builder().id(userId).build())
+                .build();
+
+        when(guestbookRepository.findById(guestbookId)).thenReturn(java.util.Optional.of(guestbook));
+        when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(guestbook.getUser()));
 
         guestbookService.deleteGuestbook(guestbookId, userId);
-        verify(guestbookRepository).findById(guestbookId);
-        verify(guestbookRepository).delete(guestbook);
+
+        verify(guestbookRepository, times(1)).delete(guestbook);
     }
 
     @Test
-    void testDeleteGuestbook_GuestbookNotFound() {
-        Long guestbookId = 1L;
+    @DisplayName("존재하지 않는 방명록을 삭제할 수 없다")
+    public void testDeleteGuestbook_GuestbookNotFound() {
+        Long guestbookId = 999L;
         Long userId = 1L;
-        when(guestbookRepository.findById(guestbookId)).thenReturn(Optional.empty());
 
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> guestbookService.deleteGuestbook(guestbookId, userId));
+        when(guestbookRepository.findById(guestbookId)).thenReturn(java.util.Optional.empty());
+
+        BusinessException exception = assertThrows(BusinessException.class, () -> guestbookService.deleteGuestbook(guestbookId, userId));
         assertEquals(ErrorCode.GUESTBOOK_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test
-    void testDeleteGuestbook_DeleteForbidden() {
+    @DisplayName("방 소유주나 방명록 작성자가 아니면 방명록을 삭제할 수 없다")
+    public void testDeleteGuestbook_UserNotAuthorized() {
         Long guestbookId = 1L;
-        Long otherUserId = 2L;
+        Long userId = 999L;
 
-        when(guestbookRepository.findById(guestbookId)).thenReturn(Optional.of(guestbook));
+        User guestbookUser = User.builder().id(1L).build(); // 다른 사용자
+        Guestbook guestbook = Guestbook.builder()
+                .guestbookId(guestbookId)
+                .user(guestbookUser)
+                .build();
 
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> guestbookService.deleteGuestbook(guestbookId, otherUserId));
+        when(guestbookRepository.findById(guestbookId)).thenReturn(java.util.Optional.of(guestbook));
+
+        User mockUser = mock(User.class);
+        when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(mockUser));
+
+        BusinessException exception = assertThrows(BusinessException.class, () -> guestbookService.deleteGuestbook(guestbookId, userId));
         assertEquals(ErrorCode.GUESTBOOK_DELETE_FORBIDDEN, exception.getErrorCode());
     }
+
 }

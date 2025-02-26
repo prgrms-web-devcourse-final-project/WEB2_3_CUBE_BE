@@ -1,5 +1,8 @@
 package com.roome.global.config;
 
+import com.roome.domain.auth.service.CustomOAuth2UserService;
+import com.roome.global.jwt.handler.OAuth2AuthenticationFailureHandler;
+import com.roome.global.jwt.handler.OAuth2AuthenticationSuccessHandler;
 import com.roome.global.jwt.filter.JwtAuthenticationFilter;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.service.RedisService;
@@ -24,71 +27,83 @@ import java.util.Arrays;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final JwtTokenProvider jwtTokenProvider;
+  private final CustomOAuth2UserService oAuth2UserService;
+  private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+  private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
+  private final JwtTokenProvider jwtTokenProvider;
+  private final RedisService redisService;
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, RedisService redisService) throws Exception {
-        http
+  @Bean
+  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http
 
-                // CSRF 보호 비활성화
-                .csrf(csrf -> csrf.disable())
+        // CSRF 보호 비활성화
+        .csrf(csrf -> csrf.disable())
 
-                // CORS 설정
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        // CORS 설정
+        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .sessionManagement((session) -> session
+            .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 폼 로그인, HTTP 기본 인증 비활성화
-                .formLogin((form) -> form.disable())
-                .httpBasic((auth) -> auth.disable())
-                .sessionManagement((session) -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        // X-Frame-Options 비활성화 (h2-console 접근 허용)
+        .headers(headers -> headers.frameOptions(frame -> frame.disable()))
+        // OAuth2 로그인 설정
+        .oauth2Login(oauth2 -> oauth2
+            .authorizationEndpoint(endpoint -> endpoint
+                .baseUri("/oauth2/authorization")
+            )
+            .redirectionEndpoint(endpoint -> endpoint
+                .baseUri("/login/oauth2/code/*")
+            )
+            .userInfoEndpoint(endpoint -> endpoint
+                .userService(oAuth2UserService)
+            )
+            .successHandler(oAuth2AuthenticationSuccessHandler)
+            .failureHandler(oAuth2AuthenticationFailureHandler)
+        )
 
-                // 예외 처리
-                .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "인증되지 않은 사용자입니다.");
-                        })
-                        .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            response.sendError(HttpServletResponse.SC_FORBIDDEN, "접근 권한이 없습니다.");
-                        })
-                )
+        // 접근 제어 설정
+        .authorizeHttpRequests((auth) -> auth
+            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+            .requestMatchers(
+                "/**",
+                "/api/auth/**",
+                "/error",
+                "/v3/api-docs/**",
+                "/swagger-ui/**",
+                "/swagger-ui.html",
+                "/mock/**"
+            ).permitAll()
+            .anyRequest().authenticated()
+        )
 
-                // 헤더 설정
-                .headers(headers -> headers
-                        .frameOptions(frame -> frame.sameOrigin())
-                        .contentSecurityPolicy(csp ->
-                                csp.policyDirectives("default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' https:;"))
-                )
+        // 예외 처리
+        .exceptionHandling(exception -> exception
+            .authenticationEntryPoint((request, response, authException) -> {
+              response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "인증되지 않은 사용자입니다.");
+            })
+            .accessDeniedHandler((request, response, accessDeniedException) -> {
+              response.sendError(HttpServletResponse.SC_FORBIDDEN, "접근 권한이 없습니다.");
+            })
+        );
 
-                // 접근 제어 설정
-                .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(
-                                "/**",
-                                "/api/auth/**",
-                                "/error",
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/mock/**"
-                        ).permitAll()
-                        .anyRequest().authenticated());
+    // JWT 필터 추가
+    http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, redisService),
+        UsernamePasswordAuthenticationFilter.class);
 
-        http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, redisService),
-                UsernamePasswordAuthenticationFilter.class);
+    return http.build();
+  }
 
-        return http.build();
-    }
+  @Bean
+  public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173")); // 프론트엔드 URL
+    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(Arrays.asList("*"));
+    configuration.setAllowCredentials(true);
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173")); // 프론트엔드 URL
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
+  }
 }

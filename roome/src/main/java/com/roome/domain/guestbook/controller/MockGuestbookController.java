@@ -51,6 +51,6 @@ public class MockGuestbookController {
     @Operation(summary = "Mock - 방명록 삭제", description = "guestbookId에 해당하는 방명록 삭제")
     @DeleteMapping("/{guestbookId}")
     public ResponseEntity<String> deleteMockGuestbook(@PathVariable Long guestbookId) {
-        return ResponseEntity.ok("삭제된 방명록 ID: " + guestbookId);
+        return ResponseEntity.ok("ID: " + guestbookId);
     }
 }

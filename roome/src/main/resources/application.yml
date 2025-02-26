@@ -76,7 +76,7 @@ cloud:
     stack:
       auto: false
     endpoint:
-        uri: ${CLOUD_AWS_ENDPOINT_URI} # 재설정 필요
+      uri: ${CLOUD_AWS_ENDPOINT_URI} # 재설정 필요
 
 ---
 spring:
@@ -110,7 +110,6 @@ spring:
       expiration-time: 3600000  # 1시간
     refresh-token:
       expiration-time: 1209600000  # 14일
-      expiration-time-seconds: 1209600  # 쿠키용 (초 단위)
 
   datasource:
     driver-class-name: org.h2.Driver
