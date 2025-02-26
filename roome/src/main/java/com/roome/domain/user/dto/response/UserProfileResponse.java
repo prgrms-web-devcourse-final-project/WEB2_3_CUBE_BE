@@ -1,5 +1,6 @@
 package com.roome.domain.user.dto.response;
 
+import com.roome.domain.user.dto.RecommendedUserDto;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -14,6 +15,7 @@ public class UserProfileResponse {
     private String bio;
     private List<String> musicGenres;
     private List<String> bookGenres;
+    private List<RecommendedUserDto> recommendedUsers;
     private boolean isMyProfile;
 
 }

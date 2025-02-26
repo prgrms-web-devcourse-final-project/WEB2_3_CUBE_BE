@@ -1,9 +1,9 @@
 package com.roome.domain.user.controller;
 
 import com.roome.domain.auth.security.OAuth2UserPrincipal;
-import com.roome.domain.user.dto.request.MockUpdateProfileRequest;
+import com.roome.domain.user.dto.RecommendedUserDto;
+import com.roome.domain.user.dto.request.UpdateProfileRequest;
 import com.roome.domain.user.dto.response.ImageUploadResponseDto;
-import com.roome.domain.user.dto.response.MockUserProfileResponse;
 import com.roome.domain.user.dto.response.UserProfileResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,7 +17,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -41,6 +40,7 @@ public class MockUserController {
                 .bio("안녕하세요. Mock입니다..")
                 .bookGenres(List.of("NOVEL", "ESSAY"))
                 .musicGenres(List.of("POP", "ROCK"))
+                .recommendedUsers(generateMockSimilarUsers())
                 .isMyProfile(true)
                 .build();
 
@@ -49,7 +49,7 @@ public class MockUserController {
 
     @Operation(summary = "프로필 수정")
     @PatchMapping("/profile")
-    public ResponseEntity<?> updateMockUserProfile(@AuthenticationPrincipal OAuth2UserPrincipal principal, @RequestBody MockUpdateProfileRequest request) {
+    public ResponseEntity<?> updateMockUserProfile(@AuthenticationPrincipal OAuth2UserPrincipal principal, @RequestBody UpdateProfileRequest request) {
         log.info("[Mock 프로필 수정] nickname: {}, profileImage: {}, bio: {}", request.getNickname(), request.getBio());
 
         return ResponseEntity.ok(
@@ -87,30 +87,20 @@ public class MockUserController {
         return ResponseEntity.ok(imageUrl);
     }
 
-    @Operation(summary = "추천 유저 조회")
-    @GetMapping("/{userId}/recommendations")
-    public ResponseEntity<List<MockUserProfileResponse.SimilarUser>> getRecommendedUsers(@AuthenticationPrincipal OAuth2UserPrincipal principal, @PathVariable Long userId) {
-        log.info("[Mock 추천 유저 조회] 사용자 ID: {}", userId);
+    private List<RecommendedUserDto> generateMockSimilarUsers() {
+        return List.of(
+                RecommendedUserDto.builder().userId(1L).nickname("Mock User 1").profileImage("""
+                        https://github.com/user-attachments/assets/912a4bc2-da94-4551-8547-b8a47c6e6813""").build(),
+                RecommendedUserDto.builder().userId(2L).nickname("Mock User 2").profileImage("""
+                        https://github.com/user-attachments/assets/912a4bc2-da94-4551-8547-b8a47c6e6813""").build(),
+                RecommendedUserDto.builder().userId(3L).nickname("Mock User 3").profileImage("""
+                        https://github.com/user-attachments/assets/912a4bc2-da94-4551-8547-b8a47c6e6813""").build(),
+                RecommendedUserDto.builder().userId(3L).nickname("Mock User 4").profileImage("""
+                        https://github.com/user-attachments/assets/912a4bc2-da94-4551-8547-b8a47c6e6813""").build(),
+                RecommendedUserDto.builder().userId(3L).nickname("Mock User 5").profileImage("""
+                        https://github.com/user-attachments/assets/912a4bc2-da94-4551-8547-b8a47c6e6813""").build()
 
-        List<MockUserProfileResponse.SimilarUser> recommendedUsers = generateMockSimilarUsers()
-                .stream()
-                .limit(5)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(recommendedUsers);
-    }
-
-    private List<MockUserProfileResponse.SimilarUser> generateMockSimilarUsers() {
-        return List.of(new MockUserProfileResponse.SimilarUser("101", "Similar User 1",
-                                                               "https://github.com/user-attachments/assets/912a4bc2-da94-4551-8547-b8a47c6e6813"),
-                       new MockUserProfileResponse.SimilarUser("102", "Similar User 2",
-                                                               "https://github.com/user-attachments/assets/912a4bc2-da94-4551-8547-b8a47c6e6813"),
-                       new MockUserProfileResponse.SimilarUser("103", "Similar User 3",
-                                                               "https://github.com/user-attachments/assets/912a4bc2-da94-4551-8547-b8a47c6e6813"),
-                       new MockUserProfileResponse.SimilarUser("104", "Similar User 4",
-                                                               "https://github.com/user-attachments/assets/912a4bc2-da94-4551-8547-b8a47c6e6813"),
-                       new MockUserProfileResponse.SimilarUser("105", "Similar User 5",
-                                                               "https://github.com/user-attachments/assets/912a4bc2-da94-4551-8547-b8a47c6e6813"));
+        );
     }
 
     // 파일 확장자 추출 메서드
