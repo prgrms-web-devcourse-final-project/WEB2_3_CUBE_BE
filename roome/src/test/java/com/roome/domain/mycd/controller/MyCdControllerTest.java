@@ -41,7 +41,7 @@ class MyCdControllerTest {
   private ObjectMapper objectMapper;
 
   @DisplayName("CD 추가 성공")
-  @WithMockUser(username = "1") // userId를 SecurityContext에 설정
+  @WithMockUser(username = "1")
   @Test
   void addMyCd_Success() throws Exception {
     MyCdCreateRequest request = createMyCdCreateRequest();
@@ -77,7 +77,7 @@ class MyCdControllerTest {
   }
 
   @DisplayName("내 CD 목록 조회 성공")
-  @WithMockUser
+  @WithMockUser(username = "1")
   @Test
   void getMyCdList_Success() throws Exception {
     MyCdListResponse response = new MyCdListResponse(
@@ -95,7 +95,7 @@ class MyCdControllerTest {
   }
 
   @DisplayName("특정 CD 조회 성공")
-  @WithMockUser
+  @WithMockUser(username = "1")
   @Test
   void getMyCd_Success() throws Exception {
     MyCdResponse response = createMyCdResponse(1L, createMyCdCreateRequest());
@@ -110,7 +110,7 @@ class MyCdControllerTest {
   }
 
   @DisplayName("특정 CD 조회 실패 - 존재하지 않음")
-  @WithMockUser
+  @WithMockUser(username = "1")
   @Test
   void getMyCd_Failure_NotFound() throws Exception {
     BDDMockito.given(myCdService.getMyCd(eq(1L), eq(999L)))
@@ -123,7 +123,7 @@ class MyCdControllerTest {
   }
 
   @DisplayName("CD 삭제 성공")
-  @WithMockUser
+  @WithMockUser(username = "1")
   @Test
   void deleteMyCd_Success() throws Exception {
     mockMvc.perform(delete("/api/my-cd")
@@ -136,7 +136,7 @@ class MyCdControllerTest {
   }
 
   @DisplayName("CD 삭제 실패 - 존재하지 않음")
-  @WithMockUser
+  @WithMockUser(username = "1")
   @Test
   void deleteMyCd_Failure_NotFound() throws Exception {
     BDDMockito.doThrow(new MyCdNotFoundException())
