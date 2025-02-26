@@ -27,7 +27,7 @@ public class User extends BaseTimeEntity {
     private String email;
 
     // 소셜에서 가져온 실제 이름
-    @Column(nullable = false, length = 10)
+    @Column(nullable = false, length = 30)
     private String name;
 
     // 서비스에서 사용할 닉네임

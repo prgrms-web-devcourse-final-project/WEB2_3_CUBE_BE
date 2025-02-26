@@ -37,12 +37,28 @@ public class UserProfileService {
         List<String> topCdGenres = getTopCdGenres(targetUserId);
         // 2. 책 장르 상위 3개 가져오기
         List<String> topBookGenres = getTopBookGenres(targetUserId);
+        // 3. 유사한 취향을 가진 사용자 추천
         List<User> recommendedUsers = recommendSimilarUsers(targetUserId);
-        List<RecommendedUserDto> recommendedUserDtos = recommendedUsers.stream()
-                                                                       .map(user -> new RecommendedUserDto(user.getId(), user.getNickname(), user.getProfileImage()))
+        // 4. DTO로 변환
+        List<RecommendedUserDto> recommendedUserDtoList = recommendedUsers.stream()
+                                                                       .map(user -> RecommendedUserDto.builder()
+                                                                                                       .userId(user.getId())
+                                                                                                       .nickname(user.getNickname())
+                                                                                                       .profileImage(user.getProfileImage())
+                                                                                                       .build())
                                                                        .collect(Collectors.toList());
 
-
+        // 5. 응답 DTO 생성
+        return UserProfileResponse.builder()
+                .id(targetUserId.toString())
+                .nickname(userRepository.getById(targetUserId).getNickname())
+                .profileImage(userRepository.getById(targetUserId).getProfileImage())
+                .bio(userRepository.getById(targetUserId).getBio())
+                .musicGenres(topCdGenres)
+                .bookGenres(topBookGenres)
+                .isMyProfile(targetUserId.equals(currentUserId))
+                .recommendedUsers(recommendedUserDtoList)
+                .build();
     }
 
     // 프로필 수정

@@ -3,6 +3,7 @@ package com.roome.global.service;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class S3Service {
 
@@ -48,11 +50,10 @@ public class S3Service {
                                                             .key(key)
                                                             .contentType(file.getContentType())
                                                             .build();
-
         // 파일 업로드
         s3Client.putObject(putObjectRequest,
                            RequestBody.fromBytes(file.getBytes()));
-
+        log.info("파일 업로드 완료: {}", key);
         // 업로드된 파일의 URL 반환
         return getFileUrl(key);
     }
