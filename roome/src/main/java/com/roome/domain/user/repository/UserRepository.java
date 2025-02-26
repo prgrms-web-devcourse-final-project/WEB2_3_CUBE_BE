@@ -24,7 +24,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
     @Transactional
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query(
             value = """
                 update users set last_login = :now where id = :userId
