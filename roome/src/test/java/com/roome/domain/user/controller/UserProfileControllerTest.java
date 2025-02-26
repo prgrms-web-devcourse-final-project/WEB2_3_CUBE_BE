@@ -123,4 +123,37 @@ class UserProfileControllerTest {
                .andExpect(jsonPath("$.bio").value("프로필이 수정되었습니다."))
                .andDo(print());
     }
+    @Test
+    @DisplayName("프로필 수정 실패 - 닉네임이 검증 실패")
+    void updateProfile_Fail_NicknameValidation() throws Exception {
+        // given
+        UpdateProfileRequest request = UpdateProfileRequest.builder()
+                                                           .nickname(" ")
+                                                           .bio("프로필이 수정되었습니다.")
+                                                           .build();
+
+        // when & then
+        mockMvc.perform(patch("/api/users/profile")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+               .andExpect(status().isBadRequest())
+               .andDo(print());
+    }
+
+    @Test
+    @DisplayName("프로필 수정 실패 - 자기소개 검증 실패")
+    void updateProfile_Fail_BioValidation() throws Exception {
+        // given
+        UpdateProfileRequest request = UpdateProfileRequest.builder()
+                                                           .nickname("UpdatedUser")
+                                                           .bio(null)
+                                                           .build();
+
+        // when & then
+        mockMvc.perform(patch("/api/users/profile")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+               .andExpect(status().isBadRequest())
+               .andDo(print());
+    }
 }

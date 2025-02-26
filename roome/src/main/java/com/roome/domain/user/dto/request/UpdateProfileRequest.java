@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 public class UpdateProfileRequest {
     private String nickname;
 
-    @Size(max = 100, message = "자기소개는 30자를 초과할 수 없습니다.")
+    @Size(max = 100, message = "자기소개는 100자를 초과할 수 없습니다.")
     private String bio;
 }
