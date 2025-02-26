@@ -40,7 +40,7 @@ public class UserProfileImageController {
         validateImageFile(image);
 
         try {
-            // S3에 이미지 업로드 (profile 디렉토리에 저장)
+            // S3에 이미지 업로드된 기존 이미지 저장. 없으면 null
             String originProfileImageUrl = userService.getProfileImageUrl(principal.getId());
             // 새로운 프로필 이미지 업로드
             String imageUrl = s3Service.uploadImage(image, "profile");

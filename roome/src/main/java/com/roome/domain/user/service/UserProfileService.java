@@ -9,8 +9,6 @@ import com.roome.domain.user.dto.request.UpdateProfileRequest;
 import com.roome.domain.user.dto.response.UserProfileResponse;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
-import com.roome.global.exception.BusinessException;
-import com.roome.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -65,9 +63,6 @@ public class UserProfileService {
     @Transactional
     public UserProfileResponse updateProfile(Long userId, UpdateProfileRequest request) {
         User user = userRepository.getById(userId);
-
-        validateNickname(request.getNickname());
-        validateBio(request.getBio());
 
         user.updateProfile(
                 request.getNickname(),
@@ -184,16 +179,4 @@ public class UserProfileService {
                                .collect(Collectors.toList());
     }
 
-
-    private void validateNickname(String nickname) {
-        if (!nickname.matches("^[가-힣a-zA-Z0-9]{2,10}$")) {
-            throw new BusinessException(ErrorCode.INVALID_NICKNAME_FORMAT);
-        }
-    }
-
-    private void validateBio(String bio) {
-        if (bio != null && bio.length() > 30) {
-            throw new BusinessException(ErrorCode.INVALID_BIO_LENGTH);
-        }
-    }
 }
