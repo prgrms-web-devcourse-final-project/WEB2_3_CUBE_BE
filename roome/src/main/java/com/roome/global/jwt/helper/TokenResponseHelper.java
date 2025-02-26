@@ -4,6 +4,7 @@ import com.roome.global.jwt.dto.JwtToken;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,12 +18,15 @@ public class TokenResponseHelper {
     }
 
     private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
-        Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
-        refreshTokenCookie.setHttpOnly(true);
-        refreshTokenCookie.setSecure(true);
-        refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setMaxAge(REFRESH_TOKEN_EXPIRE_TIME_SECONDS);
-        response.addCookie(refreshTokenCookie);
+        ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(REFRESH_TOKEN_EXPIRE_TIME_SECONDS)
+                .sameSite("Lax")
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
     }
 
     private void setAccessTokenHeader(HttpServletResponse response, String accessToken) {

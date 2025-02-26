@@ -1,7 +1,6 @@
 package com.roome.domain.auth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.roome.domain.auth.service.OAuth2LoginService;
 import com.roome.domain.user.service.UserService;
 import com.roome.global.jwt.dto.JwtToken;
 import com.roome.global.jwt.helper.TokenResponseHelper;
@@ -33,9 +32,6 @@ class WithdrawControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @MockBean
-    private OAuth2LoginService oAuth2LoginService;
 
     @MockBean
     private JwtTokenProvider jwtTokenProvider;

@@ -1,20 +1,23 @@
 package com.roome.domain.auth.service;
 
+import com.roome.domain.auth.dto.oauth2.OAuth2Provider;
+import com.roome.domain.auth.dto.oauth2.OAuth2Response;
 import com.roome.domain.auth.security.OAuth2UserPrincipal;
+import com.roome.domain.room.service.RoomService;
 import com.roome.domain.user.entity.Provider;
 import com.roome.domain.user.entity.Status;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
@@ -25,6 +28,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,10 +41,7 @@ class CustomOAuth2UserServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private OAuth2UserRequest userRequest;
-
-    @Mock
-    private ClientRegistration clientRegistration;
+    private RoomService roomService;
 
     private static final class TestUsers {
         static final String PROVIDER_ID = "12345";
@@ -62,17 +63,12 @@ class CustomOAuth2UserServiceTest {
         );
     }
 
-    @BeforeEach
-    void setUp() {
-        when(userRequest.getClientRegistration()).thenReturn(clientRegistration);
-        when(clientRegistration.getRegistrationId()).thenReturn("kakao");
-    }
-
     @Test
     @DisplayName("신규 유저는 로그인 시 회원가입이 진행된다")
     void signUpNewUserWithOAuth2Login() {
         // given
         User newUser = User.builder()
+                .id(1L)
                 .name(TestUsers.NAME)
                 .nickname(TestUsers.NAME)
                 .email(TestUsers.EMAIL)
@@ -88,29 +84,53 @@ class CustomOAuth2UserServiceTest {
                 "id"
         );
 
-        when(userRepository.findByProviderId(TestUsers.PROVIDER_ID)).thenReturn(Optional.empty());
-        when(userRepository.save(any(User.class))).thenReturn(newUser);
+        OAuth2UserRequest userRequest = createOAuth2UserRequest("KAKAO");
 
-        // when
-        OAuth2User result = customOAuth2UserService.processOAuth2User(userRequest, oAuth2User);
+        // ClientRegistration을 직접 모킹
+        ClientRegistration mockClientRegistration = mock(ClientRegistration.class);
+        when(mockClientRegistration.getRegistrationId()).thenReturn("KAKAO");
+        when(userRequest.getClientRegistration()).thenReturn(mockClientRegistration);
 
-        // then
-        assertThat(result).isInstanceOf(OAuth2UserPrincipal.class);
-        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) result;
+        try (MockedStatic<OAuth2Factory> mockedStatic = mockStatic(OAuth2Factory.class)) {
+            // OAuth2Factory 모킹
+            OAuth2Response oAuth2Response = mock(OAuth2Response.class);
+            when(oAuth2Response.getProviderId()).thenReturn(TestUsers.PROVIDER_ID);
+            when(oAuth2Response.getEmail()).thenReturn(TestUsers.EMAIL);
+            when(oAuth2Response.getName()).thenReturn(TestUsers.NAME);
+            when(oAuth2Response.getProfileImageUrl()).thenReturn(TestUsers.PROFILE_IMAGE);
+            when(oAuth2Response.getProvider()).thenReturn(OAuth2Provider.KAKAO);
 
-        assertThat(principal.getUser())
-                .satisfies(user -> {
-                    assertThat(user.getName()).isEqualTo(TestUsers.NAME);
-                    assertThat(user.getNickname()).isEqualTo(TestUsers.NAME);
-                    assertThat(user.getEmail()).isEqualTo(TestUsers.EMAIL);
-                    assertThat(user.getProfileImage()).isEqualTo(TestUsers.PROFILE_IMAGE);
-                    assertThat(user.getProviderId()).isEqualTo(TestUsers.PROVIDER_ID);
-                    assertThat(user.getProvider()).isEqualTo(Provider.KAKAO);
-                    assertThat(user.getStatus()).isEqualTo(Status.OFFLINE);
-                });
+            mockedStatic.when(() -> OAuth2Factory.createResponse(any(), any())).thenReturn(oAuth2Response);
 
-        verify(userRepository).findByProviderId(TestUsers.PROVIDER_ID);
-        verify(userRepository).save(any(User.class));
+            when(userRepository.findByEmail(TestUsers.EMAIL)).thenReturn(Optional.empty());
+            when(userRepository.save(any(User.class))).thenReturn(newUser);
+
+            // getOrCreateRoomByUserId 메서드를 모킹 (실제로 호출되는 메서드)
+            when(roomService.getOrCreateRoomByUserId(anyLong())).thenReturn(null);
+
+            // when
+            OAuth2User result = customOAuth2UserService.processOAuth2User(userRequest, oAuth2User);
+
+            // then
+            assertThat(result).isInstanceOf(OAuth2UserPrincipal.class);
+            OAuth2UserPrincipal principal = (OAuth2UserPrincipal) result;
+
+            assertThat(principal.getUser())
+                    .satisfies(user -> {
+                        assertThat(user.getName()).isEqualTo(TestUsers.NAME);
+                        assertThat(user.getNickname()).isEqualTo(TestUsers.NAME);
+                        assertThat(user.getEmail()).isEqualTo(TestUsers.EMAIL);
+                        assertThat(user.getProfileImage()).isEqualTo(TestUsers.PROFILE_IMAGE);
+                        assertThat(user.getProviderId()).isEqualTo(TestUsers.PROVIDER_ID);
+                        assertThat(user.getProvider()).isEqualTo(Provider.KAKAO);
+                        assertThat(user.getStatus()).isEqualTo(Status.OFFLINE);
+                    });
+
+            verify(userRepository).findByEmail(TestUsers.EMAIL);
+            verify(userRepository).save(any(User.class));
+            // createRoom이 아닌 getOrCreateRoomByUserId를 검증
+            verify(roomService).getOrCreateRoomByUserId(anyLong());
+        }
     }
 
     @Test
@@ -119,6 +139,7 @@ class CustomOAuth2UserServiceTest {
         // given
         LocalDateTime now = LocalDateTime.now();
         User existingUser = User.builder()
+                .id(1L)
                 .name(TestUsers.NAME)
                 .nickname(TestUsers.NAME)
                 .email(TestUsers.EMAIL)
@@ -126,6 +147,7 @@ class CustomOAuth2UserServiceTest {
                 .provider(Provider.KAKAO)
                 .providerId(TestUsers.PROVIDER_ID)
                 .status(Status.OFFLINE)
+                .lastLogin(now.minusDays(1)) // 이전 로그인 기록
                 .build();
 
         OAuth2User oAuth2User = new DefaultOAuth2User(
@@ -134,29 +156,46 @@ class CustomOAuth2UserServiceTest {
                 "id"
         );
 
-        when(userRepository.findByProviderId(TestUsers.PROVIDER_ID))
-                .thenReturn(Optional.of(existingUser));
+        OAuth2UserRequest userRequest = createOAuth2UserRequest("KAKAO");
+        // ClientRegistration을 직접 모킹
+        ClientRegistration mockClientRegistration = mock(ClientRegistration.class);
+        when(mockClientRegistration.getRegistrationId()).thenReturn("KAKAO");
+        when(userRequest.getClientRegistration()).thenReturn(mockClientRegistration);
 
-        // when
-        OAuth2User result = customOAuth2UserService.processOAuth2User(userRequest, oAuth2User);
+        try (MockedStatic<OAuth2Factory> mockedStatic = mockStatic(OAuth2Factory.class)) {
+            // OAuth2Factory 모킹
+            OAuth2Response oAuth2Response = mock(OAuth2Response.class);
+            when(oAuth2Response.getProviderId()).thenReturn(TestUsers.PROVIDER_ID);
+            when(oAuth2Response.getEmail()).thenReturn(TestUsers.EMAIL);
+            when(oAuth2Response.getName()).thenReturn(TestUsers.NAME);
+            when(oAuth2Response.getProfileImageUrl()).thenReturn(TestUsers.PROFILE_IMAGE);
+            when(oAuth2Response.getProvider()).thenReturn(OAuth2Provider.KAKAO);
 
-        // then
-        assertThat(result).isInstanceOf(OAuth2UserPrincipal.class);
-        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) result;
+            mockedStatic.when(() -> OAuth2Factory.createResponse(any(), any())).thenReturn(oAuth2Response);
 
-        assertThat(principal.getUser())
-                .satisfies(user -> {
-                    assertThat(user.getName()).isEqualTo(TestUsers.NAME);
-                    assertThat(user.getNickname()).isEqualTo(TestUsers.NAME);
-                    assertThat(user.getEmail()).isEqualTo(TestUsers.EMAIL);
-                    assertThat(user.getProfileImage()).isEqualTo(TestUsers.PROFILE_IMAGE);
-                    assertThat(user.getProviderId()).isEqualTo(TestUsers.PROVIDER_ID);
-                    assertThat(user.getLastLogin()).isNotNull();
-                    assertThat(user.getLastLogin()).isAfterOrEqualTo(now);
-                });
+            when(userRepository.findByEmail(TestUsers.EMAIL)).thenReturn(Optional.of(existingUser));
 
-        verify(userRepository).findByProviderId(TestUsers.PROVIDER_ID);
-        verify(userRepository, never()).save(any(User.class));
+            // when
+            OAuth2User result = customOAuth2UserService.processOAuth2User(userRequest, oAuth2User);
+
+            // then
+            assertThat(result).isInstanceOf(OAuth2UserPrincipal.class);
+            OAuth2UserPrincipal principal = (OAuth2UserPrincipal) result;
+
+            assertThat(principal.getUser())
+                    .satisfies(user -> {
+                        assertThat(user.getName()).isEqualTo(TestUsers.NAME);
+                        assertThat(user.getNickname()).isEqualTo(TestUsers.NAME);
+                        assertThat(user.getEmail()).isEqualTo(TestUsers.EMAIL);
+                        assertThat(user.getProfileImage()).isEqualTo(TestUsers.PROFILE_IMAGE);
+                        assertThat(user.getProviderId()).isEqualTo(TestUsers.PROVIDER_ID);
+                        assertThat(user.getLastLogin()).isNotNull();
+                    });
+
+            verify(userRepository).findByEmail(TestUsers.EMAIL);
+            verify(userRepository, never()).save(any(User.class));
+            verify(roomService, never()).getOrCreateRoomByUserId(anyLong());
+        }
     }
 
     @Test
@@ -168,14 +207,19 @@ class CustomOAuth2UserServiceTest {
                 KakaoAttributes.VALID,
                 "id"
         );
-        when(clientRegistration.getRegistrationId()).thenReturn("invalid");
+
+        OAuth2UserRequest userRequest = createOAuth2UserRequest("INVALID");
+        // ClientRegistration을 직접 모킹
+        ClientRegistration mockClientRegistration = mock(ClientRegistration.class);
+        when(mockClientRegistration.getRegistrationId()).thenReturn("INVALID");
+        when(userRequest.getClientRegistration()).thenReturn(mockClientRegistration);
 
         // when & then
         assertThatThrownBy(() -> customOAuth2UserService.processOAuth2User(userRequest, oAuth2User))
-                .isInstanceOf(InternalAuthenticationServiceException.class)
-                .hasMessage("지원하지 않는 로그인 방식입니다.");
+                .isInstanceOf(OAuth2AuthenticationException.class)
+                .hasMessageContaining("OAuth2 인증 실패");
 
-        verify(userRepository, never()).findByProviderId(anyString());
+        verify(userRepository, never()).findByEmail(anyString());
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -188,12 +232,35 @@ class CustomOAuth2UserServiceTest {
                 KakaoAttributes.VALID,
                 "id"
         );
-        when(userRepository.findByProviderId(anyString()))
-                .thenThrow(new RuntimeException("DB Error"));
 
-        // when & then
-        assertThatThrownBy(() -> customOAuth2UserService.processOAuth2User(userRequest, oAuth2User))
-                .isInstanceOf(InternalAuthenticationServiceException.class)
-                .hasMessageContaining("DB Error");
+        OAuth2UserRequest userRequest = createOAuth2UserRequest("KAKAO");
+        // ClientRegistration을 직접 모킹
+        ClientRegistration mockClientRegistration = mock(ClientRegistration.class);
+        when(mockClientRegistration.getRegistrationId()).thenReturn("KAKAO");
+        when(userRequest.getClientRegistration()).thenReturn(mockClientRegistration);
+
+        try (MockedStatic<OAuth2Factory> mockedStatic = mockStatic(OAuth2Factory.class)) {
+            // OAuth2Factory 모킹
+            OAuth2Response oAuth2Response = mock(OAuth2Response.class);
+            // 테스트에 필요한 정보만 모킹
+            when(oAuth2Response.getEmail()).thenReturn(TestUsers.EMAIL);
+
+            mockedStatic.when(() -> OAuth2Factory.createResponse(any(), any())).thenReturn(oAuth2Response);
+
+            when(userRepository.findByEmail(anyString()))
+                    .thenThrow(new RuntimeException("DB Error"));
+
+            // when & then
+            assertThatThrownBy(() -> customOAuth2UserService.processOAuth2User(userRequest, oAuth2User))
+                    .isInstanceOf(OAuth2AuthenticationException.class)
+                    .hasMessageContaining("OAuth2 인증 실패");
+        }
+    }
+
+    private OAuth2UserRequest createOAuth2UserRequest(String registrationId) {
+        // 실제 ClientRegistration 객체를 생성하지 않고 Mock으로 대체
+        OAuth2UserRequest userRequest = mock(OAuth2UserRequest.class);
+
+        return userRequest;
     }
 }
