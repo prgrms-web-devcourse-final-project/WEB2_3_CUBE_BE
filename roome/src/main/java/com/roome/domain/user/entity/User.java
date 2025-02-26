@@ -121,16 +121,12 @@ public class User extends BaseTimeEntity {
     }
 
     public boolean isAttendanceToday(LocalDateTime now) {
-        if (lastLogin == null) { // 에러 처리
-            return false;
-        }
-
         LocalDateTime midnight = now.with(LocalTime.MIDNIGHT);
         return midnight.isEqual(lastLogin) || midnight.isAfter(lastLogin);
     }
 
-    public void accumulatePoints(int amount) {
-        this.point.addPoints(amount);
+    public void accumulatePoints(int point) {
+        this.point.addPoints(point);
     }
 
     public void payPoints(int point) {

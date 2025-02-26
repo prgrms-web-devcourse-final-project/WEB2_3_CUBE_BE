@@ -3,6 +3,9 @@ package com.roome.domain.auth.service;
 import com.roome.domain.auth.dto.oauth2.OAuth2Provider;
 import com.roome.domain.auth.dto.oauth2.OAuth2Response;
 import com.roome.domain.auth.security.OAuth2UserPrincipal;
+import com.roome.domain.point.entity.PointHistory;
+import com.roome.domain.point.entity.PointReason;
+import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.room.service.RoomService;
 import com.roome.domain.user.entity.Provider;
 import com.roome.domain.user.entity.Status;
@@ -19,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Random;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -26,6 +30,7 @@ import java.time.temporal.ChronoUnit;
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
+    private final PointHistoryRepository pointHistoryRepository;
     private final RoomService roomService;
 
     @Override
@@ -60,10 +65,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             }
 
             // 하루 한 번 로그인시 포인트 획득
-            LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS);
-            if (!user.isAttendanceToday(now)) {
-                // TODO: 포인트 획득
-            }
+            accumulateAttendancePoints(user);
 
             return new OAuth2UserPrincipal(user, oAuth2Response);
         } catch (OAuth2AuthenticationException e) {
@@ -74,6 +76,23 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw new OAuth2AuthenticationException(new OAuth2Error("invalid_token"), "OAuth2 인증 실패", e);
 
         }
+    }
+
+    private void accumulateAttendancePoints(User user) {
+        LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS);
+        if (!user.isAttendanceToday(now)) {
+            int point = new Random().nextInt(50) + 1;
+            user.accumulatePoints(point);
+
+            pointHistoryRepository.save(
+                    PointHistory.builder()
+                            .user(user)
+                            .amount(point)
+                            .reason(PointReason.DAILY_ATTENDANCE)
+                            .build()
+            );
+        }
+        userRepository.updateLastLogin(user.getId(), now);
     }
 
     private User updateOrCreateUser(OAuth2Response response) {
