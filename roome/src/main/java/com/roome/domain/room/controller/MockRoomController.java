@@ -34,7 +34,7 @@ public class MockRoomController {
     public ResponseEntity<RoomResponseDto> getRoomByUserId(
             @RequestParam("userId") Long userId
     ){
-        RoomResponseDto roomResponseDto = createMockRoomResponse(1L, "vintage");
+        RoomResponseDto roomResponseDto = createMockRoomResponse(1L, "forest");
         return ResponseEntity.ok(roomResponseDto);
     }
 
