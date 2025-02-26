@@ -1,16 +1,20 @@
 package com.roome.domain.auth.controller;
 
+import com.roome.domain.auth.dto.response.LoginResponse;
 import com.roome.domain.auth.dto.response.MessageResponse;
+import com.roome.domain.room.dto.RoomResponseDto;
+import com.roome.domain.room.service.RoomService;
+import com.roome.domain.user.entity.User;
+import com.roome.domain.user.repository.UserRepository;
 import com.roome.domain.user.service.UserService;
 import com.roome.global.exception.BusinessException;
-import com.roome.global.jwt.dto.JwtToken;
 import com.roome.global.jwt.exception.InvalidRefreshTokenException;
-import com.roome.global.jwt.helper.TokenResponseHelper;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.jwt.service.TokenService;
 import com.roome.global.service.RedisService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import jakarta.servlet.http.HttpServletResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -25,20 +29,58 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
+@Tag(name = "Authentication", description = "인증 관련 API")
 public class AuthController {
 
-    private final TokenResponseHelper tokenResponseHelper;
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenService tokenService;
     private final UserService userService;
+    private final UserRepository userRepository;
     private final RedisService redisService;
+    private final RoomService roomService;
+
+    @Operation(
+            summary = "사용자 정보 조회",
+            description = "Access Token으로 사용자 정보를 조회합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @GetMapping("/user")
+    public ResponseEntity<LoginResponse> getUserInfo(
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        try {
+            String accessToken = authHeader.substring(7);
+            Long userId = tokenService.getUserIdFromToken(accessToken);
+            User user = userRepository.getById(userId);
+            RoomResponseDto roomInfo = roomService.getOrCreateRoomByUserId(userId);
+
+            String refreshToken = redisService.getRefreshToken(userId.toString());
+
+            LoginResponse loginResponse = LoginResponse.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .expiresIn(jwtTokenProvider.getAccessTokenExpirationTime() / 1000) // 초 단위로 변환
+                    .user(LoginResponse.UserInfo.builder()
+                            .userId(user.getId())
+                            .nickname(user.getNickname())
+                            .email(user.getEmail())
+                            .roomId(roomInfo.getRoomId())
+                            .profileImage(user.getProfileImage())
+                            .build())
+                    .build();
+
+            return ResponseEntity.ok(loginResponse);
+        } catch (Exception e) {
+            log.error("사용자 정보 조회 중 오류: ", e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(null);
+        }
+    }
 
     @Transactional
     @PostMapping("/logout")
     public ResponseEntity<?> logout(
-            @RequestHeader(value = "Authorization", required = false) String authHeader,
-            HttpServletResponse response
-    ) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String accessToken = authHeader.substring(7);
@@ -56,7 +98,6 @@ public class AuthController {
                 }
             }
 
-            tokenResponseHelper.removeTokenResponse(response);
             return ResponseEntity.ok(Map.of("message", "로그아웃 되었습니다."));
         } catch (Exception e) {
             log.error("로그아웃 중 오류 발생: ", e);
@@ -67,24 +108,14 @@ public class AuthController {
 
     @DeleteMapping("/withdraw")
     public ResponseEntity<MessageResponse> withdraw(
-            @RequestHeader("Authorization") String authHeader,
-            @CookieValue(value = "refresh_token", required = false) String refreshToken,
-            HttpServletResponse response
-    ) {
+            @RequestHeader("Authorization") String authHeader) {
         try {
             String accessToken = authHeader.substring(7);
 
             if (accessToken.isBlank() || !jwtTokenProvider.validateAccessToken(accessToken)) {
-                // 리프레시 토큰 검증
-                if (refreshToken == null || !jwtTokenProvider.validateRefreshToken(refreshToken)) {
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body(new MessageResponse("리프레시 토큰이 없거나 유효하지 않습니다."));
+                            .body(new MessageResponse("유효하지 않은 액세스 토큰입니다."));
                 }
-
-                // 유효하지 않은 액세스 토큰을 사용한 경우 새로운 액세스 토큰 발급
-                JwtToken newToken = tokenService.reissueToken(refreshToken);
-                accessToken = newToken.getAccessToken();
-            }
 
             // 유저 ID 추출 및 회원 탈퇴 처리
             Long userId = tokenService.getUserIdFromToken(accessToken);
@@ -96,8 +127,6 @@ public class AuthController {
             // Access Token 블랙리스트 추가
             redisService.addToBlacklist(accessToken, jwtTokenProvider.getAccessTokenExpirationTime());
 
-            // 클라이언트 측 토큰 삭제
-            tokenResponseHelper.removeTokenResponse(response);
             return ResponseEntity.ok(new MessageResponse("회원 탈퇴가 완료되었습니다."));
 
         } catch (InvalidRefreshTokenException e) {

@@ -1,16 +1,18 @@
 package com.roome.global.jwt.controller;
 
 import com.roome.global.jwt.dto.JwtToken;
-import com.roome.global.jwt.helper.TokenResponseHelper;
+import com.roome.global.jwt.exception.InvalidRefreshTokenException;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.jwt.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import jakarta.servlet.http.HttpServletResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
@@ -18,41 +20,25 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Tag(name = "Token", description = "토큰 관련 API")
 public class ReissueController {
 
     private final TokenService tokenService;
     private final JwtTokenProvider jwtTokenProvider;
-    private final TokenResponseHelper tokenResponseHelper;
 
-    @Operation(security = { @SecurityRequirement(name = "cookieAuth") })
+    @Operation(summary = "토큰 재발급", description = "리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급받습니다.")
     @PostMapping("/reissue-token")
-    public ResponseEntity<?> reissueToken(
-            @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @CookieValue(value = "refresh_token", required = false) String refreshToken,
-            HttpServletResponse response
-    ) {
+    public ResponseEntity<?> reissueToken(@RequestBody Map<String, String> request) {
         try {
-            // 액세스 토큰이 없는 경우
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("message", "액세스 토큰이 필요합니다."));
-            }
-
-            String accessToken = authHeader.substring(7);
-
-            // 액세스 토큰이 아직 유효한 경우
-            if (jwtTokenProvider.validateAccessToken(accessToken)) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("message", "아직 유효한 액세스 토큰입니다."));
-            }
-
-            // 액세스 토큰이 만료된 경우에만 리프레시 토큰 확인
-            if (refreshToken == null || refreshToken.isBlank()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("message", "리프레시 토큰이 없습니다."));
-            }
+            String refreshToken = request.get("refreshToken");
 
             // 리프레시 토큰 검증
+            if (refreshToken == null || refreshToken.isBlank()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "리프레시 토큰이 필요합니다."));
+            }
+
+            // 리프레시 토큰이 유효한지 확인
             if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("message", "유효하지 않은 리프레시 토큰입니다."));
@@ -60,9 +46,12 @@ public class ReissueController {
 
             // 새로운 토큰 발급
             JwtToken newToken = tokenService.reissueToken(refreshToken);
-            tokenResponseHelper.setTokenResponse(response, newToken);
 
             return ResponseEntity.ok(createTokenResponse(newToken));
+        } catch (InvalidRefreshTokenException e) {
+            log.warn("유효하지 않은 리프레시 토큰: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
             log.error("토큰 재발급 중 오류 발생: ", e);
             return ResponseEntity.internalServerError()
@@ -72,10 +61,10 @@ public class ReissueController {
 
     private Map<String, Object> createTokenResponse(JwtToken token) {
         return Map.of(
-                "access_token", token.getAccessToken(),
-                "token_type", token.getGrantType(),
-                "expires_in", 3600,
-                "message", "토큰이 재발급되었습니다."
+                "accessToken", token.getAccessToken(),
+                "refreshToken", token.getRefreshToken(),
+                "tokenType", token.getGrantType(),
+                "expiresIn", jwtTokenProvider.getAccessTokenExpirationTime() / 1000
         );
     }
 }

@@ -1,10 +1,9 @@
 package com.roome.domain.auth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.roome.domain.room.service.RoomService;
+import com.roome.domain.user.repository.UserRepository;
 import com.roome.domain.user.service.UserService;
-import com.roome.global.jwt.handler.OAuth2AuthenticationFailureHandler;
-import com.roome.global.jwt.handler.OAuth2AuthenticationSuccessHandler;
-import com.roome.global.jwt.helper.TokenResponseHelper;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.jwt.service.TokenService;
 import com.roome.global.service.RedisService;
@@ -24,7 +23,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(AuthController.class)
+@WebMvcTest(controllers = AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @ExtendWith(MockitoExtension.class)
 class AuthControllerTest {
@@ -36,9 +35,6 @@ class AuthControllerTest {
     private JwtTokenProvider jwtTokenProvider;
 
     @MockBean
-    private TokenResponseHelper tokenResponseHelper;
-
-    @MockBean
     private TokenService tokenService;
 
     @MockBean
@@ -48,10 +44,10 @@ class AuthControllerTest {
     private RedisService redisService;
 
     @MockBean
-    private OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    private UserRepository userRepository;
 
     @MockBean
-    private OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
+    private RoomService roomService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
