@@ -28,6 +28,9 @@ public enum ErrorCode {
   INVALID_NICKNAME_FORMAT(HttpStatus.BAD_REQUEST, "닉네임 형식이 올바르지 않습니다."),
   INVALID_BIO_LENGTH(HttpStatus.BAD_REQUEST, "자기소개는 30자를 초과할 수 없습니다."),
 
+  // Auth 관련 예외
+  UNAUTHORIZED_ACCESS(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
+
   // 페이지네이션 관련 예외
   INVALID_LIMIT_VALUE(HttpStatus.BAD_REQUEST, "유효하지 않은 limit 값입니다. (1-100 사이의 값을 입력해주세요)"),
   INVALID_CURSOR_VALUE(HttpStatus.BAD_REQUEST, "유효하지 않은 cursor 값입니다."),
