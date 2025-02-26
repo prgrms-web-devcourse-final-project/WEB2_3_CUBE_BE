@@ -41,17 +41,16 @@ class MyCdControllerTest {
   private ObjectMapper objectMapper;
 
   @DisplayName("CD 추가 성공")
-  @WithMockUser
+  @WithMockUser(username = "1") // userId를 SecurityContext에 설정
   @Test
   void addMyCd_Success() throws Exception {
     MyCdCreateRequest request = createMyCdCreateRequest();
     MyCdResponse response = createMyCdResponse(1L, request);
 
-    BDDMockito.given(myCdService.addCdToMyList(any(Long.class), any(MyCdCreateRequest.class)))
+    BDDMockito.given(myCdService.addCdToMyList(eq(1L), any(MyCdCreateRequest.class)))
         .willReturn(response);
 
     mockMvc.perform(post("/api/my-cd")
-            .param("userId", "1")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request))
             .with(csrf()))
@@ -61,16 +60,15 @@ class MyCdControllerTest {
   }
 
   @DisplayName("CD 추가 실패 - 중복 추가")
-  @WithMockUser
+  @WithMockUser(username = "1")
   @Test
   void addMyCd_Failure_AlreadyExists() throws Exception {
     MyCdCreateRequest request = createMyCdCreateRequest();
 
-    BDDMockito.given(myCdService.addCdToMyList(any(Long.class), any(MyCdCreateRequest.class)))
+    BDDMockito.given(myCdService.addCdToMyList(eq(1L), any(MyCdCreateRequest.class)))
         .willThrow(new MyCdAlreadyExistsException());
 
     mockMvc.perform(post("/api/my-cd")
-            .param("userId", "1")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request))
             .with(csrf()))
