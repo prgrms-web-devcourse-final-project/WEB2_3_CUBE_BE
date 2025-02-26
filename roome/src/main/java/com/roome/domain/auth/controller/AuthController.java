@@ -9,7 +9,6 @@ import com.roome.domain.user.repository.UserRepository;
 import com.roome.domain.user.service.UserService;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.jwt.exception.InvalidRefreshTokenException;
-import com.roome.global.jwt.helper.TokenResponseHelper;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.jwt.service.TokenService;
 import com.roome.global.service.RedisService;
@@ -33,7 +32,6 @@ import java.util.Map;
 @Tag(name = "Authentication", description = "인증 관련 API")
 public class AuthController {
 
-    private final TokenResponseHelper tokenResponseHelper;
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenService tokenService;
     private final UserService userService;
@@ -116,7 +114,7 @@ public class AuthController {
 
             if (accessToken.isBlank() || !jwtTokenProvider.validateAccessToken(accessToken)) {
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body(new MessageResponse("리프레시 토큰이 없거나 유효하지 않습니다."));
+                            .body(new MessageResponse("유효하지 않은 액세스 토큰입니다."));
                 }
 
             // 유저 ID 추출 및 회원 탈퇴 처리

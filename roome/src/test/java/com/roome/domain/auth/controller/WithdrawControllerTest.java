@@ -1,13 +1,12 @@
 package com.roome.domain.auth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.roome.domain.room.service.RoomService;
+import com.roome.domain.user.repository.UserRepository;
 import com.roome.domain.user.service.UserService;
-import com.roome.global.jwt.dto.JwtToken;
-import com.roome.global.jwt.helper.TokenResponseHelper;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.jwt.service.TokenService;
 import com.roome.global.service.RedisService;
-import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(AuthController.class)
+@WebMvcTest(controllers = AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @ExtendWith(MockitoExtension.class)
 class WithdrawControllerTest {
@@ -46,7 +45,10 @@ class WithdrawControllerTest {
     private RedisService redisService;
 
     @MockBean
-    private TokenResponseHelper tokenResponseHelper;
+    private UserRepository userRepository;
+
+    @MockBean
+    private RoomService roomService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -55,7 +57,6 @@ class WithdrawControllerTest {
     void withdrawSuccess_BlacklistAndDeleteToken() throws Exception {
         // Given
         String accessToken = "mockAccessToken";
-        String refreshToken = "mockRefreshToken";
         Long userId = 1L;
 
         when(jwtTokenProvider.validateAccessToken(accessToken)).thenReturn(true);
@@ -68,7 +69,6 @@ class WithdrawControllerTest {
         // When & Then
         mockMvc.perform(delete("/api/auth/withdraw")
                         .header("Authorization", "Bearer " + accessToken)
-                        .cookie(new Cookie("refresh_token", refreshToken))
                         .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("회원 탈퇴가 완료되었습니다."));
@@ -79,67 +79,30 @@ class WithdrawControllerTest {
     }
 
     @Test
-    @DisplayName("Access Token이 만료되었을 때 Refresh Token 검증 후 재발급")
-    void withdrawWithExpiredAccessToken_ReissueToken() throws Exception {
+    @DisplayName("유효하지 않은 Access Token으로 회원 탈퇴 시 401 반환")
+    void withdrawWithInvalidAccessToken_Returns401() throws Exception {
         // Given
-        String accessToken = "expiredAccessToken";
-        String refreshToken = "validRefreshToken";
-        Long userId = 1L;
-        JwtToken newToken = new JwtToken("newAccessToken", "newRefreshToken", "Bearer");
-
-        when(jwtTokenProvider.validateAccessToken(accessToken)).thenReturn(false);  // 액세스 토큰 만료
-        when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(true); // 리프레시 토큰 유효
-        when(jwtTokenProvider.getAccessTokenExpirationTime()).thenReturn(3600000L);
-        when(tokenService.reissueToken(refreshToken)).thenReturn(newToken);
-        when(tokenService.getUserIdFromToken(newToken.getAccessToken())).thenReturn(userId);
-        doNothing().when(redisService).deleteRefreshToken(userId.toString());
-        doNothing().when(redisService).addToBlacklist(eq(newToken.getAccessToken()), anyLong());
-        doNothing().when(userService).deleteUser(userId);
-
-        // When & Then
-        mockMvc.perform(delete("/api/auth/withdraw")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .cookie(new Cookie("refresh_token", refreshToken))
-                        .with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("회원 탈퇴가 완료되었습니다."));
-
-        // Verify: 새 Access Token을 사용하여 회원 탈퇴 처리
-        verify(redisService, times(1)).deleteRefreshToken(userId.toString());
-        verify(redisService, times(1)).addToBlacklist(eq(newToken.getAccessToken()), anyLong());
-    }
-
-    @Test
-    @DisplayName("Refresh Token이 없거나 유효하지 않을 때 탈퇴 실패 (401)")
-    void withdrawFail_InvalidRefreshToken() throws Exception {
-        // Given
-        String accessToken = "expiredAccessToken";
-        String refreshToken = "invalidRefreshToken";
+        String accessToken = "invalidAccessToken";
 
         when(jwtTokenProvider.validateAccessToken(accessToken)).thenReturn(false);
-        when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(false);
 
         // When & Then
         mockMvc.perform(delete("/api/auth/withdraw")
                         .header("Authorization", "Bearer " + accessToken)
-                        .cookie(new Cookie("refresh_token", refreshToken))
                         .with(csrf()))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("리프레시 토큰이 없거나 유효하지 않습니다."));
+                .andExpect(jsonPath("$.message").value("유효하지 않은 액세스 토큰입니다."));
 
-        // Verify: Refresh Token이 유효하지 않아 삭제되지 않음
+        // Verify: 토큰이 유효하지 않아 호출되지 않음
         verify(redisService, times(0)).deleteRefreshToken(anyString());
+        verify(userService, times(0)).deleteUser(anyLong());
     }
 
     @Test
     @DisplayName("Authorization 헤더 없이 회원 탈퇴 시 401 반환")
     void withdrawFail_NoAuthorizationToken() throws Exception {
-        // Given
-        String refreshToken = "validRefreshToken";
-
         // When & Then
         mockMvc.perform(delete("/api/auth/withdraw")
-                        .cookie(new Cookie("refresh_token", refreshToken))
                         .with(csrf()))
                 .andExpect(status().isUnauthorized());
     }
