@@ -51,6 +51,15 @@ spring:
   jwt:
     secret: ${JWT_SECRET}
 
+# OAuth2 리디렉션 설정
+app:
+  oauth2:
+    redirectUri: http://localhost:5173/oauth/callback
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      - http://localhost:3000
+
 server:
   shutdown: graceful
 
