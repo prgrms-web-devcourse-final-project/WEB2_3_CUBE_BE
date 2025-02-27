@@ -4,6 +4,7 @@ import com.roome.domain.guestbook.dto.*;
 import com.roome.domain.guestbook.entity.Guestbook;
 import com.roome.domain.guestbook.entity.RelationType;
 import com.roome.domain.guestbook.repository.GuestbookRepository;
+import com.roome.domain.point.service.PointService;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
@@ -25,6 +26,7 @@ public class GuestbookService {
     private final GuestbookRepository guestbookRepository;
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
+    private final PointService pointService;
 
     public GuestbookListResponseDto getGuestbook(Long roomId, int page, int size) {
         Room room = roomRepository.findById(roomId)
@@ -65,6 +67,10 @@ public class GuestbookService {
                 .build();
 
         guestbookRepository.save(guestbook);
+
+        // 방명록 보상 포인트 적립
+        pointService.addGuestbookReward(userId);
+
         return GuestbookResponseDto.from(guestbook);
     }
 
