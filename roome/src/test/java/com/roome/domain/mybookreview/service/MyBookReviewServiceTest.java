@@ -68,7 +68,7 @@ class MyBookReviewServiceTest {
         Room room = createRoom(user);
         roomRepository.save(room);
 
-        Book book = createBook(1L, "book1");
+        Book book = createBook("1", "book1");
         bookRepository.save(book);
 
         MyBook myBook = createMyBook(room, book, user);
@@ -103,7 +103,7 @@ class MyBookReviewServiceTest {
         Room room = createRoom(user1);
         roomRepository.save(room);
 
-        Book book = createBook(1L, "book1");
+        Book book = createBook("1", "book1");
         bookRepository.save(book);
 
         MyBook myBook = createMyBook(room, book, user1);
@@ -136,7 +136,7 @@ class MyBookReviewServiceTest {
         Room room = createRoom(user1);
         roomRepository.save(room);
 
-        Book book = createBook(1L, "book1");
+        Book book = createBook("1", "book1");
         bookRepository.save(book);
 
         MyBook myBook = createMyBook(room, book, user1);
@@ -172,7 +172,7 @@ class MyBookReviewServiceTest {
         Room room = createRoom(user);
         roomRepository.save(room);
 
-        Book book = createBook(1L, "book1");
+        Book book = createBook("1", "book1");
         bookRepository.save(book);
 
         MyBook myBook = createMyBook(room, book, user);
@@ -199,7 +199,7 @@ class MyBookReviewServiceTest {
         Room room = createRoom(user);
         roomRepository.save(room);
 
-        Book book = createBook(1L, "book1");
+        Book book = createBook("1", "book1");
         bookRepository.save(book);
 
         MyBook myBook = createMyBook(room, book, user);
@@ -222,7 +222,7 @@ class MyBookReviewServiceTest {
         Room room = createRoom(user);
         roomRepository.save(room);
 
-        Book book = createBook(1L, "book1");
+        Book book = createBook("1", "book1");
         bookRepository.save(book);
 
         MyBook myBook = createMyBook(room, book, user);
@@ -260,7 +260,7 @@ class MyBookReviewServiceTest {
         Room room = createRoom(user1);
         roomRepository.save(room);
 
-        Book book = createBook(1L, "book1");
+        Book book = createBook("1", "book1");
         bookRepository.save(book);
 
         MyBook myBook = createMyBook(room, book, user1);
@@ -296,7 +296,7 @@ class MyBookReviewServiceTest {
         Room room = createRoom(user);
         roomRepository.save(room);
 
-        Book book = createBook(1L, "book1");
+        Book book = createBook("1", "book1");
         bookRepository.save(book);
 
         MyBook myBook = createMyBook(room, book, user);
@@ -325,7 +325,7 @@ class MyBookReviewServiceTest {
         Room room = createRoom(user1);
         roomRepository.save(room);
 
-        Book book = createBook(1L, "book1");
+        Book book = createBook("1", "book1");
         bookRepository.save(book);
 
         MyBook myBook = createMyBook(room, book, user1);
@@ -363,7 +363,7 @@ class MyBookReviewServiceTest {
                 .build();
     }
 
-    private Book createBook(Long isbn, String title) {
+    private Book createBook(String isbn, String title) {
         return Book.builder()
                 .isbn(isbn)
                 .title(title)
