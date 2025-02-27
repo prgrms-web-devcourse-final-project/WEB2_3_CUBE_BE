@@ -3,10 +3,11 @@ package com.roome.domain.user.controller;
 import com.roome.domain.auth.security.OAuth2UserPrincipal;
 import com.roome.domain.user.dto.response.ImageUploadResponseDto;
 import com.roome.domain.user.service.UserProfileImageService;
-import com.roome.domain.user.service.UserService;
 import com.roome.global.exception.ControllerException;
 import com.roome.global.exception.ErrorCode;
 import com.roome.global.service.S3Service;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/users/image")
+@Tag(name = "프로필 이미지", description = "프로필 이미지 업로드 및 삭제")
 public class UserProfileImageController {
     // 허용할 이미지 확장자 목록
     private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png", "gif");
@@ -35,6 +37,7 @@ public class UserProfileImageController {
 
 
     // 프로필 이미지 업로드
+    @Operation(summary = "프로필 이미지 업로드", description = "사용자의 프로필 이미지를 업로드합니다. PUT과 POST 모두 지원합니다.")
     @RequestMapping(method = {RequestMethod.POST, RequestMethod.PUT})
     public ResponseEntity<ImageUploadResponseDto> uploadProfileImage(@AuthenticationPrincipal OAuth2UserPrincipal principal, @RequestParam("image") MultipartFile image) {
         // 이미지 파일 유효성 검증
@@ -66,6 +69,7 @@ public class UserProfileImageController {
     }
 
     // 프로필 이미지 삭제
+    @Operation(summary = "프로필 이미지 삭제", description = "사용자의 프로필 이미지를 삭제합니다.")
     @DeleteMapping
     public ResponseEntity<?> deleteProfileImage(@AuthenticationPrincipal OAuth2UserPrincipal principal, @RequestParam("imageUrl") String imageUrl) {
         // URL 유효성 검증
@@ -104,9 +108,6 @@ public class UserProfileImageController {
             return false;
         }
 
-        // AWS S3 버킷 도메인 확인
-        String bucketDomain = bucketName + ".s3.amazonaws.com";
-
         // URL에 버킷 이름이 포함되어 있는지 확인
         boolean containsBucketName = imageUrl.contains(bucketName);
 
@@ -143,5 +144,4 @@ public class UserProfileImageController {
             }
         }
     }
-
 }

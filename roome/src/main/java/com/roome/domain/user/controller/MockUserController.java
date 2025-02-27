@@ -50,7 +50,7 @@ public class MockUserController {
     @Operation(summary = "프로필 수정")
     @PatchMapping("/profile")
     public ResponseEntity<?> updateMockUserProfile(@AuthenticationPrincipal OAuth2UserPrincipal principal, @RequestBody UpdateProfileRequest request) {
-        log.info("[Mock 프로필 수정] nickname: {}, profileImage: {}, bio: {}", request.getNickname(), request.getBio());
+        log.info("[Mock 프로필 수정] nickname: {}, bio: {}", request.getNickname(), request.getBio());
 
         return ResponseEntity.ok(
                 Map.of("id", MOCK_USER_ID.toString(), "nickname", request.getNickname(), "bio", request.getBio()));

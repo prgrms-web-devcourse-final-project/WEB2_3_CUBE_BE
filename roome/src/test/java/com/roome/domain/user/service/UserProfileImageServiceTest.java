@@ -22,15 +22,13 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class UserProfileImageServiceTest {
 
-    @Mock
-    private UserRepository userRepository;
-
-    @InjectMocks
-    private UserProfileImageService userProfileImageService;
-
-    private User testUser;
     private final Long userId = 1L;
     private final String profileImageUrl = "https://example.com/image.jpg";
+    @Mock
+    private UserRepository userRepository;
+    @InjectMocks
+    private UserProfileImageService userProfileImageService;
+    private User testUser;
 
     @BeforeEach
     void setUp() {
@@ -69,9 +67,7 @@ public class UserProfileImageServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         // when & then
-        BusinessException exception = assertThrows(BusinessException.class, () -> {
-            userProfileImageService.updateProfileImage(userId, newProfileImageUrl);
-        });
+        BusinessException exception = assertThrows(BusinessException.class, () -> userProfileImageService.updateProfileImage(userId, newProfileImageUrl));
 
         assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
         verify(userRepository, times(1)).findById(userId);
@@ -98,9 +94,7 @@ public class UserProfileImageServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         // when & then
-        BusinessException exception = assertThrows(BusinessException.class, () -> {
-            userProfileImageService.deleteProfileImage(userId);
-        });
+        BusinessException exception = assertThrows(BusinessException.class, () -> userProfileImageService.deleteProfileImage(userId));
 
         assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
         verify(userRepository, times(1)).findById(userId);
@@ -127,9 +121,7 @@ public class UserProfileImageServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         // when & then
-        BusinessException exception = assertThrows(BusinessException.class, () -> {
-            userProfileImageService.getProfileImageUrl(userId);
-        });
+        BusinessException exception = assertThrows(BusinessException.class, () -> userProfileImageService.getProfileImageUrl(userId));
 
         assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
         verify(userRepository, times(1)).findById(userId);

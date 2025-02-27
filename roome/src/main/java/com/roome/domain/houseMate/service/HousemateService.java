@@ -1,9 +1,9 @@
 package com.roome.domain.houseMate.service;
 
 import com.roome.domain.houseMate.dto.HousemateInfo;
+import com.roome.domain.houseMate.dto.HousemateListResponse;
 import com.roome.domain.houseMate.entity.AddedHousemate;
 import com.roome.domain.houseMate.repository.HousemateRepository;
-import com.roome.domain.houseMate.dto.HousemateListResponse;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
