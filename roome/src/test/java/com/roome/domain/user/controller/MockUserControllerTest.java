@@ -70,20 +70,45 @@ class MockUserControllerTest {
     }
 
     @Test
-    @DisplayName("프로필 이미지 업로드 - 성공")
-    void uploadMockProfileImage_success() throws Exception {
+    @DisplayName("프로필 이미지 업로드 - POST 성공")
+    void uploadMockProfileImage_post_success() throws Exception {
         // given
         MockMultipartFile imageFile = new MockMultipartFile(
                 "image",
                 "test-image.jpg",
-                "image/jpeg",
-                "test image content".getBytes()
+                MediaType.IMAGE_JPEG_VALUE,
+                "image content".getBytes()
         );
 
         // when & then
         mockMvc
-                .perform(multipart(BASE_URL)
+                .perform(multipart(BASE_URL + "/profile/image")
                         .file(imageFile))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.imageUrl").exists())
+                .andExpect(jsonPath("$.fileName").value(imageFile.getOriginalFilename()));
+    }
+
+    @Test
+    @DisplayName("프로필 이미지 업로드 - PUT 성공")
+    void uploadMockProfileImage_put_success() throws Exception {
+        // given
+        MockMultipartFile imageFile = new MockMultipartFile(
+                "image",
+                "test-image.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "image content".getBytes()
+        );
+
+        // when & then
+        mockMvc
+                .perform(multipart(BASE_URL + "/profile/image")
+                        .file(imageFile)
+                        .with(request -> {
+                            request.setMethod("PUT");
+                            return request;
+                        }))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.imageUrl").exists())
@@ -94,7 +119,7 @@ class MockUserControllerTest {
     @DisplayName("프로필 이미지 삭제 - 성공")
     void deleteMockProfileImage_success() throws Exception {
         // given
-        String imageUrl = "https://roome-profile-images.s3.ap-northeast-2.amazonaws.com/profile/test.jpg";
+        String imageUrl = "https://roome-profile-images.s3.amazonaws.com/profile/image.jpg";
 
         // when & then
         mockMvc
