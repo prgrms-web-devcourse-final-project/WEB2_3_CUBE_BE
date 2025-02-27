@@ -52,7 +52,7 @@ class MyBookControllerTest {
         // given
         String title = "title";
         List<String> genreNames = List.of("웹", "IT");
-        MyBookCreateRequest request = createMyBookCreateRequest(1213214432L, title, genreNames);
+        MyBookCreateRequest request = createMyBookCreateRequest("1213214432", title, genreNames);
 
         Long myBookId = 1L;
         MyBookResponse response = createMyBookResponse(myBookId, request);
@@ -186,7 +186,7 @@ class MyBookControllerTest {
         verify(myBookService).delete(any(), eq(1L), eq("1,2,3"));
     }
 
-    private MyBookCreateRequest createMyBookCreateRequest(Long isbn, String title, List<String> genreNames) {
+    private MyBookCreateRequest createMyBookCreateRequest(String isbn, String title, List<String> genreNames) {
         return new MyBookCreateRequest(
                 isbn,
                 title,
