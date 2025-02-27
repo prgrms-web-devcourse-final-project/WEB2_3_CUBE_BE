@@ -123,4 +123,5 @@ public class UserService {
         List<Guestbook> guestbooks = guestbookRepository.findAllByRoomOrUserId(room, userId);
         guestbookRepository.deleteAll(guestbooks);
     }
+
 }

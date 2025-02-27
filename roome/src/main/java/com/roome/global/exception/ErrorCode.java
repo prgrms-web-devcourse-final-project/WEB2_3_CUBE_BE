@@ -26,7 +26,8 @@ public enum ErrorCode {
   // User 관련 예외
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
   INVALID_NICKNAME_FORMAT(HttpStatus.BAD_REQUEST, "닉네임 형식이 올바르지 않습니다."),
-  INVALID_BIO_LENGTH(HttpStatus.BAD_REQUEST, "자기소개는 30자를 초과할 수 없습니다."),
+  INVALID_BIO_LENGTH(HttpStatus.BAD_REQUEST, "자기소개는 100자를 초과할 수 없습니다."),
+    INVALID_BIO_NULL(HttpStatus.BAD_REQUEST, "자기소개는 비어 있을 수 없습니다."),
 
   // Auth 관련 예외
   UNAUTHORIZED_ACCESS(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
@@ -87,13 +88,16 @@ public enum ErrorCode {
   INVALID_NOTIFICATION_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 알림 타입입니다."),
   INVALID_NOTIFICATION_REQUEST(HttpStatus.BAD_REQUEST, "알림 생성 요청이 유효하지 않습니다."),
 
-  // 유저 Genre 관련 예외
-  GENRE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "장르는 최대 3개까지만 선택할 수 있습니다."),
-  DUPLICATE_GENRE(HttpStatus.BAD_REQUEST, "이미 선택된 장르입니다."),
-  INVALID_GENRE_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 장르 타입입니다."),
-
   // Point 관련 예외
   INSUFFICIENT_POINTS(HttpStatus.BAD_REQUEST, "포인트가 부족합니다."),
+
+  // 이미지 업로드 관련 예외
+  IMAGE_NOT_FOUND(HttpStatus.BAD_REQUEST, "이미지 파일이 없거나 비어 있습니다."),
+  INVALID_IMAGE_FORMAT(HttpStatus.BAD_REQUEST, "지원되지 않는 이미지 형식입니다."),
+  IMAGE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "이미지 크기가 제한을 초과했습니다."),
+  S3_UPLOAD_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 업로드 중 오류가 발생했습니다."),
+  INVALID_IMAGE_URL(HttpStatus.BAD_REQUEST, "잘못된 이미지 URL입니다."),
+  S3_DELETE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 삭제 중 오류가 발생했습니다."),
 
   // 서버 에러
   INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 에러가 발생했습니다.");

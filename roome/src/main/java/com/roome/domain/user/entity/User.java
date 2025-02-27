@@ -5,25 +5,11 @@ import com.roome.domain.point.entity.PointHistory;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.exception.RoomAuthorizationException;
 import com.roome.global.entity.BaseTimeEntity;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
 @Setter
@@ -41,9 +27,11 @@ public class User extends BaseTimeEntity {
   @Column(nullable = false, length = 255, unique = true)
   private String email;
 
-  // 소셜에서 가져온 실제 이름
-  @Column(nullable = false, length = 10)
-  private String name;
+
+    // 소셜에서 가져온 실제 이름
+    @Column(nullable = false, length = 30)
+    private String name;
+
 
   // 서비스에서 사용할 닉네임
   private String nickname;
@@ -51,8 +39,10 @@ public class User extends BaseTimeEntity {
   @Column(length = 500)
   private String profileImage;
 
-  @Column(length = 30)
+
+  @Column(length = 101)
   private String bio;
+
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 10)
@@ -92,13 +82,24 @@ public class User extends BaseTimeEntity {
     }
   }
 
-  public void updateLastLogin() {
-    if (this.lastLogin == null) {  // 에러 처리
-      this.lastLogin = LocalDateTime.now();
-    } else {
-      this.lastLogin = LocalDateTime.now();
+public void updateProfile(String nickname, String bio) {
+    boolean updated = false;
+    if (nickname != null && !nickname.equals(this.nickname)) {
+        this.nickname = nickname;
+        updated = true;
     }
-  }
+    if (bio != null && !bio.equals(this.bio)) {
+        this.bio = bio;
+        updated = true;
+    }
+    if (updated) {
+        this.lastLogin = LocalDateTime.now();
+    }
+}
+
+public void updateLastLogin() {
+    this.lastLogin = LocalDateTime.now();
+}
 
   public void updateProfile(String nickname, String profileImage, String bio) {
     boolean updated = false;

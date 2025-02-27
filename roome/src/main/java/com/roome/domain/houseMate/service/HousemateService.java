@@ -1,9 +1,9 @@
 package com.roome.domain.houseMate.service;
 
 import com.roome.domain.houseMate.dto.HousemateInfo;
+import com.roome.domain.houseMate.dto.HousemateListResponse;
 import com.roome.domain.houseMate.entity.AddedHousemate;
 import com.roome.domain.houseMate.repository.HousemateRepository;
-import com.roome.domain.houseMate.dto.HousemateListResponse;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
@@ -21,13 +21,6 @@ import java.util.List;
 public class HousemateService {
     private final HousemateRepository housemateRepository;
     private final UserRepository userRepository;
-
-    //email로 userId 조회
-    public Long findUserIdByUserId(String email) {
-        return userRepository.findByEmail(email)
-                            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND))
-                            .getId();
-    }
 
     // 팔로잉 목록 조회 (내가 추가한 유저 목록)
     public HousemateListResponse getFollowingList(Long userId, Long cursor, int limit, String nickname) {

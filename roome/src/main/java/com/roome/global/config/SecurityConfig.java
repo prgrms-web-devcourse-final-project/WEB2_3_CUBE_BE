@@ -37,6 +37,7 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
+
         // CSRF 보호 비활성화
         .csrf(csrf -> csrf.disable())
 
