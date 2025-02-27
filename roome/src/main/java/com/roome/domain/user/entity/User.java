@@ -26,11 +26,9 @@ public class User extends BaseTimeEntity {
   @Column(nullable = false, length = 255, unique = true)
   private String email;
 
-
-    // 소셜에서 가져온 실제 이름
-    @Column(nullable = false, length = 30)
-    private String name;
-
+  // 소셜에서 가져온 실제 이름
+  @Column(nullable = false, length = 30)
+  private String name;
 
   // 서비스에서 사용할 닉네임
   private String nickname;
@@ -38,10 +36,8 @@ public class User extends BaseTimeEntity {
   @Column(length = 500)
   private String profileImage;
 
-
   @Column(length = 101)
   private String bio;
-
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 10)
@@ -54,8 +50,11 @@ public class User extends BaseTimeEntity {
   @Column(nullable = false, length = 10)
   private Status status;
 
-  @Column(nullable = true)  // 에러 처리
+  @Column(nullable = true)
   private LocalDateTime lastLogin;
+
+  @Column(nullable = true) 
+  private LocalDateTime lastGuestbookReward;
 
   // TODO: 추후 Redis 사용
   @Column(length = 1000)
@@ -67,35 +66,30 @@ public class User extends BaseTimeEntity {
   @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   private Point point;
 
-  @PrePersist // 에러 처리
+  @PrePersist
   public void prePersist() {
     if (this.lastLogin == null) {
       this.lastLogin = LocalDateTime.now();
     }
-
     if (this.point == null) {
       this.point = new Point(this, 0, 0, 0);
     }
   }
 
-public void updateProfile(String nickname, String bio) {
+  public void updateProfile(String nickname, String bio) {
     boolean updated = false;
     if (nickname != null && !nickname.equals(this.nickname)) {
-        this.nickname = nickname;
-        updated = true;
+      this.nickname = nickname;
+      updated = true;
     }
     if (bio != null && !bio.equals(this.bio)) {
-        this.bio = bio;
-        updated = true;
+      this.bio = bio;
+      updated = true;
     }
     if (updated) {
-        this.lastLogin = LocalDateTime.now();
+      this.lastLogin = LocalDateTime.now();
     }
-}
-
-public void updateLastLogin() {
-    this.lastLogin = LocalDateTime.now();
-}
+  }
 
   public void updateProfile(String nickname, String profileImage, String bio) {
     boolean updated = false;
@@ -124,7 +118,6 @@ public void updateLastLogin() {
     this.status = status;
   }
 
-  // TODO: 추후 Redis 사용
   public void updateRefreshToken(String refreshToken) {
     this.refreshToken = refreshToken;
   }
@@ -154,5 +147,9 @@ public void updateLastLogin() {
     if (room == null || !room.getId().equals(roomId)) {
       throw new RoomAuthorizationException();
     }
+  }
+
+  public void updateLastGuestbookReward(LocalDateTime date) {
+    this.lastGuestbookReward = date;
   }
 }
