@@ -53,7 +53,7 @@ public class SecurityConfig {
                 .baseUri("/oauth2/authorization")
             )
             .redirectionEndpoint(endpoint -> endpoint
-                .baseUri("/oauth/callback/*")
+                .baseUri("/oauth/callback/{registrationId}")
             )
             .userInfoEndpoint(endpoint -> endpoint
                 .userService(oAuth2UserService)
