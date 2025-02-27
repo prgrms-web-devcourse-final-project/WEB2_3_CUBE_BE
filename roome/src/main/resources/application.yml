@@ -14,7 +14,7 @@ spring:
             client-name: google
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
-            redirect-uri: "{baseUrl}/oauth/callback/{registrationId}"
+            redirect-uri: https://desqb38rc2v50.cloudfront.net/oauth/callback/google
             authorization-grant-type: authorization_code
             scope:
               - email
