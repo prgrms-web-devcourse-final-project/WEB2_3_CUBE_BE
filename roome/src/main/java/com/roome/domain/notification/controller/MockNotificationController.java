@@ -1,6 +1,9 @@
 package com.roome.domain.notification.controller;
 
-import com.roome.domain.notification.dto.*;
+import com.roome.domain.notification.dto.NotificationInfo;
+import com.roome.domain.notification.dto.NotificationReadResponse;
+import com.roome.domain.notification.dto.NotificationResponse;
+import com.roome.domain.notification.dto.NotificationType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -20,20 +23,20 @@ import java.util.stream.Collectors;
 public class MockNotificationController {
 
     // Mock 데이터 생성 - 더 많은 데이터 추가
-    List<NotificationInfo> mockNotifications = generateMockNotifications(100);
+    List<NotificationInfo> mockNotifications = generateMockNotifications();
 
-    private List<NotificationInfo> generateMockNotifications(int count) {
+    private List<NotificationInfo> generateMockNotifications() {
         List<NotificationInfo> notifications = new ArrayList<>();
 
         // 알림 타입 배열
         NotificationType[] types = NotificationType.values();
 
-        for (int i = 1; i <= count; i++) {
+        for (int i = 1; i <= 100; i++) {
             // i에 따라 읽음 상태 결정 (짝수는 읽음, 홀수는 안읽음)
             boolean isRead = i % 2 == 0;
 
             // 시간은 최신순으로 생성 (id가 클수록 최신)
-            LocalDateTime createdTime = LocalDateTime.now().minusHours(count - i);
+            LocalDateTime createdTime = LocalDateTime.now().minusHours(100 - i);
 
             // 알림 타입은 순환하면서 배정
             NotificationType type = types[i % types.length];
