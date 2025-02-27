@@ -18,68 +18,67 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class TokenService {
 
-    private final JwtTokenProvider jwtTokenProvider;
-    private final UserRepository userRepository;
-    private final RedisService redisService;
+  private final JwtTokenProvider jwtTokenProvider;
+  private final UserRepository userRepository;
+  private final RedisService redisService;
 
-    @Transactional
-    public JwtToken reissueToken(String refreshToken) {
-        // 리프레시 토큰 유효성 검증 (서명, 만료 등..)
-        if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
-            log.warn("유효하지 않은 리프레시 토큰");
-            throw new InvalidRefreshTokenException();
-        }
-
-        User user = findUserByRefreshToken(refreshToken);
-        String userId = user.getId().toString();
-
-        // Redis에 저장된 Refresh Token과 비교
-        String savedRefreshToken = redisService.getRefreshToken(userId);
-        if (!refreshToken.equals(savedRefreshToken)) {
-            log.warn("Redis에 저장된 토큰과 일치하지 않음");
-            throw new InvalidRefreshTokenException();
-        }
-
-        // 기존 Refresh Token을 삭제하여 무효화
-        redisService.deleteRefreshToken(userId);
-
-        // 새 토큰 발급
-        JwtToken newToken = jwtTokenProvider.createToken(userId);
-
-        // 새 Refresh Token을 Redis에 저장
-        redisService.saveRefreshToken(userId, newToken.getRefreshToken(),
-                jwtTokenProvider.getRefreshTokenExpirationTime());
-
-        return newToken;
+  @Transactional
+  public JwtToken reissueToken(String refreshToken) {
+    // 리프레시 토큰 유효성 검증 (서명, 만료 등..)
+    if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
+      log.warn("유효하지 않은 리프레시 토큰");
+      throw new InvalidRefreshTokenException();
     }
 
-    private User findUserByRefreshToken(String refreshToken) {
-        String userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
+    User user = findUserByRefreshToken(refreshToken);
+    String userId = user.getId().toString();
 
-        if (userId == null || userId.isBlank()) {
-            throw new MissingUserIdFromTokenException();
-        }
-
-        try {
-            return userRepository.findById(Long.valueOf(userId))
-                    .orElseThrow(UserNotFoundException::new);
-        } catch (NumberFormatException e) {
-            throw new InvalidUserIdFormatException();
-        }
+    // Redis에 저장된 Refresh Token과 비교
+    String savedRefreshToken = redisService.getRefreshToken(userId);
+    if (savedRefreshToken == null || !refreshToken.equals(savedRefreshToken)) {
+      log.warn("Redis에 저장된 토큰이 없거나 일치하지 않음");
+      throw new InvalidRefreshTokenException();
     }
 
-    @Transactional(readOnly = true)
-    public Long getUserIdFromToken(String accessToken) {
-        String userIdStr = jwtTokenProvider.getUserIdFromToken(accessToken);
+    // 기존 Refresh Token을 삭제하여 무효화
+    redisService.deleteRefreshToken(userId);
 
-        if (userIdStr == null || userIdStr.trim().isEmpty()) {
-            throw new MissingUserIdFromTokenException();
-        }
+    // 새 토큰 발급
+    JwtToken newToken = jwtTokenProvider.createToken(userId);
 
-        try {
-            return Long.valueOf(userIdStr);
-        } catch (NumberFormatException e) {
-            throw new InvalidUserIdFormatException();
-        }
+    // 새 Refresh Token을 Redis에 저장
+    redisService.saveRefreshToken(userId, newToken.getRefreshToken(),
+        jwtTokenProvider.getRefreshTokenExpirationTime());
+
+    return newToken;
+  }
+
+  private User findUserByRefreshToken(String refreshToken) {
+    String userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
+
+    if (userId == null || userId.isBlank()) {
+      throw new MissingUserIdFromTokenException();
     }
+
+    try {
+      return userRepository.findById(Long.valueOf(userId)).orElseThrow(UserNotFoundException::new);
+    } catch (NumberFormatException e) {
+      throw new InvalidUserIdFormatException();
+    }
+  }
+
+  @Transactional(readOnly = true)
+  public Long getUserIdFromToken(String accessToken) {
+    String userIdStr = jwtTokenProvider.getUserIdFromToken(accessToken);
+
+    if (userIdStr == null || userIdStr.trim().isEmpty()) {
+      throw new MissingUserIdFromTokenException();
+    }
+
+    try {
+      return Long.valueOf(userIdStr);
+    } catch (NumberFormatException e) {
+      throw new InvalidUserIdFormatException();
+    }
+  }
 }
