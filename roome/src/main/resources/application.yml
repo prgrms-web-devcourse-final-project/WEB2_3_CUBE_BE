@@ -53,25 +53,6 @@ spring:
             user-name-attribute: id
   jwt:
     secret: ${JWT_SECRET}
-    access-token:
-      expiration-time: 3600000  # 1시간
-    refresh-token:
-      expiration-time: 1209600000  # 14일
-
-  data:
-    redis:
-      port: ${REDIS_PORT}
-      host: ${REDIS_HOST}
-      password: ${REDIS_PASSWORD}
-
-# OAuth2 리디렉션 설정
-app:
-  oauth2:
-    redirectUri: http://localhost:5173/oauth/callback
-  cors:
-    allowed-origins:
-      - http://localhost:5173
-      - http://localhost:3000
 
 server:
   shutdown: graceful
