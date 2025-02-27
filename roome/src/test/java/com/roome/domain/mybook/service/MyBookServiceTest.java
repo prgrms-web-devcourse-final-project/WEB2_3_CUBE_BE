@@ -2,6 +2,9 @@ package com.roome.domain.mybook.service;
 
 import com.roome.domain.book.entity.Book;
 import com.roome.domain.book.entity.repository.BookRepository;
+import com.roome.domain.furniture.entity.Furniture;
+import com.roome.domain.furniture.entity.FurnitureType;
+import com.roome.domain.furniture.repository.FurnitureRepository;
 import com.roome.domain.mybook.entity.MyBook;
 import com.roome.domain.mybook.entity.MyBookCount;
 import com.roome.domain.mybook.entity.repository.MyBookCountRepository;
@@ -57,6 +60,9 @@ class MyBookServiceTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private FurnitureRepository furnitureRepository;
+
     @DisplayName("도서를 등록할 수 있다. 등록하고자 하는 도서가 테이블에 없는 경우.")
     @Test
     void createBookDoesNotExist() {
@@ -66,7 +72,12 @@ class MyBookServiceTest {
         userRepository.save(user);
 
         Room room = createRoom(user);
-        roomRepository.save(room);
+        room = roomRepository.save(room);
+
+        Furniture furniture = createFurniture(room);
+        furnitureRepository.save(furniture);
+
+        room.setFurnitures(List.of(furniture));
 
         List<String> genreNames = List.of("IT", "웹");
         MyBookCreateRequest request = new MyBookCreateRequest(
@@ -105,7 +116,12 @@ class MyBookServiceTest {
         userRepository.save(user);
 
         Room room = createRoom(user);
-        roomRepository.save(room);
+        room = roomRepository.save(room);
+
+        Furniture furniture = createFurniture(room);
+        furnitureRepository.save(furniture);
+
+        room.setFurnitures(List.of(furniture));
 
         Book book = createBook(1L, "title");
         bookRepository.save(book);
@@ -175,7 +191,12 @@ class MyBookServiceTest {
         userRepository.save(user1);
 
         Room room = createRoom(user1);
-        roomRepository.save(room);
+        room = roomRepository.save(room);
+
+        Furniture furniture = createFurniture(room);
+        furnitureRepository.save(furniture);
+
+        room.setFurnitures(List.of(furniture));
 
         Book book = createBook(1L, "book");
         bookRepository.save(book);
@@ -423,7 +444,15 @@ class MyBookServiceTest {
                 .user(user)
                 .theme(RoomTheme.BASIC)
                 .createdAt(LocalDateTime.of(2025, 1, 1, 1, 1))
-                .furnitures(null)
+                .build();
+    }
+
+    private Furniture createFurniture(Room room) {
+        return Furniture.builder()
+                .room(room)
+                .furnitureType(FurnitureType.BOOKSHELF)
+                .isVisible(false)
+                .level(1)
                 .build();
     }
 
