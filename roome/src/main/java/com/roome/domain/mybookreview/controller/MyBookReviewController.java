@@ -6,6 +6,7 @@ import com.roome.domain.mybookreview.service.request.MyBookReviewUpdateRequest;
 import com.roome.domain.mybookreview.service.response.MyBookReviewResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,10 +17,10 @@ public class MyBookReviewController {
 
     @PostMapping("/api/mybooks-review")
     public ResponseEntity<MyBookReviewResponse> create(
+            @AuthenticationPrincipal Long loginUserId,
             @RequestParam("myBookId") Long myBookId,
             @RequestBody MyBookReviewCreateRequest request
     ) {
-        Long loginUserId = 1L;
         MyBookReviewResponse response = myBookReviewService.create(loginUserId, myBookId, request);
         return ResponseEntity.ok(response);
     }
@@ -32,19 +33,19 @@ public class MyBookReviewController {
 
     @PatchMapping("/api/mybooks-review/{myBookReviewId}")
     public ResponseEntity<MyBookReviewResponse> update(
+            @AuthenticationPrincipal Long loginUserId,
             @PathVariable("myBookReviewId") Long myBookReviewId,
             @RequestBody MyBookReviewUpdateRequest request
     ) {
-        Long loginUserId = 1L;
         MyBookReviewResponse response = myBookReviewService.update(loginUserId, myBookReviewId, request);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/api/mybooks-review/{myBookReviewId}")
     public ResponseEntity<Void> delete(
+            @AuthenticationPrincipal Long loginUserId,
             @PathVariable("myBookReviewId") Long myBookReviewId
     ) {
-        Long loginUserId = 1L;
         myBookReviewService.delete(loginUserId, myBookReviewId);
         return ResponseEntity.ok().build();
     }
