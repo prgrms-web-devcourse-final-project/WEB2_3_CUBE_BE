@@ -52,20 +52,21 @@ public class SecurityConfig {
                 .baseUri("/oauth2/authorization")
             )
             .redirectionEndpoint(endpoint -> endpoint
-                .baseUri("/login/oauth2/code/*")
+                .baseUri("/oauth/callback/*")
             )
             .userInfoEndpoint(endpoint -> endpoint
                 .userService(oAuth2UserService)
             )
             .successHandler(oAuth2AuthenticationSuccessHandler)
             .failureHandler(oAuth2AuthenticationFailureHandler)
-            .defaultSuccessUrl("/oauth2/success", true)
         )
 
         // 접근 제어 설정
         .authorizeHttpRequests((auth) -> auth
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers(
+                "/oauth2/authorization/**",  // OAuth 인증 시작 엔드포인트
+                "/oauth/callback/**",        // OAuth 콜백 엔드포인트
                 "/api/auth/**",
                 "/error",
                 "/v3/api-docs/**",

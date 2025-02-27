@@ -34,6 +34,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     User user = oAuth2UserPrincipal.getUser();
 
     log.info("OAuth2 로그인 성공: userId={}, email={}", user.getId(), user.getEmail());
+    log.info("Request URI: {}", request.getRequestURI());
+    log.info("Request URL: {}", request.getRequestURL());
+    log.info("Query String: {}", request.getQueryString());
 
     // JWT 토큰 생성
     JwtToken jwtToken = jwtTokenProvider.createToken(user.getId().toString());
@@ -46,12 +49,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     );
 
     // 프론트엔드 리다이렉트 URI에 액세스 토큰을 쿼리 파라미터로 추가
-    String targetUri = request.getParameter("redirect_uri");
-    if (targetUri == null || targetUri.isBlank()) {
-      targetUri = redirectUri; // 기본값으로 설정된 리디렉트 URI 사용
-    }
-
-    String targetUrl = UriComponentsBuilder.fromUriString(targetUri)
+    String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
         .queryParam("accessToken", jwtToken.getAccessToken())
         .queryParam("userId", user.getId())
         .build().toUriString();
