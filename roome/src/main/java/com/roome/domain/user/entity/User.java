@@ -65,6 +65,9 @@ public class User extends BaseTimeEntity {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private PointHistory pointHistory;
 
+    @Column(nullable = true)
+    private LocalDateTime lastGuestbookReward;
+
     @PrePersist // 에러 처리
     public void prePersist() {
         if (this.lastLogin == null) {
@@ -137,5 +140,9 @@ public class User extends BaseTimeEntity {
         if (room == null || !room.getId().equals(roomId)) {
             throw new RoomAuthorizationException();
         }
+    }
+
+    public void updateLastGuestbookReward(LocalDateTime date) {
+        this.lastGuestbookReward = date;
     }
 }

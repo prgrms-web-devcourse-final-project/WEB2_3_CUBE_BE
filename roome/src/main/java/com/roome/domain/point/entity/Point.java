@@ -31,9 +31,6 @@ public class Point {
   @Column(nullable = false)
   private int totalUsed; // 누적 사용 포인트
 
-  @Column
-  private LocalDateTime lastGuestbookReward; // 마지막 방명록 보상 일자
-
   @Column(nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
@@ -41,12 +38,11 @@ public class Point {
   private LocalDateTime updatedAt;
 
   @Builder
-  public Point(User user, int balance, int totalEarned, int totalUsed, LocalDateTime lastGuestbookReward) {
+  public Point(User user, int balance, int totalEarned, int totalUsed) {
     this.user = user;
     this.balance = balance;
     this.totalEarned = totalEarned;
     this.totalUsed = totalUsed;
-    this.lastGuestbookReward = lastGuestbookReward;
     this.createdAt = LocalDateTime.now();
     this.updatedAt = LocalDateTime.now();
   }
@@ -68,8 +64,4 @@ public class Point {
     this.updatedAt = LocalDateTime.now();
   }
 
-  // 방명록 작성 보상 날짜 업데이트
-  public void updateLastGuestbookReward(LocalDateTime date) {
-    this.lastGuestbookReward = date;
-  }
 }
