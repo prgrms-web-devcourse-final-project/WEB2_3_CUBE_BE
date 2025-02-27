@@ -33,7 +33,7 @@ public class User extends BaseTimeEntity {
     @Column(length = 500)
     private String profileImage;
 
-    @Column(length = 30)
+    @Column(length = 101)
     private String bio;
 
     @Enumerated(EnumType.STRING)
@@ -68,6 +68,24 @@ public class User extends BaseTimeEntity {
         if (this.lastLogin == null) {  // 에러 처리
             this.lastLogin = LocalDateTime.now();
         } else {
+            this.lastLogin = LocalDateTime.now();
+        }
+    }
+
+    public  void updateProfile(String nickname, String bio) {
+        boolean updated = false;
+
+        if (nickname != null && !nickname.equals(this.nickname)) {
+            this.nickname = nickname;
+            updated = true;
+        }
+
+        if (bio != null && !bio.equals(this.bio)) {
+            this.bio = bio;
+            updated = true;
+        }
+
+        if (updated) {
             this.lastLogin = LocalDateTime.now();
         }
     }

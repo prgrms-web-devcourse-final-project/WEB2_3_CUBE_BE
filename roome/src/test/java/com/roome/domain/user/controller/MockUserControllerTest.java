@@ -2,7 +2,6 @@ package com.roome.domain.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.roome.domain.user.dto.request.UpdateProfileRequest;
-import com.roome.domain.user.entity.MusicGenre;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +44,7 @@ class MockUserControllerTest {
                 .andExpect(jsonPath("$.bio").exists())
                 .andExpect(jsonPath("$.bookGenres").isArray())
                 .andExpect(jsonPath("$.musicGenres").isArray())
-                .andExpect(jsonPath("$.similarUser").isArray());
+                .andExpect(jsonPath("$.recommendedUsers").isArray());
     }
 
     @Test
@@ -104,52 +103,5 @@ class MockUserControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").value(imageUrl));
-    }
-
-    @Test
-    @DisplayName("음악 감성 목록 조회 - 성공")
-    void getMusicGenres_success() throws Exception {
-        // when & then
-        mockMvc
-                .perform(get(BASE_URL + "/music-genres"))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$").isNotEmpty());
-    }
-
-    @Test
-    @DisplayName("음악 감성 추가 - 성공")
-    void addMusicGenre_success() throws Exception {
-        // given
-        String genre = MusicGenre.values()[0].name();
-
-        // when & then
-        mockMvc
-                .perform(post(BASE_URL + "/music-genres")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(genre))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.userId").value(MOCK_USER_ID))
-                .andExpect(jsonPath("$.genre").value(genre));
-    }
-
-    @Test
-    @DisplayName("추천 유저 조회 - 성공")
-    void getRecommendedUsers_success() throws Exception {
-        // given
-        Long userId = 1L;
-
-        // when & then
-        mockMvc
-                .perform(get(BASE_URL + "/{userId}/recommendations", userId))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(5))
-                .andExpect(jsonPath("$[0].userId").exists())
-                .andExpect(jsonPath("$[0].nickname").exists())
-                .andExpect(jsonPath("$[0].profileImage").exists());
     }
 }

@@ -66,7 +66,7 @@ public class MockUserController {
                 .randomUUID()
                 .toString()
                 .replace("-", "");
-        String mockFileExtension = getFileExtension(image.getOriginalFilename());
+        String mockFileExtension = "jpg";
         String mockImageUrl = "https://roome-profile-images.s3.ap-northeast-2.amazonaws.com/profile/" + mockUuid + "." + mockFileExtension;
 
         ImageUploadResponseDto response = ImageUploadResponseDto
@@ -101,16 +101,5 @@ public class MockUserController {
                         https://github.com/user-attachments/assets/912a4bc2-da94-4551-8547-b8a47c6e6813""").build()
 
         );
-    }
-
-    // 파일 확장자 추출 메서드
-    private String getFileExtension(String filename) {
-        if (filename == null) return "jpg";
-
-        int lastDotIndex = filename.lastIndexOf(".");
-        if (lastDotIndex > 0) {
-            return filename.substring(lastDotIndex + 1);
-        }
-        return "jpg";
     }
 }

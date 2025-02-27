@@ -9,6 +9,8 @@ import com.roome.domain.user.dto.request.UpdateProfileRequest;
 import com.roome.domain.user.dto.response.UserProfileResponse;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
+import com.roome.global.exception.BusinessException;
+import com.roome.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,10 @@ public class UserProfileService {
     private final MyBookRepository myBookRepository;
 
     public UserProfileResponse getUserProfile(Long targetUserId, Long currentUserId) {
+        // 사용자 정보 한 번만 조회
+        User targetUser = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
         // 1. CD 장르 상위 3개 가져오기
         List<String> topCdGenres = getTopCdGenres(targetUserId);
         // 2. 책 장르 상위 3개 가져오기
@@ -39,19 +45,19 @@ public class UserProfileService {
         List<User> recommendedUsers = recommendSimilarUsers(targetUserId);
         // 4. DTO로 변환
         List<RecommendedUserDto> recommendedUserDtoList = recommendedUsers.stream()
-                                                                       .map(user -> RecommendedUserDto.builder()
-                                                                                                       .userId(user.getId())
-                                                                                                       .nickname(user.getNickname())
-                                                                                                       .profileImage(user.getProfileImage())
-                                                                                                       .build())
-                                                                       .collect(Collectors.toList());
+                .map(user -> RecommendedUserDto.builder()
+                        .userId(user.getId())
+                        .nickname(user.getNickname())
+                        .profileImage(user.getProfileImage())
+                        .build())
+                .collect(Collectors.toList());
 
         // 5. 응답 DTO 생성
         return UserProfileResponse.builder()
                 .id(targetUserId.toString())
-                .nickname(userRepository.getById(targetUserId).getNickname())
-                .profileImage(userRepository.getById(targetUserId).getProfileImage())
-                .bio(userRepository.getById(targetUserId).getBio())
+                .nickname(targetUser.getNickname())
+                .profileImage(targetUser.getProfileImage())
+                .bio(targetUser.getBio())
                 .musicGenres(topCdGenres)
                 .bookGenres(topBookGenres)
                 .isMyProfile(targetUserId.equals(currentUserId))
@@ -62,14 +68,9 @@ public class UserProfileService {
     // 프로필 수정
     @Transactional
     public UserProfileResponse updateProfile(Long userId, UpdateProfileRequest request) {
-        User user = userRepository.getById(userId);
-
-        user.updateProfile(
-                request.getNickname(),
-                user.getProfileImage(), // 프로필 이미지는 별도 API로 처리
-                request.getBio()
-                          );
-
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        user.updateProfile(request.getNickname(), request.getBio());
         return getUserProfile(userId, userId);
     }
 
@@ -93,10 +94,10 @@ public class UserProfileService {
 
         // 3. 상위 3개 장르 반환
         return genreCounts.entrySet().stream()
-                          .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                          .limit(3)
-                          .map(Map.Entry::getKey)
-                          .collect(Collectors.toList());
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .limit(3)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 
     // 사용자의 책 컬렉션에서 상위 3개 장르 찾기
@@ -113,8 +114,8 @@ public class UserProfileService {
         for (MyBook myBook : userBooks) {
             // Book 엔티티에서 장르 정보를 가져오는 방식에 따라 코드 조정 필요
             List<String> genres = myBook.getBook().getBookGenres().stream()
-                                        .map(bg -> bg.getGenre().getName())
-                                        .collect(Collectors.toList());
+                    .map(bg -> bg.getGenre().getName())
+                    .collect(Collectors.toList());
 
             for (String genre : genres) {
                 genreCounts.put(genre, genreCounts.getOrDefault(genre, 0L) + 1);
@@ -123,10 +124,10 @@ public class UserProfileService {
 
         // 3. 상위 3개 장르 반환
         return genreCounts.entrySet().stream()
-                          .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                          .limit(3)
-                          .map(Map.Entry::getKey)
-                          .collect(Collectors.toList());
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .limit(3)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 
     // 유사한 취향을 가진 사용자 추천
@@ -173,10 +174,9 @@ public class UserProfileService {
 
         // 4. 유사도 높은 순으로 정렬하여 상위 5명 반환
         return similarityScores.entrySet().stream()
-                               .sorted(Map.Entry.<User, Integer>comparingByValue().reversed())
-                               .limit(5)
-                               .map(Map.Entry::getKey)
-                               .collect(Collectors.toList());
+                .sorted(Map.Entry.<User, Integer>comparingByValue().reversed())
+                .limit(5)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
-
 }

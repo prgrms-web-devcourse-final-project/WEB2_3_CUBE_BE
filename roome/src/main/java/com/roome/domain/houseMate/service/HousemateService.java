@@ -22,13 +22,6 @@ public class HousemateService {
     private final HousemateRepository housemateRepository;
     private final UserRepository userRepository;
 
-    //email로 userId 조회
-    public Long findUserIdByUserId(String email) {
-        return userRepository.findByEmail(email)
-                            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND))
-                            .getId();
-    }
-
     // 팔로잉 목록 조회 (내가 추가한 유저 목록)
     public HousemateListResponse getFollowingList(Long userId, Long cursor, int limit, String nickname) {
         List<HousemateInfo> housemates = housemateRepository.findByUserId(userId, cursor, limit + 1, nickname);

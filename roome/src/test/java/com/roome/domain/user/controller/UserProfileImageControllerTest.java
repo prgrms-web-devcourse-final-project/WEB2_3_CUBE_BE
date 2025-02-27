@@ -1,7 +1,7 @@
 package com.roome.domain.user.controller;
 
 import com.roome.domain.auth.security.OAuth2UserPrincipal;
-import com.roome.domain.user.service.UserService;
+import com.roome.domain.user.service.UserProfileImageService;
 import com.roome.global.service.S3Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -37,7 +37,7 @@ public class UserProfileImageControllerTest {
     @MockBean
     private S3Service s3Service;
     @MockBean
-    private UserService userService;
+    private UserProfileImageService userService;
     private OAuth2UserPrincipal mockPrincipal;
     private Authentication auth;
 
@@ -78,6 +78,62 @@ public class UserProfileImageControllerTest {
                 .andExpect(jsonPath("$.fileName").value("test-image.jpg"));
 
         verify(userService).updateProfileImage(eq(USER_ID), eq(uploadedImageUrl));
+    }
+
+    @Test
+    @DisplayName("이미지 파일이 없는 경우 테스트")
+    void uploadEmptyImageTest() throws Exception {
+        // given
+        MockMultipartFile emptyFile = new MockMultipartFile(
+                "image",
+                "",
+                MediaType.IMAGE_JPEG_VALUE,
+                new byte[0]
+        );
+
+        // when & then
+        mockMvc.perform(multipart("/api/users/image")
+                        .file(emptyFile)
+                        .with(authentication(auth)))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+
+        verify(s3Service, never()).uploadImage(any(), anyString());
+        verify(userService, never()).updateProfileImage(anyLong(), anyString());
+    }
+
+    @Test
+    @DisplayName("이미지 파일이 null인 경우 테스트")
+    void uploadNullImageTest() throws Exception {
+        // 파일 없이 요청
+        mockMvc.perform(multipart("/api/users/image")
+                        .with(authentication(auth)))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+
+        verify(s3Service, never()).uploadImage(any(), anyString());
+        verify(userService, never()).updateProfileImage(anyLong(), anyString());
+    }
+
+    @Test
+    @DisplayName("확장자가 없는 파일 업로드 테스트")
+    void uploadFileWithoutExtensionTest() throws Exception {
+        // given
+        MockMultipartFile noExtensionFile = new MockMultipartFile(
+                "image",
+                "noextension",
+                MediaType.IMAGE_JPEG_VALUE,
+                "test image content".getBytes()
+        );
+
+        // when & then
+        mockMvc.perform(multipart("/api/users/image")
+                        .file(noExtensionFile)
+                        .with(authentication(auth)))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+
+        verify(s3Service, never()).uploadImage(any(), anyString());
     }
 
     @Test
@@ -141,6 +197,34 @@ public class UserProfileImageControllerTest {
 
         verify(s3Service).deleteImage(eq(imageUrl));
         verify(userService).deleteProfileImage(eq(USER_ID));
+    }
+
+    @Test
+    @DisplayName("null 이미지 URL로 삭제 시도 테스트")
+    void deleteNullImageUrlTest() throws Exception {
+        // when & then
+        mockMvc.perform(delete("/api/users/image")
+                        .param("imageUrl", (String)null)
+                        .with(authentication(auth)))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+
+        verify(s3Service, never()).deleteImage(anyString());
+        verify(userService, never()).deleteProfileImage(anyLong());
+    }
+
+    @Test
+    @DisplayName("빈 이미지 URL로 삭제 시도 테스트")
+    void deleteEmptyImageUrlTest() throws Exception {
+        // when & then
+        mockMvc.perform(delete("/api/users/image")
+                        .param("imageUrl", "")
+                        .with(authentication(auth)))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+
+        verify(s3Service, never()).deleteImage(anyString());
+        verify(userService, never()).deleteProfileImage(anyLong());
     }
 
     @Test
