@@ -4,7 +4,6 @@ import com.roome.domain.auth.dto.response.MessageResponse;
 import com.roome.global.jwt.dto.JwtToken;
 import com.roome.global.jwt.dto.TokenReissueRequest;
 import com.roome.global.jwt.dto.TokenResponse;
-import com.roome.global.jwt.exception.InvalidRefreshTokenException;
 import com.roome.global.jwt.exception.UserNotFoundException;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.jwt.service.TokenService;
@@ -42,14 +41,16 @@ public class ReissueController {
             .body(new MessageResponse("리프레시 토큰이 필요합니다."));
       }
 
+      // 리프레시 토큰이 유효한지 확인
+      if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
+        return ResponseEntity.badRequest()
+            .body(new MessageResponse("유효하지 않은 리프레시 토큰입니다."));
+      }
+
       // 새로운 토큰 발급
       JwtToken newToken = tokenService.reissueToken(refreshToken);
       return ResponseEntity.ok(createTokenResponse(newToken));
 
-    } catch (InvalidRefreshTokenException e) {
-      log.warn("유효하지 않은 리프레시 토큰: {}", e.getMessage());
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-          .body(new MessageResponse("리프레시 토큰이 유효하지 않거나 만료되었습니다."));
     } catch (UserNotFoundException e) {
       log.warn("사용자를 찾을 수 없음: {}", e.getMessage());
       return ResponseEntity.status(HttpStatus.NOT_FOUND)
