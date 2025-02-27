@@ -51,6 +51,9 @@ spring:
   jwt:
     secret: ${JWT_SECRET}
 
+  toss:
+    secret-key: ${TOSS_SECRET_KEY}
+
 server:
   shutdown: graceful
 
@@ -90,7 +93,7 @@ spring:
     password: ${DATASOURCE_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
       naming:
         physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
     show-sql: true
