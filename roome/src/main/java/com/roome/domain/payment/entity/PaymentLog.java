@@ -6,9 +6,11 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Getter
 @Entity
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 @Table(name = "payment_logs")
 public class PaymentLog {
 
@@ -29,16 +31,11 @@ public class PaymentLog {
     @Column(nullable = false, unique = true)
     private String paymentKey; // 토스 결제 키
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Builder
-    public PaymentLog(User user, int amount, int earnedPoints, String paymentKey) {
-        this.user = user;
-        this.amount = amount;
-        this.earnedPoints = earnedPoints;
-        this.paymentKey = paymentKey;
+    @PrePersist
+    protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
-
 }
