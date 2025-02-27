@@ -4,6 +4,7 @@ import com.roome.domain.payment.entity.PaymentStatus;
 import lombok.Builder;
 import lombok.Getter;
 
+@Builder
 @Getter
 public class PaymentResponseDto {
 
@@ -12,14 +13,5 @@ public class PaymentResponseDto {
     private int amount; // 결제 금액
     private int purchasedPoints; // 구매한 포인트
     private PaymentStatus status; // 결제 상태
-
-    @Builder
-    public PaymentResponseDto(String orderId, String paymentKey, int amount, int purchasedPoints, PaymentStatus status) {
-        this.orderId = orderId;
-        this.paymentKey = paymentKey;
-        this.amount = amount;
-        this.purchasedPoints = purchasedPoints;
-        this.status = status;
-    }
 
 }
