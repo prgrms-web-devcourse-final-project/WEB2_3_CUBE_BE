@@ -1,68 +1,61 @@
 package com.roome.domain.rank.service;
 
-import com.roome.domain.rank.entity.Ranking;
-import com.roome.domain.rank.repository.RankingRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
+import com.roome.domain.rank.dto.UserRankingDto;
+import com.roome.domain.user.entity.User;
+import com.roome.domain.user.repository.UserRepository;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RankingService {
 
-    private final RankingRepository rankingRepository;
+  private final RedisTemplate<String, Object> redisTemplate;
+  private final UserRepository userRepository;
 
-    // TODO: Redis 활용 예정
-    // 점수 업데이트
-    public void updateScore(Long userId, int additionalScore) {
-        Ranking ranking = rankingRepository.findByUserId(userId)
-                .orElse(Ranking.builder()
-                        .userId(userId)
-                        .score(0)         // 기본 점수 0
-                        .rankPosition(0)  // 초기 순위 0
-                        .lastUpdated(LocalDateTime.now())
-                        .build());
+  private static final String RANKING_KEY = "user:ranking";
 
-        ranking.addScore(additionalScore);
+  // top10 랭킹 조회
+  public List<UserRankingDto> getTopRankings() {
+    Set<ZSetOperations.TypedTuple<Object>> rankSet = redisTemplate.opsForZSet()
+        .reverseRangeWithScores(RANKING_KEY, 0, 9);
 
-        rankingRepository.save(ranking);
+    List<UserRankingDto> rankingList = new ArrayList<>();
+
+    if (rankSet == null || rankSet.isEmpty()) {
+      return rankingList;
     }
 
-    // 현재 순위 업데이트
-    @Transactional
-    public void updateRanking() {
-        List<Ranking> rankings = rankingRepository.findTop10ByOrderByScoreDesc();
-        int rank = 1;
-        for (Ranking ranking : rankings) {
-            ranking.setRankPosition(rank++);
-            rankingRepository.save(ranking);
-        }
+    int rank = 0;
+    for (ZSetOperations.TypedTuple<Object> tuple : rankSet) {
+      String userId = (String) tuple.getValue();
+      Double score = tuple.getScore();
+      rank++;
+
+      if (userId == null) {
+        continue;
+      }
+
+      // 사용자 정보 조회
+      User user = userRepository.findById(Long.valueOf(userId)).orElse(null);
+      if (user == null) {
+        continue;
+      }
+
+      UserRankingDto dto = UserRankingDto.builder().rank(rank).userId(user.getId())
+          .nickname(user.getNickname()).profileImage(user.getProfileImage())
+          .score(score != null ? score.intValue() : 0).build();
+
+      rankingList.add(dto);
     }
 
-    // 유저 랭킹 조회
-    public Optional<Ranking> getUserRanking(Long userId) {
-        return rankingRepository.findByUserId(userId);
-    }
-
-    // 상위 10명 랭킹 조회
-    public List<Ranking> getTopRankings() {
-        return rankingRepository.findTop10ByOrderByScoreDesc();
-    }
-
-    // TODO: 배치 처리 도입 예정
-    // 매주 월요일 00:00에 점수 리셋
-    @Scheduled(cron = "0 0 0 * * MON")
-    @Transactional
-    public void resetWeeklyScores() {
-        List<Ranking> rankings = rankingRepository.findAll();
-        for (Ranking ranking : rankings) {
-            ranking.resetScore();
-            rankingRepository.save(ranking);
-        }
-    }
+    return rankingList;
+  }
 }

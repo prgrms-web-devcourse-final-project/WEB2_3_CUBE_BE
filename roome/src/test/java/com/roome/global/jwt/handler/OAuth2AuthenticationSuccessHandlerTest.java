@@ -1,19 +1,27 @@
 package com.roome.global.jwt.handler;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.roome.domain.auth.dto.response.LoginResponse;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.roome.domain.auth.security.OAuth2UserPrincipal;
-import com.roome.domain.room.dto.RoomResponseDto;
-import com.roome.domain.room.service.RoomService;
 import com.roome.domain.user.entity.Provider;
 import com.roome.domain.user.entity.Status;
 import com.roome.domain.user.entity.User;
 import com.roome.global.jwt.dto.JwtToken;
-import com.roome.global.jwt.helper.TokenResponseHelper;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.service.RedisService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,103 +32,81 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
-
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.Collections;
-
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import org.springframework.security.web.RedirectStrategy;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class OAuth2AuthenticationSuccessHandlerTest {
 
-    @InjectMocks
-    private OAuth2AuthenticationSuccessHandler successHandler;
+  @InjectMocks
+  private OAuth2AuthenticationSuccessHandler successHandler;
 
-    @Mock
-    private JwtTokenProvider jwtTokenProvider;
+  @Mock
+  private JwtTokenProvider jwtTokenProvider;
 
-    @Mock
-    private RedisService redisService;
+  @Mock
+  private RedisService redisService;
 
-    @Mock
-    private RoomService roomService;
+  @Mock
+  private RedirectStrategy redirectStrategy;
 
-    @Mock
-    private ObjectMapper objectMapper;
+  @BeforeEach
+  void setUp() {
+    // 테스트를 위한 redirectUri 설정
+    ReflectionTestUtils.setField(successHandler, "redirectUri",
+        "http://localhost:5173/oauth/callback");
+    successHandler.setRedirectStrategy(redirectStrategy);
+  }
 
-    @Mock
-    private TokenResponseHelper tokenResponseHelper;
+  @Test
+  @DisplayName("인증 성공 시 JWT 토큰이 발급되고 Redis에 저장되며, 프론트엔드로 리다이렉트된다")
+  void onAuthenticationSuccess_GeneratesTokenAndRedirects() throws IOException {
+    // Given
+    HttpServletRequest request = new MockHttpServletRequest();
+    HttpServletResponse response = new MockHttpServletResponse();
 
-    @Test
-    @DisplayName("인증 성공 시 JWT 토큰이 발급되고 Redis에 저장된다")
-    void onAuthenticationSuccess_GeneratesTokenAndSavesToRedis() throws IOException {
-        // Given
-        HttpServletRequest request = new MockHttpServletRequest();
-        HttpServletResponse response = new MockHttpServletResponse();
+    User user = User.builder()
+        .id(1L)
+        .email("test@example.com")
+        .name("Test User")
+        .nickname("testuser")
+        .provider(Provider.KAKAO)
+        .providerId("12345")
+        .status(Status.OFFLINE)
+        .lastLogin(LocalDateTime.now())
+        .build();
 
-        User user = User.builder()
-                .id(1L)
-                .email("test@example.com")
-                .name("Test User")
-                .nickname("testuser")
-                .provider(Provider.KAKAO)
-                .providerId("12345")
-                .status(Status.OFFLINE)
-                .lastLogin(LocalDateTime.now())
-                .build();
+    OAuth2UserPrincipal oAuth2UserPrincipal = mock(OAuth2UserPrincipal.class);
+    when(oAuth2UserPrincipal.getUser()).thenReturn(user);
 
-        OAuth2UserPrincipal oAuth2UserPrincipal = mock(OAuth2UserPrincipal.class);
-        when(oAuth2UserPrincipal.getUser()).thenReturn(user);
+    Authentication authentication = new TestingAuthenticationToken(oAuth2UserPrincipal, null);
 
-        Authentication authentication = new TestingAuthenticationToken(oAuth2UserPrincipal, null);
+    JwtToken jwtToken = JwtToken.builder()
+        .grantType("Bearer")
+        .accessToken("test-access-token")
+        .refreshToken("test-refresh-token")
+        .build();
 
-        JwtToken jwtToken = JwtToken.builder()
-                .grantType("Bearer")
-                .accessToken("test-access-token")
-                .refreshToken("test-refresh-token")
-                .build();
+    // Mocking
+    when(jwtTokenProvider.createToken(anyString())).thenReturn(jwtToken);
+    doNothing().when(redisService).saveRefreshToken(anyString(), anyString(), anyLong());
+    doNothing().when(redirectStrategy).sendRedirect(any(), any(), anyString());
 
-        RoomResponseDto roomResponseDto = RoomResponseDto.builder()
-                .roomId(1L)
-                .userId(1L)
-                .theme("BASIC")
-                .furnitures(Collections.emptyList())
-                .build();
+    // When
+    successHandler.onAuthenticationSuccess(request, response, authentication);
 
-        LoginResponse loginResponse = LoginResponse.builder()
-                .accessToken(jwtToken.getAccessToken())
-                .refreshToken(jwtToken.getRefreshToken())
-                .expiresIn(3600L)
-                .user(LoginResponse.UserInfo.builder()
-                        .userId(user.getId())
-                        .nickname(user.getNickname())
-                        .email(user.getEmail())
-                        .roomId(roomResponseDto.getRoomId())
-                        .profileImage(user.getProfileImage())
-                        .build())
-                .build();
+    // Then
+    verify(jwtTokenProvider).createToken(user.getId().toString());
+    verify(redisService).saveRefreshToken(
+        eq(user.getId().toString()),
+        eq(jwtToken.getRefreshToken()),
+        anyLong()
+    );
 
-        String loginResponseJson = "{\"accessToken\":\"test-access-token\"}";
-
-        when(jwtTokenProvider.createToken(anyString())).thenReturn(jwtToken);
-        when(roomService.getOrCreateRoomByUserId(anyLong())).thenReturn(roomResponseDto);
-        when(objectMapper.writeValueAsString(any(LoginResponse.class))).thenReturn(loginResponseJson);
-        doNothing().when(tokenResponseHelper).setTokenResponse(any(), any());
-        doNothing().when(redisService).saveRefreshToken(anyString(), anyString(), anyLong());
-
-        // When
-        successHandler.onAuthenticationSuccess(request, response, authentication);
-
-        // Then
-        verify(jwtTokenProvider).createToken(user.getId().toString());
-        verify(redisService).saveRefreshToken(
-                eq(user.getId().toString()),
-                eq(jwtToken.getRefreshToken()),
-                anyLong()
-        );
-        verify(tokenResponseHelper).setTokenResponse(response, jwtToken);
-        verify(objectMapper).writeValueAsString(any(LoginResponse.class));
-    }
+    verify(redirectStrategy).sendRedirect(
+        eq(request),
+        eq(response),
+        contains("accessToken=test-access-token")
+    );
+  }
 }

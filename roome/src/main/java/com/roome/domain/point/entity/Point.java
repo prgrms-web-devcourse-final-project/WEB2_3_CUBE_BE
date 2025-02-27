@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Getter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @Table(name = "points")
 public class Point {
 
@@ -29,9 +30,6 @@ public class Point {
 
   @Column(nullable = false)
   private int totalUsed; // 누적 사용 포인트
-
-  @Column
-  private LocalDateTime lastGuestbookReward; // 마지막 방명록 보상 일자
 
   @Column(nullable = false, updatable = false)
   private LocalDateTime createdAt;
@@ -66,8 +64,4 @@ public class Point {
     this.updatedAt = LocalDateTime.now();
   }
 
-  // 방명록 작성 보상 날짜 업데이트
-  public void updateLastGuestbookReward(LocalDateTime date) {
-    this.lastGuestbookReward = date;
-  }
 }

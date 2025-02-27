@@ -12,6 +12,7 @@ import com.roome.domain.mycd.entity.MyCd;
 import com.roome.domain.mycd.repository.MyCdRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
+import com.roome.global.exception.UnauthorizedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class) // Mockito 초기화 자동 처리
+@ExtendWith(MockitoExtension.class)
 class CdCommentServiceTest {
 
   @Mock
@@ -65,23 +66,19 @@ class CdCommentServiceTest {
         .timestamp("03:40")
         .content("이 곡 최고네요!")
         .build();
-
   }
 
   @Test
   @DisplayName("댓글 추가 성공")
   void addComment_Success() {
-    // given
     CdCommentCreateRequest request = new CdCommentCreateRequest("03:40", "이 곡 최고네요!");
 
     when(myCdRepository.findById(1L)).thenReturn(Optional.of(myCd));
     when(userRepository.findById(1L)).thenReturn(Optional.of(user));
     when(cdCommentRepository.save(any(CdComment.class))).thenReturn(cdComment);
 
-    // when
     CdCommentResponse response = cdCommentService.addComment(1L, 1L, request);
 
-    // then
     assertThat(response.getContent()).isEqualTo(request.getContent());
     assertThat(response.getTimestamp()).isEqualTo(request.getTimestamp());
   }
@@ -89,16 +86,13 @@ class CdCommentServiceTest {
   @Test
   @DisplayName("댓글 목록 조회 성공")
   void getComments_Success() {
-    // given
     Pageable pageable = PageRequest.of(0, 5);
     Page<CdComment> page = new PageImpl<>(List.of(cdComment), pageable, 1);
 
     when(cdCommentRepository.findByMyCdId(1L, pageable)).thenReturn(page);
 
-    // when
     CdCommentListResponse response = cdCommentService.getComments(1L, 0, 5);
 
-    // then
     assertThat(response.getData()).hasSize(1);
     assertThat(response.getData().get(0).getContent()).isEqualTo("이 곡 최고네요!");
   }
@@ -106,13 +100,11 @@ class CdCommentServiceTest {
   @Test
   @DisplayName("댓글 목록이 비어있을 때 예외 발생")
   void getComments_EmptyList() {
-    // given
     Pageable pageable = PageRequest.of(0, 5);
     Page<CdComment> emptyPage = Page.empty(pageable);
 
     when(cdCommentRepository.findByMyCdId(1L, pageable)).thenReturn(emptyPage);
 
-    // when & then
     assertThatThrownBy(() -> cdCommentService.getComments(1L, 0, 5))
         .isInstanceOf(CdCommentListEmptyException.class);
   }
@@ -120,17 +112,14 @@ class CdCommentServiceTest {
   @Test
   @DisplayName("댓글 검색 성공")
   void searchComments_Success() {
-    // given
     Pageable pageable = PageRequest.of(0, 5);
     Page<CdComment> page = new PageImpl<>(List.of(cdComment), pageable, 1);
 
     when(cdCommentRepository.findByMyCdIdAndKeyword(1L, "최고", pageable))
         .thenReturn(page);
 
-    // when
     CdCommentListResponse response = cdCommentService.searchComments(1L, "최고", 0, 5);
 
-    // then
     assertThat(response.getData()).hasSize(1);
     assertThat(response.getData().get(0).getContent()).isEqualTo("이 곡 최고네요!");
   }
@@ -138,14 +127,12 @@ class CdCommentServiceTest {
   @Test
   @DisplayName("댓글 검색 결과가 없을 때 예외 발생")
   void searchComments_EmptyResult() {
-    // given
     Pageable pageable = PageRequest.of(0, 5);
     Page<CdComment> emptyPage = Page.empty(pageable);
 
     when(cdCommentRepository.findByMyCdIdAndKeyword(1L, "없는내용", pageable))
         .thenReturn(emptyPage);
 
-    // when & then
     assertThatThrownBy(() -> cdCommentService.searchComments(1L, "없는내용", 0, 5))
         .isInstanceOf(CdCommentSearchEmptyException.class);
   }
@@ -153,51 +140,82 @@ class CdCommentServiceTest {
   @Test
   @DisplayName("댓글 삭제 성공")
   void deleteComment_Success() {
-    // given
     when(cdCommentRepository.findById(1L)).thenReturn(Optional.of(cdComment));
 
-    // when
-    cdCommentService.deleteComment(1L);
+    cdCommentService.deleteComment(1L, 1L);
 
-    // then
-    verify(cdCommentRepository, times(1)).delete(cdComment);
+    verify(cdCommentRepository, times(1)).delete(any(CdComment.class));
   }
 
   @Test
   @DisplayName("존재하지 않는 댓글 삭제 시 예외 발생")
   void deleteComment_NotFound() {
-    // given
     when(cdCommentRepository.findById(1L)).thenReturn(Optional.empty());
 
-    // when & then
-    assertThatThrownBy(() -> cdCommentService.deleteComment(1L))
+    assertThatThrownBy(() -> cdCommentService.deleteComment(1L, 1L))
         .isInstanceOf(CdCommentNotFoundException.class);
   }
 
   @Test
   @DisplayName("다중 댓글 삭제 성공")
   void deleteMultipleComments_Success() {
-    // given
     List<Long> commentIds = List.of(1L, 2L, 3L);
     List<CdComment> comments = List.of(cdComment, cdComment, cdComment);
 
     when(cdCommentRepository.findAllById(commentIds)).thenReturn(comments);
 
-    // when
-    cdCommentService.deleteMultipleComments(commentIds);
+    cdCommentService.deleteMultipleComments(1L, commentIds);
 
-    // then
-    verify(cdCommentRepository, times(1)).deleteAll(comments);
+    verify(cdCommentRepository, times(1)).deleteAll(anyList());
   }
 
   @Test
   @DisplayName("삭제할 댓글이 존재하지 않을 때 예외 발생")
   void deleteMultipleComments_NotFound() {
-    // given
     when(cdCommentRepository.findAllById(List.of(1L, 2L, 3L))).thenReturn(List.of());
 
-    // when & then
-    assertThatThrownBy(() -> cdCommentService.deleteMultipleComments(List.of(1L, 2L, 3L)))
+    assertThatThrownBy(() -> cdCommentService.deleteMultipleComments(1L, List.of(1L, 2L, 3L)))
         .isInstanceOf(CdCommentNotFoundException.class);
+  }
+
+  @Test
+  @DisplayName("다른 사용자의 댓글 삭제 시 UnauthorizedException 발생")
+  void deleteComment_Unauthorized() {
+    User anotherUser = User.builder()
+        .id(2L)
+        .nickname("다른 사용자")
+        .build();
+
+    CdComment anotherComment = CdComment.builder()
+        .id(1L)
+        .user(anotherUser)
+        .myCd(myCd)
+        .timestamp("03:40")
+        .content("이 곡 최고네요!")
+        .build();
+
+    when(cdCommentRepository.findById(1L)).thenReturn(Optional.of(anotherComment));
+
+    assertThatThrownBy(() -> cdCommentService.deleteComment(1L, 1L))
+        .isInstanceOf(UnauthorizedException.class);
+  }
+
+  @Test
+  @DisplayName("다른 사용자의 댓글 다중 삭제 시 UnauthorizedException 발생")
+  void deleteMultipleComments_Unauthorized() {
+    User anotherUser = User.builder()
+        .id(2L)
+        .nickname("다른 사용자")
+        .build();
+
+    List<CdComment> anotherUserComments = List.of(
+        CdComment.builder().id(1L).user(anotherUser).myCd(myCd).timestamp("03:40").content("이 곡 최고네요!").build(),
+        CdComment.builder().id(2L).user(anotherUser).myCd(myCd).timestamp("02:20").content("좋은 곡!").build()
+    );
+
+    when(cdCommentRepository.findAllById(List.of(1L, 2L))).thenReturn(anotherUserComments);
+
+    assertThatThrownBy(() -> cdCommentService.deleteMultipleComments(1L, List.of(1L, 2L)))
+        .isInstanceOf(UnauthorizedException.class);
   }
 }

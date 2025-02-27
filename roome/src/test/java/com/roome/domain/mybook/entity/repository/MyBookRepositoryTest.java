@@ -52,11 +52,11 @@ class MyBookRepositoryTest {
         Room room = createRoom(user);
         roomRepository.save(room);
 
-        Book book1 = createBook(1L, "book1");
-        Book book2 = createBook(2L, "book2");
-        Book book3 = createBook(3L, "book3");
-        Book book4 = createBook(4L, "book4");
-        Book book5 = createBook(5L, "book5");
+        Book book1 = createBook("1", "book1");
+        Book book2 = createBook("2", "book2");
+        Book book3 = createBook("3", "book3");
+        Book book4 = createBook("4", "book4");
+        Book book5 = createBook("5", "book5");
         bookRepository.saveAll(List.of(book1, book2, book3, book4, book5));
 
         MyBook myBook1 = createMyBook(room, book1, user);
@@ -88,11 +88,11 @@ class MyBookRepositoryTest {
         Room room = createRoom(user);
         roomRepository.save(room);
 
-        Book book1 = createBook(1L, "book1");
-        Book book2 = createBook(2L, "book2");
-        Book book3 = createBook(3L, "book3");
-        Book book4 = createBook(4L, "book4");
-        Book book5 = createBook(5L, "book5");
+        Book book1 = createBook("1", "book1");
+        Book book2 = createBook("2", "book2");
+        Book book3 = createBook("3", "book3");
+        Book book4 = createBook("4", "book4");
+        Book book5 = createBook("5", "book5");
         bookRepository.saveAll(List.of(book1, book2, book3, book4, book5));
 
         MyBook myBook1 = createMyBook(room, book1, user);
@@ -126,9 +126,9 @@ class MyBookRepositoryTest {
         Room room = createRoom(user);
         roomRepository.save(room);
 
-        Book book1 = createBook(1L, "book1");
-        Book book2 = createBook(2L, "book2");
-        Book book3 = createBook(3L, "book3");
+        Book book1 = createBook("1", "book1");
+        Book book2 = createBook("2", "book2");
+        Book book3 = createBook("3", "book3");
         bookRepository.saveAll(List.of(book1, book2, book3));
 
         MyBook myBook1 = createMyBook(room, book1, user);
@@ -174,7 +174,7 @@ class MyBookRepositoryTest {
                 .build();
     }
 
-    private Book createBook(Long isbn, String title) {
+    private Book createBook(String isbn, String title) {
         return Book.builder()
                 .isbn(isbn)
                 .title(title)

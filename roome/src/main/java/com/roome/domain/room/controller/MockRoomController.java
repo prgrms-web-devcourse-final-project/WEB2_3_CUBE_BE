@@ -1,14 +1,14 @@
 package com.roome.domain.room.controller;
 
+import com.roome.domain.furniture.dto.FurnitureRequestDto;
 import com.roome.domain.furniture.dto.FurnitureResponseDto;
+import com.roome.domain.furniture.dto.ToggleFurnitureResponseDto;
 import com.roome.domain.furniture.entity.FurnitureCapacity;
 import com.roome.domain.furniture.entity.FurnitureType;
-import com.roome.domain.room.dto.RoomResponseDto;
-import com.roome.domain.room.dto.UpdateRoomThemeRequestDto;
-import com.roome.domain.room.dto.StorageLimitsDto;
-import com.roome.domain.room.dto.UserStorageDto;
+import com.roome.domain.room.dto.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.sql.Update;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,25 +39,23 @@ public class MockRoomController {
     }
 
     @PutMapping("/{roomId}")
-    public ResponseEntity<Map<String, Object>> updateRoomTheme(
+    public ResponseEntity<UpdateRoomThemeResponseDto> updateRoomTheme(
             @RequestParam("userId") Long userId,
             @PathVariable Long roomId,
             @RequestBody UpdateRoomThemeRequestDto requestDto
     ) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("roomId", roomId);
-        response.put("updatedTheme", requestDto.getThemeName());
+        UpdateRoomThemeResponseDto response = new UpdateRoomThemeResponseDto(roomId, requestDto.getThemeName());
 
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{roomId}/furniture")
-    public ResponseEntity<FurnitureResponseDto> toggleFurnitureVisibility(
+    public ResponseEntity<ToggleFurnitureResponseDto> toggleFurnitureVisibility(
             @RequestParam("userId") Long userId,
             @PathVariable Long roomId,
-            @RequestBody Map<String, String> request
+            @RequestBody FurnitureRequestDto requestDto
     ) {
-        String furnitureTypeStr = request.get("furnitureType");
+        String furnitureTypeStr = requestDto.getFurnitureType();
 
         if (furnitureTypeStr == null) {
             return ResponseEntity.badRequest().body(null);
@@ -93,7 +91,8 @@ public class MockRoomController {
                 targetFurniture.getMaxCapacity()
         );
 
-        return ResponseEntity.ok(updatedFurniture);
+        ToggleFurnitureResponseDto responseDto = new ToggleFurnitureResponseDto(roomId, updatedFurniture);
+        return ResponseEntity.ok(responseDto);
     }
 
     private RoomResponseDto createMockRoomResponse(Long roomId, String theme) {

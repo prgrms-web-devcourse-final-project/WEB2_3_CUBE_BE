@@ -2,6 +2,9 @@ package com.roome.domain.mybook.service;
 
 import com.roome.domain.book.entity.Book;
 import com.roome.domain.book.entity.repository.BookRepository;
+import com.roome.domain.furniture.entity.Furniture;
+import com.roome.domain.furniture.entity.FurnitureType;
+import com.roome.domain.furniture.repository.FurnitureRepository;
 import com.roome.domain.mybook.entity.MyBook;
 import com.roome.domain.mybook.entity.MyBookCount;
 import com.roome.domain.mybook.entity.repository.MyBookCountRepository;
@@ -57,6 +60,9 @@ class MyBookServiceTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private FurnitureRepository furnitureRepository;
+
     @DisplayName("도서를 등록할 수 있다. 등록하고자 하는 도서가 테이블에 없는 경우.")
     @Test
     void createBookDoesNotExist() {
@@ -66,11 +72,16 @@ class MyBookServiceTest {
         userRepository.save(user);
 
         Room room = createRoom(user);
-        roomRepository.save(room);
+        room = roomRepository.save(room);
+
+        Furniture furniture = createFurniture(room);
+        furnitureRepository.save(furniture);
+
+        room.setFurnitures(List.of(furniture));
 
         List<String> genreNames = List.of("IT", "웹");
         MyBookCreateRequest request = new MyBookCreateRequest(
-                1L,
+                "1",
                 "title",
                 "author",
                 "publisher",
@@ -105,9 +116,14 @@ class MyBookServiceTest {
         userRepository.save(user);
 
         Room room = createRoom(user);
-        roomRepository.save(room);
+        room = roomRepository.save(room);
 
-        Book book = createBook(1L, "title");
+        Furniture furniture = createFurniture(room);
+        furnitureRepository.save(furniture);
+
+        room.setFurnitures(List.of(furniture));
+
+        Book book = createBook("1", "title");
         bookRepository.save(book);
 
         MyBookCreateRequest request = new MyBookCreateRequest(
@@ -146,7 +162,7 @@ class MyBookServiceTest {
         Room room = createRoom(user1);
         roomRepository.save(room);
 
-        Book book = createBook(1L, "book");
+        Book book = createBook("1", "book");
         bookRepository.save(book);
 
         MyBookCreateRequest request = new MyBookCreateRequest(
@@ -175,9 +191,14 @@ class MyBookServiceTest {
         userRepository.save(user1);
 
         Room room = createRoom(user1);
-        roomRepository.save(room);
+        room = roomRepository.save(room);
 
-        Book book = createBook(1L, "book");
+        Furniture furniture = createFurniture(room);
+        furnitureRepository.save(furniture);
+
+        room.setFurnitures(List.of(furniture));
+
+        Book book = createBook("1", "book");
         bookRepository.save(book);
 
         MyBook myBook = createMyBook(room, book, user1);
@@ -211,7 +232,7 @@ class MyBookServiceTest {
         Room room = createRoom(user);
         roomRepository.save(room);
 
-        Book book1 = createBook(1L, "book1");
+        Book book1 = createBook("1", "book1");
         bookRepository.save(book1);
 
         MyBook myBook1 = createMyBook(room, book1, user);
@@ -236,7 +257,7 @@ class MyBookServiceTest {
         Room room = createRoom(user);
         roomRepository.save(room);
 
-        Book book1 = createBook(1L, "book1");
+        Book book1 = createBook("1", "book1");
         bookRepository.save(book1);
 
         MyBook myBook1 = createMyBook(room, book1, user);
@@ -259,11 +280,11 @@ class MyBookServiceTest {
         Room room = createRoom(user);
         roomRepository.save(room);
 
-        Book book1 = createBook(1L, "book1");
-        Book book2 = createBook(2L, "book2");
-        Book book3 = createBook(3L, "book3");
-        Book book4 = createBook(4L, "book4");
-        Book book5 = createBook(5L, "book5");
+        Book book1 = createBook("1", "book1");
+        Book book2 = createBook("2", "book2");
+        Book book3 = createBook("3", "book3");
+        Book book4 = createBook("4", "book4");
+        Book book5 = createBook("5", "book5");
         bookRepository.saveAll(List.of(book1, book2, book3, book4, book5));
 
         MyBook myBook1 = createMyBook(room, book1, user);
@@ -304,11 +325,11 @@ class MyBookServiceTest {
         Room room = createRoom(user);
         roomRepository.save(room);
 
-        Book book1 = createBook(1L, "book1");
-        Book book2 = createBook(2L, "book2");
-        Book book3 = createBook(3L, "book3");
-        Book book4 = createBook(4L, "book4");
-        Book book5 = createBook(5L, "book5");
+        Book book1 = createBook("1", "book1");
+        Book book2 = createBook("2", "book2");
+        Book book3 = createBook("3", "book3");
+        Book book4 = createBook("4", "book4");
+        Book book5 = createBook("5", "book5");
         bookRepository.saveAll(List.of(book1, book2, book3, book4, book5));
 
         MyBook myBook1 = createMyBook(room, book1, user);
@@ -347,9 +368,9 @@ class MyBookServiceTest {
         Room room = createRoom(user);
         roomRepository.save(room);
 
-        Book book1 = createBook(1L, "book1");
-        Book book2 = createBook(2L, "book2");
-        Book book3 = createBook(3L, "book3");
+        Book book1 = createBook("1", "book1");
+        Book book2 = createBook("2", "book2");
+        Book book3 = createBook("3", "book3");
         bookRepository.saveAll(List.of(book1, book2, book3));
 
         MyBook myBook1 = createMyBook(room, book1, user);
@@ -389,7 +410,7 @@ class MyBookServiceTest {
         Room room = createRoom(user1);
         roomRepository.save(room);
 
-        Book book1 = createBook(1L, "book1");
+        Book book1 = createBook("1", "book1");
         bookRepository.save(book1);
 
         MyBook myBook1 = createMyBook(room, book1, user1);
@@ -423,11 +444,19 @@ class MyBookServiceTest {
                 .user(user)
                 .theme(RoomTheme.BASIC)
                 .createdAt(LocalDateTime.of(2025, 1, 1, 1, 1))
-                .furnitures(null)
                 .build();
     }
 
-    private Book createBook(Long isbn, String title) {
+    private Furniture createFurniture(Room room) {
+        return Furniture.builder()
+                .room(room)
+                .furnitureType(FurnitureType.BOOKSHELF)
+                .isVisible(false)
+                .level(1)
+                .build();
+    }
+
+    private Book createBook(String isbn, String title) {
         return Book.builder()
                 .isbn(isbn)
                 .title(title)

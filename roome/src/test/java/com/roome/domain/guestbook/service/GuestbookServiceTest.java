@@ -4,6 +4,7 @@ import com.roome.domain.guestbook.dto.GuestbookRequestDto;
 import com.roome.domain.guestbook.entity.Guestbook;
 import com.roome.domain.guestbook.entity.RelationType;
 import com.roome.domain.guestbook.repository.GuestbookRepository;
+import com.roome.domain.point.service.PointService;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
@@ -35,6 +36,9 @@ public class GuestbookServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private PointService pointService;
 
     @InjectMocks
     private GuestbookService guestbookService;
@@ -100,6 +104,42 @@ public class GuestbookServiceTest {
 
         BusinessException exception = assertThrows(BusinessException.class, () -> guestbookService.addGuestbook(roomId, userId, requestDto));
         assertEquals(ErrorCode.ROOM_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("방명록 작성 시 포인트 보상 적립")
+    public void addGuestbook_ShouldRewardPoints() {
+      // Given
+      Long userId = 1L;
+      Long roomId = 1L;
+      GuestbookRequestDto requestDto = new GuestbookRequestDto("안녕하세요!");
+
+      User user = User.builder()
+          .id(userId)
+          .nickname("User")
+          .build();
+      Room room = Room.builder()
+          .id(roomId)
+          .build();
+      Guestbook guestbook = Guestbook.builder()
+          .guestbookId(1L)
+          .room(room)
+          .user(user)
+          .nickname(user.getNickname())
+          .profileImage(user.getProfileImage())
+          .message(requestDto.getMessage())
+          .relation(RelationType.지나가던_나그네)
+          .build();
+
+      when(roomRepository.findById(roomId)).thenReturn(java.util.Optional.of(room));
+      when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(user));
+      when(guestbookRepository.save(any(Guestbook.class))).thenReturn(guestbook);
+
+      // When
+      guestbookService.addGuestbook(roomId, userId, requestDto);
+
+      // Then
+      verify(pointService, times(1)).addGuestbookReward(userId);
     }
 
     @Test

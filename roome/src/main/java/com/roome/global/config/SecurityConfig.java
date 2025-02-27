@@ -1,12 +1,13 @@
 package com.roome.global.config;
 
 import com.roome.domain.auth.service.CustomOAuth2UserService;
+import com.roome.global.jwt.filter.JwtAuthenticationFilter;
 import com.roome.global.jwt.handler.OAuth2AuthenticationFailureHandler;
 import com.roome.global.jwt.handler.OAuth2AuthenticationSuccessHandler;
-import com.roome.global.jwt.filter.JwtAuthenticationFilter;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.service.RedisService;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,8 +20,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.Arrays;
 
 @RequiredArgsConstructor
 @Configuration
@@ -47,13 +46,14 @@ public class SecurityConfig {
 
         // X-Frame-Options 비활성화 (h2-console 접근 허용)
         .headers(headers -> headers.frameOptions(frame -> frame.disable()))
+
         // OAuth2 로그인 설정
         .oauth2Login(oauth2 -> oauth2
             .authorizationEndpoint(endpoint -> endpoint
                 .baseUri("/oauth2/authorization")
             )
             .redirectionEndpoint(endpoint -> endpoint
-                .baseUri("/login/oauth2/code/*")
+                .baseUri("/oauth/callback/{registrationId}")
             )
             .userInfoEndpoint(endpoint -> endpoint
                 .userService(oAuth2UserService)
@@ -66,7 +66,8 @@ public class SecurityConfig {
         .authorizeHttpRequests((auth) -> auth
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers(
-                "/**",
+                "/oauth2/authorization/**",  // OAuth 인증 시작 엔드포인트
+                "/oauth/callback/**",        // OAuth 콜백 엔드포인트
                 "/api/auth/**",
                 "/error",
                 "/v3/api-docs/**",
@@ -97,8 +98,10 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173")); // 프론트엔드 URL
-    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    configuration.setAllowedOrigins(
+        Arrays.asList("http://localhost:5173", "http://localhost:3000"));
+    configuration.setAllowedMethods(
+        Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(Arrays.asList("*"));
     configuration.setAllowCredentials(true);
 

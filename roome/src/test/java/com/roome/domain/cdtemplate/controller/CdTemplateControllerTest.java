@@ -37,7 +37,7 @@ class CdTemplateControllerTest {
 
   @Test
   @DisplayName("CD 템플릿 생성 성공")
-  @WithMockUser
+  @WithMockUser(username = "1")
   void createTemplate_Success() throws Exception {
     CdTemplateRequest request = createCdTemplateRequest();
     CdTemplateResponse response = createCdTemplateResponse(1L, request);
@@ -46,7 +46,6 @@ class CdTemplateControllerTest {
         .willReturn(response);
 
     mockMvc.perform(post("/api/my-cd/1/template")
-            .param("userId", "1")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request))
             .with(csrf()))
@@ -57,11 +56,12 @@ class CdTemplateControllerTest {
 
   @Test
   @DisplayName("CD 템플릿 조회 성공")
-  @WithMockUser
+  @WithMockUser(username = "1")
   void getTemplate_Success() throws Exception {
     CdTemplateResponse response = createCdTemplateResponse(1L, createCdTemplateRequest());
 
-    BDDMockito.given(cdTemplateService.getTemplate(eq(1L))).willReturn(response);
+    BDDMockito.given(cdTemplateService.getTemplate(eq(1L)))
+        .willReturn(response);
 
     mockMvc.perform(get("/api/my-cd/1/template")
             .accept(MediaType.APPLICATION_JSON))
@@ -71,7 +71,7 @@ class CdTemplateControllerTest {
 
   @Test
   @DisplayName("CD 템플릿 수정 성공")
-  @WithMockUser
+  @WithMockUser(username = "1")
   void updateTemplate_Success() throws Exception {
     CdTemplateRequest request = createCdTemplateRequest();
     CdTemplateResponse response = createCdTemplateResponse(1L, request);
@@ -80,7 +80,6 @@ class CdTemplateControllerTest {
         .willReturn(response);
 
     mockMvc.perform(patch("/api/my-cd/1/template")
-            .param("userId", "1")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request))
             .with(csrf()))
@@ -90,10 +89,9 @@ class CdTemplateControllerTest {
 
   @Test
   @DisplayName("CD 템플릿 삭제 성공")
-  @WithMockUser
+  @WithMockUser(username = "1")
   void deleteTemplate_Success() throws Exception {
     mockMvc.perform(delete("/api/my-cd/1/template")
-            .param("userId", "1")
             .with(csrf()))
         .andExpect(status().isNoContent());
 

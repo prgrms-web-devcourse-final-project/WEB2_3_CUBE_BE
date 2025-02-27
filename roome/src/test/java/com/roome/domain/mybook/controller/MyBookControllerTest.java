@@ -21,6 +21,8 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -50,13 +52,13 @@ class MyBookControllerTest {
         // given
         String title = "title";
         List<String> genreNames = List.of("웹", "IT");
-        MyBookCreateRequest request = createMyBookCreateRequest(1213214432L, title, genreNames);
+        MyBookCreateRequest request = createMyBookCreateRequest("1213214432", title, genreNames);
 
         Long myBookId = 1L;
         MyBookResponse response = createMyBookResponse(myBookId, request);
 
         Long roomOwnerId = 1L;
-        given(myBookService.create(1L, roomOwnerId, request))
+        given(myBookService.create(any(), eq(roomOwnerId), any(MyBookCreateRequest.class)))
                 .willReturn(response);
 
         // when // then
@@ -181,10 +183,10 @@ class MyBookControllerTest {
                                 .with(csrf())
                 )
                 .andExpect(status().isOk());
-        verify(myBookService).delete(1L, 1L, "1,2,3");
+        verify(myBookService).delete(any(), eq(1L), eq("1,2,3"));
     }
 
-    private MyBookCreateRequest createMyBookCreateRequest(Long isbn, String title, List<String> genreNames) {
+    private MyBookCreateRequest createMyBookCreateRequest(String isbn, String title, List<String> genreNames) {
         return new MyBookCreateRequest(
                 isbn,
                 title,

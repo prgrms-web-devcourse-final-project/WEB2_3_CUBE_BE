@@ -23,7 +23,7 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class JwtTokenProvider {
 
-    @Value("${jwt.access-token.expiration-time:3600000}")
+    @Value("${jwt.access-token.expiration-time:1209600000}") //TODO: 테스트 기간에는 리프레시 토큰이랑 만료기간 같게 나중에 줄여야함.
     private long ACCESS_TOKEN_EXPIRE_TIME; // 1시간
 
     @Value("${jwt.refresh-token.expiration-time:1209600000}")

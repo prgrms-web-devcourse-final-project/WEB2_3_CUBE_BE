@@ -9,8 +9,11 @@ import com.roome.domain.mybookreview.service.response.MyBookReviewResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -37,7 +40,7 @@ class MyBookReviewControllerTest {
     private ObjectMapper objectMapper;
 
     @DisplayName("서평을 작성할 수 있다.")
-    @WithMockUser
+    @WithMockUser()
     @Test
     void create() throws Exception {
 
@@ -49,7 +52,7 @@ class MyBookReviewControllerTest {
         MyBookReviewResponse response = createMyBookReviewResponse(myBookReviewId, request);
 
         Long myBookId = 1L;
-        given(myBookReviewService.create(1L, myBookId, request))
+        given(myBookReviewService.create(any(), eq(myBookId), any(MyBookReviewCreateRequest.class)))
                 .willReturn(response);
 
         // when // then
@@ -102,7 +105,7 @@ class MyBookReviewControllerTest {
         Long myBookReviewId = 1L;
         MyBookReviewResponse response = createMyBookReviewResponse(myBookReviewId, title);
 
-        given(myBookReviewService.update(1L, myBookReviewId, request))
+        given(myBookReviewService.update(any(), eq(myBookReviewId), any(MyBookReviewUpdateRequest.class)))
                 .willReturn(response);
 
         // when // then
@@ -129,7 +132,7 @@ class MyBookReviewControllerTest {
                                 .with(csrf())
                 )
                 .andExpect(status().isOk());
-        verify(myBookReviewService).delete(1L, myBookReviewId);
+        verify(myBookReviewService).delete(any(), eq(myBookReviewId));
     }
 
     private MyBookReviewCreateRequest createMyBookReviewCreateRequest(String title) {

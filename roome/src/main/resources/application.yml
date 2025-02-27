@@ -3,6 +3,9 @@ spring:
     active: test
   config:
     import: optional:file:.env[.properties]
+  autoconfigure:
+    exclude:
+      - io.awspring.cloud.autoconfigure.s3.S3AutoConfiguration
   security:
     oauth2:
       client:
@@ -11,7 +14,7 @@ spring:
             client-name: google
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
-            redirect-uri: http://localhost:8080/login/oauth2/code/google
+            redirect-uri: https://desqb38rc2v50.cloudfront.net/oauth/callback/google
             authorization-grant-type: authorization_code
             scope:
               - email
@@ -20,7 +23,7 @@ spring:
             client-name: naver
             client-id: ${NAVER_CLIENT_ID}
             client-secret: ${NAVER_CLIENT_SECRET}
-            redirect-uri: http://localhost:8080/login/oauth2/code/naver
+            redirect-uri: "{baseUrl}/oauth/callback/{registrationId}"
             authorization-grant-type: authorization_code
             scope:
               - name
@@ -30,7 +33,7 @@ spring:
             client-name: Kakao
             client-id: ${KAKAO_CLIENT_ID}
             client-secret: ${KAKAO_CLIENT_SECRET}
-            redirect-uri: http://localhost:8080/login/oauth2/code/kakao
+            redirect-uri: "{baseUrl}/oauth/callback/{registrationId}"
             authorization-grant-type: authorization_code
             client-authentication-method: client_secret_post
             scope:
@@ -50,6 +53,20 @@ spring:
             user-name-attribute: id
   jwt:
     secret: ${JWT_SECRET}
+  data:
+    redis:
+      port: ${REDIS_PORT}
+      host: ${REDIS_HOST}
+      password: ${REDIS_PASSWORD}
+
+# OAuth2 리디렉션 설정
+app:
+  oauth2:
+    redirectUri: http://localhost:5173/oauth/callback
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      - http://localhost:3000
 
 toss:
   secret-key: ${TOSS_SECRET_KEY}
@@ -76,10 +93,7 @@ cloud:
       bucket: ${AWS_BUCKET_NAME} # 월요일 설정
     region:
       static: ap-northeast-2  # 서울 리전
-    stack:
-      auto: false
-    endpoint:
-      uri: ${CLOUD_AWS_ENDPOINT_URI} # 재설정 필요
+
 
 ---
 spring:
@@ -107,12 +121,6 @@ spring:
   config:
     activate:
       on-profile: test
-  jwt:
-    secret: ebe1d0e205c1ee44b8e1937f6baed2b069774d7c52fc1c7db419ff850148db89  # .env 파일의 값을 직접 넣어줍니다
-    access-token:
-      expiration-time: 3600000  # 1시간
-    refresh-token:
-      expiration-time: 1209600000  # 14일
 
   datasource:
     driver-class-name: org.h2.Driver
@@ -131,8 +139,3 @@ spring:
     properties:
       hibernate:
         format_sql: true
-  data:
-    redis:
-      port: ${REDIS_PORT}
-      host: ${REDIS_HOST}
-      password: ${REDIS_PASSWORD}
