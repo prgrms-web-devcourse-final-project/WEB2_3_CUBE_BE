@@ -1,11 +1,14 @@
 package com.roome.domain.mybook.controller;
 
+import com.roome.domain.auth.security.OAuth2UserPrincipal;
 import com.roome.domain.mybook.service.MyBookService;
 import com.roome.domain.mybook.service.request.MyBookCreateRequest;
 import com.roome.domain.mybook.service.response.MyBookResponse;
 import com.roome.domain.mybook.service.response.MyBooksResponse;
+import com.roome.global.jwt.service.JwtTokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,14 +20,18 @@ import org.springframework.web.bind.annotation.*;
 public class MyBookController {
 
     private final MyBookService myBookService;
+    private final JwtTokenProvider provider;
 
     @Operation(summary = "도서 등록", description = "도서를 등록할 수 있다.")
     @PostMapping("/api/mybooks")
     public ResponseEntity<MyBookResponse> create(
-            @AuthenticationPrincipal Long loginUserId,
+//            @AuthenticationPrincipal Long loginUserId,
+            HttpServletRequest servletRequest,
             @RequestParam("userId") Long userId,
             @RequestBody MyBookCreateRequest request
     ) {
+        String accessToken = servletRequest.getHeader("Authorization").substring(7);
+        Long loginUserId = Long.valueOf(provider.getUserIdFromToken(accessToken));
         MyBookResponse response = myBookService.create(loginUserId, userId, request);
         return ResponseEntity.ok(response);
     }
