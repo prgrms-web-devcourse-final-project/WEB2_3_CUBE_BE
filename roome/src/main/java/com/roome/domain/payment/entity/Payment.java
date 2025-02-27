@@ -2,16 +2,15 @@ package com.roome.domain.payment.entity;
 
 import com.roome.domain.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Getter
 @Entity
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 @Table(name = "payments")
 public class Payment {
 
@@ -24,7 +23,7 @@ public class Payment {
     private User user; // 결제한 사용자
 
     @Column(nullable = false, unique = true)
-    private String paymentKey; // 토스 결제 키
+    private String paymentKey; // 결제 성공 시 반환되는 키
 
     @Column(nullable = false, unique = true)
     private String orderId; // 우리 서비스 내부 주문 ID
@@ -39,25 +38,11 @@ public class Payment {
     @Column(nullable = false)
     private PaymentStatus status; // 결제 상태
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
-    @Builder
-    public Payment(User user, String paymentKey, String orderId, int amount, int purchasedPoints, PaymentStatus status) {
-        this.user = user;
-        this.paymentKey = paymentKey;
-        this.orderId = orderId;
-        this.amount = amount;
-        this.purchasedPoints = purchasedPoints;
-        this.status = status;
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
     public void updateStatus(PaymentStatus status) {
         this.status = status;
-        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updatePaymentKey(String paymentKey) {
+        this.paymentKey = paymentKey;
     }
 }
