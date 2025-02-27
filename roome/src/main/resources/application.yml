@@ -53,6 +53,20 @@ spring:
             user-name-attribute: id
   jwt:
     secret: ${JWT_SECRET}
+  data:
+    redis:
+      port: ${REDIS_PORT}
+      host: ${REDIS_HOST}
+      password: ${REDIS_PASSWORD}
+
+# OAuth2 리디렉션 설정
+app:
+  oauth2:
+    redirectUri: http://localhost:5173/oauth/callback
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      - http://localhost:3000
 
 server:
   shutdown: graceful
@@ -76,10 +90,7 @@ cloud:
       bucket: ${AWS_BUCKET_NAME} # 월요일 설정
     region:
       static: ap-northeast-2  # 서울 리전
-    stack:
-      auto: false
-    endpoint:
-      uri: ${CLOUD_AWS_ENDPOINT_URI} # 재설정 필요
+
 
 ---
 spring:
