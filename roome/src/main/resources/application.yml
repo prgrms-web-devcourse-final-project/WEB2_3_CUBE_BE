@@ -51,8 +51,8 @@ spring:
   jwt:
     secret: ${JWT_SECRET}
 
-  toss:
-    secret-key: ${TOSS_SECRET_KEY}
+toss:
+  secret-key: ${TOSS_SECRET_KEY}
 
 server:
   shutdown: graceful
