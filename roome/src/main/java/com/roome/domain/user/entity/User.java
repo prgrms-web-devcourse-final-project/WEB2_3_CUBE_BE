@@ -53,7 +53,7 @@ public class User extends BaseTimeEntity {
   @Column(nullable = true)
   private LocalDateTime lastLogin;
 
-  @Column(nullable = true) 
+  @Column(nullable = true)
   private LocalDateTime lastGuestbookReward;
 
   // TODO: 추후 Redis 사용
@@ -151,5 +151,9 @@ public class User extends BaseTimeEntity {
 
   public void updateLastGuestbookReward(LocalDateTime date) {
     this.lastGuestbookReward = date;
+  }
+
+  public void updateLastLogin() {
+    this.lastLogin = LocalDateTime.now();
   }
 }
