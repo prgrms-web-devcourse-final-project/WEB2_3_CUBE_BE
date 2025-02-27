@@ -8,6 +8,8 @@ import com.roome.global.jwt.exception.UserNotFoundException;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.jwt.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,13 +25,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@Tag(name = "Token", description = "토큰 관련 API")
+@Tag(name = "토큰", description = "토큰 관련 API")
 public class ReissueController {
 
   private final TokenService tokenService;
   private final JwtTokenProvider jwtTokenProvider;
 
-  @Operation(summary = "토큰 재발급", description = "리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급받습니다.")
+  @Operation(
+      summary = "토큰 재발급",
+      description = "리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급받습니다."
+  )
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "토큰 재발급 성공"),
+      @ApiResponse(responseCode = "400", description = "리프레시 토큰이 없거나 유효하지 않음"),
+      @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
+      @ApiResponse(responseCode = "503", description = "데이터베이스 접근 오류"),
+      @ApiResponse(responseCode = "500", description = "서버 내부 오류")
+  })
   @PostMapping("/reissue-token")
   public ResponseEntity<?> reissueToken(@RequestBody TokenReissueRequest request) {
     try {
