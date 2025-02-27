@@ -1,7 +1,16 @@
 package com.roome.domain.rank.service;
 
-import com.roome.domain.rank.entity.Ranking;
-import com.roome.domain.rank.repository.RankingRepository;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+
+import com.roome.domain.rank.dto.UserRankingDto;
+import com.roome.domain.user.entity.User;
+import com.roome.domain.user.repository.UserRepository;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,144 +18,151 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 
 @ExtendWith(MockitoExtension.class)
 class RankingServiceTest {
 
-    @InjectMocks
-    private RankingService rankingService;
+  @InjectMocks
+  private RankingService rankingService;
 
-    @Mock
-    private RankingRepository rankingRepository;
+  @Mock
+  private RedisTemplate<String, Object> redisTemplate;
 
-    private Ranking testRanking;
+  @Mock
+  private UserRepository userRepository;
 
-    @BeforeEach
-    void setUp() {
-        testRanking = Ranking.builder()
-                .id(1L)
-                .userId(1L)
-                .score(100)
-                .rankPosition(1)
-                .lastUpdated(LocalDateTime.now())
-                .build();
-    }
+  @Mock
+  private ZSetOperations<String, Object> zSetOperations;
 
-    @Test
-    @DisplayName("점수 업데이트 - 기존 유저 점수 추가")
-    void updateScore_existingUser() {
-        // Given
-        when(rankingRepository.findByUserId(1L)).thenReturn(Optional.of(testRanking));
+  private User testUser;
 
-        // When
-        rankingService.updateScore(1L, 50);
+  @BeforeEach
+  void setUp() {
+    when(redisTemplate.opsForZSet()).thenReturn(zSetOperations);
 
-        // Then
-        assertThat(testRanking.getScore()).isEqualTo(150);
-        verify(rankingRepository, times(1)).save(testRanking);
-    }
+    // 테스트 유저 생성
+    testUser = User.builder().id(1L).nickname("테스트유저").profileImage("profile.jpg").build();
+  }
 
-    @Test
-    @DisplayName("점수 업데이트 - 새로운 유저 생성 및 점수 추가")
-    void updateScore_newUser() {
-        // Given
-        when(rankingRepository.findByUserId(2L)).thenReturn(Optional.empty());
+  @Test
+  @DisplayName("상위 10명 랭킹 조회")
+  void getTopRankings() {
+    // Given
+    Set<ZSetOperations.TypedTuple<Object>> mockRankSet = new HashSet<>();
 
-        // When
-        rankingService.updateScore(2L, 30);
+    // 3명의 유저
+    mockRankSet.add(createTypedTuple("1", 100.0));
+    mockRankSet.add(createTypedTuple("2", 200.0));
+    mockRankSet.add(createTypedTuple("3", 300.0));
 
-        // Then
-        verify(rankingRepository, times(1)).save(argThat(ranking ->
-                ranking.getUserId().equals(2L) && ranking.getScore() == 30
-        ));
-    }
+    when(zSetOperations.reverseRangeWithScores("user:ranking", 0, 9)).thenReturn(mockRankSet);
 
-    @Test
-    @DisplayName("랭킹 업데이트 - 점수 기준으로 순위 재정렬")
-    void updateRanking() {
-        // Given
-        Ranking user1 = new Ranking(1L, 1L, 300, 0, LocalDateTime.now());
-        Ranking user2 = new Ranking(2L, 2L, 200, 0, LocalDateTime.now());
-        Ranking user3 = new Ranking(3L, 3L, 100, 0, LocalDateTime.now());
+    // 유저 정보 모킹
+    when(userRepository.findById(1L)).thenReturn(Optional.of(createUser(1L, "유저1")));
+    when(userRepository.findById(2L)).thenReturn(Optional.of(createUser(2L, "유저2")));
+    when(userRepository.findById(3L)).thenReturn(Optional.of(createUser(3L, "유저3")));
 
-        List<Ranking> rankings = List.of(user1, user2, user3);
-        when(rankingRepository.findTop10ByOrderByScoreDesc()).thenReturn(rankings);
+    // When
+    List<UserRankingDto> result = rankingService.getTopRankings();
 
-        // When
-        rankingService.updateRanking();
+    // Then
+    assertThat(result).hasSize(3);
 
-        // Then
-        assertThat(user1.getRankPosition()).isEqualTo(1);
-        assertThat(user2.getRankPosition()).isEqualTo(2);
-        assertThat(user3.getRankPosition()).isEqualTo(3);
+    // id별
+    var userMap = result.stream().collect(Collectors.toMap(UserRankingDto::getUserId, dto -> dto));
 
-        verify(rankingRepository, times(3)).save(any(Ranking.class));
-    }
+    // 유저1
+    assertThat(userMap.get(1L).getScore()).isEqualTo(100);
+    assertThat(userMap.get(1L).getNickname()).isEqualTo("유저1");
 
-    @Test
-    @DisplayName("유저 랭킹 조회 - 존재하는 유저")
-    void getUserRanking_existingUser() {
-        // Given
-        when(rankingRepository.findByUserId(1L)).thenReturn(Optional.of(testRanking));
+    // 유저2
+    assertThat(userMap.get(2L).getScore()).isEqualTo(200);
+    assertThat(userMap.get(2L).getNickname()).isEqualTo("유저2");
 
-        // When
-        Optional<Ranking> ranking = rankingService.getUserRanking(1L);
+    // 유저3
+    assertThat(userMap.get(3L).getScore()).isEqualTo(300);
+    assertThat(userMap.get(3L).getNickname()).isEqualTo("유저3");
+  }
 
-        // Then
-        assertThat(ranking).isPresent();
-        assertThat(ranking.get().getScore()).isEqualTo(100);
-    }
+  @Test
+  @DisplayName("랭킹 데이터가 없는 경우")
+  void getTopRankings_emptyRanking() {
+    // Given
+    when(zSetOperations.reverseRangeWithScores("user:ranking", 0, 9)).thenReturn(new HashSet<>());
 
-    @Test
-    @DisplayName("유저 랭킹 조회 - 존재하지 않는 유저")
-    void getUserRanking_nonExistingUser() {
-        // Given
-        when(rankingRepository.findByUserId(99L)).thenReturn(Optional.empty());
+    // When
+    List<UserRankingDto> result = rankingService.getTopRankings();
 
-        // When
-        Optional<Ranking> ranking = rankingService.getUserRanking(99L);
+    // Then
+    assertThat(result).isEmpty();
+  }
 
-        // Then
-        assertThat(ranking).isEmpty();
-    }
+  @Test
+  @DisplayName("랭킹에 없는 사용자가 있는 경우")
+  void getTopRankings_userNotFound() {
+    // Given
+    Set<ZSetOperations.TypedTuple<Object>> mockRankSet = new HashSet<>();
+    mockRankSet.add(createTypedTuple("1", 300.0));
+    mockRankSet.add(createTypedTuple("999", 200.0)); // 존재하지 않는 유저
 
-    @Test
-    @DisplayName("상위 10명 랭킹 조회")
-    void getTopRankings() {
-        // Given
-        List<Ranking> topRankings = List.of(testRanking);
-        when(rankingRepository.findTop10ByOrderByScoreDesc()).thenReturn(topRankings);
+    when(zSetOperations.reverseRangeWithScores("user:ranking", 0, 9)).thenReturn(mockRankSet);
 
-        // When
-        List<Ranking> result = rankingService.getTopRankings();
+    when(userRepository.findById(1L)).thenReturn(Optional.of(createUser(1L, "유저1")));
+    when(userRepository.findById(999L)).thenReturn(Optional.empty()); // 유저 없음
 
-        // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getUserId()).isEqualTo(1L);
-    }
+    // When
+    List<UserRankingDto> result = rankingService.getTopRankings();
 
-    @Test
-    @DisplayName("매주 월요일 00:00 점수 초기화")
-    void resetWeeklyScores() {
-        // Given
-        Ranking user1 = new Ranking(1L, 1L, 300, 1, LocalDateTime.now());
-        Ranking user2 = new Ranking(2L, 2L, 200, 2, LocalDateTime.now());
-        List<Ranking> rankings = List.of(user1, user2);
-        when(rankingRepository.findAll()).thenReturn(rankings);
+    // Then
+    assertThat(result).hasSize(1); // 존재하는 유저만 포함
+    assertThat(result.get(0).getUserId()).isEqualTo(1L);
+    assertThat(result.get(0).getNickname()).isEqualTo("유저1");
+  }
 
-        // When
-        rankingService.resetWeeklyScores();
+  @Test
+  @DisplayName("랭킹 데이터에 null 값이 있는 경우")
+  void getTopRankings_nullValues() {
+    // Given
+    Set<ZSetOperations.TypedTuple<Object>> mockRankSet = new HashSet<>();
+    mockRankSet.add(createTypedTuple(null, 300.0));
+    mockRankSet.add(createTypedTuple("1", 200.0));
 
-        // Then
-        assertThat(user1.getScore()).isZero();
-        assertThat(user2.getScore()).isZero();
-        verify(rankingRepository, times(2)).save(any(Ranking.class));
-    }
+    when(zSetOperations.reverseRangeWithScores("user:ranking", 0, 9)).thenReturn(mockRankSet);
+
+    when(userRepository.findById(1L)).thenReturn(Optional.of(createUser(1L, "유저1")));
+
+    // When
+    List<UserRankingDto> result = rankingService.getTopRankings();
+
+    // Then
+    assertThat(result).hasSize(1); // null이 아닌 유저만 포함
+    assertThat(result.get(0).getUserId()).isEqualTo(1L);
+  }
+
+  // TypedTuple 생성
+  private ZSetOperations.TypedTuple<Object> createTypedTuple(String value, Double score) {
+    return new ZSetOperations.TypedTuple<Object>() {
+      @Override
+      public Object getValue() {
+        return value;
+      }
+
+      @Override
+      public Double getScore() {
+        return score;
+      }
+
+      @Override
+      public int compareTo(ZSetOperations.TypedTuple<Object> o) {
+        return getScore().compareTo(o.getScore());
+      }
+    };
+  }
+
+  // 테스트 유저 생성
+  private User createUser(Long id, String nickname) {
+    return User.builder().id(id).nickname(nickname).profileImage("profile_" + id + ".jpg").build();
+  }
 }
