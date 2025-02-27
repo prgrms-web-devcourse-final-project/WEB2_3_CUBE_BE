@@ -51,7 +51,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     // 프론트엔드 리다이렉트 URI에 액세스 토큰을 쿼리 파라미터로 추가
     String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
         .queryParam("accessToken", jwtToken.getAccessToken())
-        .queryParam("userId", user.getId())
         .build().toUriString();
 
     log.info("리다이렉트 URL: {}", targetUrl);

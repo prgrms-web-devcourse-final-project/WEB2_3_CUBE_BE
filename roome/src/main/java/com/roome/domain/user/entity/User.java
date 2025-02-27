@@ -1,7 +1,6 @@
 package com.roome.domain.user.entity;
 
 import com.roome.domain.point.entity.Point;
-import com.roome.domain.point.entity.PointHistory;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.exception.RoomAuthorizationException;
 import com.roome.global.entity.BaseTimeEntity;
@@ -67,9 +66,6 @@ public class User extends BaseTimeEntity {
 
   @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   private Point point;
-
-  @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-  private PointHistory pointHistory;
 
   @PrePersist // 에러 처리
   public void prePersist() {
