@@ -17,4 +17,5 @@ public class NotificationInfo {
     private String senderProfileImage;
     private Long targetId;
     private LocalDateTime createdAt;
+    private Boolean isRead;
 }

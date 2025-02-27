@@ -3,6 +3,8 @@ package com.roome.domain.auth.service;
 import com.roome.domain.auth.dto.oauth2.OAuth2Provider;
 import com.roome.domain.auth.dto.oauth2.OAuth2Response;
 import com.roome.domain.auth.security.OAuth2UserPrincipal;
+import com.roome.domain.point.entity.Point;
+import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.room.service.RoomService;
 import com.roome.domain.user.entity.Provider;
 import com.roome.domain.user.entity.Status;
@@ -43,6 +45,9 @@ class CustomOAuth2UserServiceTest {
     @Mock
     private RoomService roomService;
 
+    @Mock
+    private PointHistoryRepository pointHistoryRepository;
+
     private static final class TestUsers {
         static final String PROVIDER_ID = "12345";
         static final String NAME = "Test User";
@@ -76,6 +81,7 @@ class CustomOAuth2UserServiceTest {
                 .provider(Provider.KAKAO)
                 .providerId(TestUsers.PROVIDER_ID)
                 .status(Status.OFFLINE)
+                .point(new Point(null, 0, 0, 0))
                 .build();
 
         OAuth2User oAuth2User = new DefaultOAuth2User(
@@ -105,8 +111,11 @@ class CustomOAuth2UserServiceTest {
             when(userRepository.findByEmail(TestUsers.EMAIL)).thenReturn(Optional.empty());
             when(userRepository.save(any(User.class))).thenReturn(newUser);
 
-            // getOrCreateRoomByUserId 메서드를 모킹 (실제로 호출되는 메서드)
+            // getOrCreateRoomByUserId 메서드를 모킹
             when(roomService.getOrCreateRoomByUserId(anyLong())).thenReturn(null);
+
+            // 🔹 pointHistoryRepository.save() 호출을 방지하기 위한 Mock 설정
+            when(pointHistoryRepository.save(any())).thenReturn(null);
 
             // when
             OAuth2User result = customOAuth2UserService.processOAuth2User(userRequest, oAuth2User);
@@ -124,14 +133,16 @@ class CustomOAuth2UserServiceTest {
                         assertThat(user.getProviderId()).isEqualTo(TestUsers.PROVIDER_ID);
                         assertThat(user.getProvider()).isEqualTo(Provider.KAKAO);
                         assertThat(user.getStatus()).isEqualTo(Status.OFFLINE);
+                        assertThat(user.getPoint()).isNotNull();
                     });
 
             verify(userRepository).findByEmail(TestUsers.EMAIL);
             verify(userRepository).save(any(User.class));
-            // createRoom이 아닌 getOrCreateRoomByUserId를 검증
             verify(roomService).getOrCreateRoomByUserId(anyLong());
+            verify(pointHistoryRepository, atLeastOnce()).save(any());
         }
     }
+
 
     @Test
     @DisplayName("기존 유저는 로그인 시 마지막 로그인 시간이 갱신된다")

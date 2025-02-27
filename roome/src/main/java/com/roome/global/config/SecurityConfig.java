@@ -7,6 +7,7 @@ import com.roome.global.jwt.handler.OAuth2AuthenticationSuccessHandler;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.service.RedisService;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,10 +19,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.CorsUtils;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.Arrays;
 
 @RequiredArgsConstructor
 @Configuration
@@ -37,6 +35,7 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
+
         // CSRF 보호 비활성화
         .csrf(csrf -> csrf.disable())
 
@@ -54,7 +53,7 @@ public class SecurityConfig {
                 .baseUri("/oauth2/authorization")
             )
             .redirectionEndpoint(endpoint -> endpoint
-                .baseUri("/login/oauth2/code/*")
+                .baseUri("/oauth/callback/{registrationId}")
             )
             .userInfoEndpoint(endpoint -> endpoint
                 .userService(oAuth2UserService)
@@ -65,16 +64,18 @@ public class SecurityConfig {
 
         // 접근 제어 설정
         .authorizeHttpRequests((auth) -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers(
-                    "/api/auth/**",
-                    "/error",
-                    "/v3/api-docs/**",
-                    "/swagger-ui/**",
-                    "/swagger-ui.html",
-                    "/mock/**"
-                ).permitAll()
-                .anyRequest().authenticated()
+            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+            .requestMatchers(
+                "/oauth2/authorization/**",  // OAuth 인증 시작 엔드포인트
+                "/oauth/callback/**",        // OAuth 콜백 엔드포인트
+                "/api/auth/**",
+                "/error",
+                "/v3/api-docs/**",
+                "/swagger-ui/**",
+                "/swagger-ui.html",
+                "/mock/**"
+            ).permitAll()
+            .anyRequest().authenticated()
         )
 
         // 예외 처리
