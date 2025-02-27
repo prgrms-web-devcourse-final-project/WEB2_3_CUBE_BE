@@ -1,13 +1,14 @@
 package com.roome.global.jwt.controller;
 
+import com.roome.domain.auth.dto.response.MessageResponse;
 import com.roome.global.jwt.dto.JwtToken;
 import com.roome.global.jwt.dto.TokenReissueRequest;
+import com.roome.global.jwt.dto.TokenResponse;
 import com.roome.global.jwt.exception.InvalidRefreshTokenException;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.jwt.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -35,13 +36,13 @@ public class ReissueController {
       // 리프레시 토큰 검증
       if (refreshToken == null || refreshToken.isBlank()) {
         return ResponseEntity.badRequest()
-            .body(Map.of("message", "리프레시 토큰이 필요합니다."));
+            .body(new MessageResponse("리프레시 토큰이 필요합니다."));
       }
 
       // 리프레시 토큰이 유효한지 확인
       if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
         return ResponseEntity.badRequest()
-            .body(Map.of("message", "유효하지 않은 리프레시 토큰입니다."));
+            .body(new MessageResponse("유효하지 않은 리프레시 토큰입니다."));
       }
 
       // 새로운 토큰 발급
@@ -51,20 +52,20 @@ public class ReissueController {
     } catch (InvalidRefreshTokenException e) {
       log.warn("유효하지 않은 리프레시 토큰: {}", e.getMessage());
       return ResponseEntity.badRequest()
-          .body(Map.of("message", e.getMessage()));
+          .body(new MessageResponse(e.getMessage()));
     } catch (Exception e) {
       log.error("토큰 재발급 중 오류 발생: ", e);
       return ResponseEntity.internalServerError()
-          .body(Map.of("message", "토큰 재발급 중 오류가 발생했습니다."));
+          .body(new MessageResponse("토큰 재발급 중 오류가 발생했습니다."));
     }
   }
 
-  private Map<String, Object> createTokenResponse(JwtToken token) {
-    return Map.of(
-        "accessToken", token.getAccessToken(),
-        "refreshToken", token.getRefreshToken(),
-        "tokenType", token.getGrantType(),
-        "expiresIn", jwtTokenProvider.getAccessTokenExpirationTime() / 1000
-    );
+  private TokenResponse createTokenResponse(JwtToken token) {
+    return TokenResponse.builder()
+        .accessToken(token.getAccessToken())
+        .refreshToken(token.getRefreshToken())
+        .tokenType(token.getGrantType())
+        .expiresIn(jwtTokenProvider.getAccessTokenExpirationTime() / 1000)
+        .build();
   }
 }
