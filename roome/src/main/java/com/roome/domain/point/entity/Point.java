@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Getter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @Table(name = "points")
 public class Point {
 
@@ -40,11 +41,12 @@ public class Point {
   private LocalDateTime updatedAt;
 
   @Builder
-  public Point(User user, int balance, int totalEarned, int totalUsed) {
+  public Point(User user, int balance, int totalEarned, int totalUsed, LocalDateTime lastGuestbookReward) {
     this.user = user;
     this.balance = balance;
     this.totalEarned = totalEarned;
     this.totalUsed = totalUsed;
+    this.lastGuestbookReward = lastGuestbookReward;
     this.createdAt = LocalDateTime.now();
     this.updatedAt = LocalDateTime.now();
   }
