@@ -61,7 +61,8 @@ public class AuthController {
     try {
       String accessToken = authHeader.substring(7);
       Long userId = tokenService.getUserIdFromToken(accessToken);
-      User user = userRepository.getById(userId);
+      User user = userRepository.findById(userId)
+          .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
       RoomResponseDto roomInfo = roomService.getOrCreateRoomByUserId(userId);
 
       String refreshToken = redisService.getRefreshToken(userId.toString());
