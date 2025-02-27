@@ -2,6 +2,7 @@ package com.roome.domain.user.controller;
 
 import com.roome.domain.auth.security.OAuth2UserPrincipal;
 import com.roome.domain.user.dto.response.ImageUploadResponseDto;
+import com.roome.domain.user.service.UserProfileImageService;
 import com.roome.domain.user.service.UserService;
 import com.roome.global.exception.ControllerException;
 import com.roome.global.exception.ErrorCode;
@@ -30,7 +31,7 @@ public class UserProfileImageController {
     private S3Service s3Service;
 
     @Autowired
-    private UserService userService;
+    private UserProfileImageService userService;
 
 
     // 프로필 이미지 업로드
