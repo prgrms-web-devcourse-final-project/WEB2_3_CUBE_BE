@@ -1,4 +1,4 @@
-package com.roome.domain.payment.mock;
+package com.roome.domain.payment.controller;
 
 import com.roome.domain.payment.dto.PaymentRequestDto;
 import com.roome.domain.payment.dto.PaymentResponseDto;
