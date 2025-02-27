@@ -6,6 +6,7 @@ import com.roome.domain.mybook.service.response.MyBookResponse;
 import com.roome.domain.mybook.service.response.MyBooksResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,10 +17,10 @@ public class MyBookController {
 
     @PostMapping("/api/mybooks")
     public ResponseEntity<MyBookResponse> create(
+            @AuthenticationPrincipal Long loginUserId,
             @RequestParam("userId") Long userId,
             @RequestBody MyBookCreateRequest request
     ) {
-        Long loginUserId = 1L;
         MyBookResponse response = myBookService.create(loginUserId, userId, request);
         return ResponseEntity.ok(response);
     }
@@ -42,10 +43,10 @@ public class MyBookController {
 
     @DeleteMapping("/api/mybooks")
     public ResponseEntity<Void> delete(
+            @AuthenticationPrincipal Long loginUserId,
             @RequestParam("userId") Long userId,
             @RequestParam String myBookIds
     ) {
-        Long loginUserId = 1L;
         myBookService.delete(loginUserId, userId, myBookIds);
         return ResponseEntity.ok().build();
     }
