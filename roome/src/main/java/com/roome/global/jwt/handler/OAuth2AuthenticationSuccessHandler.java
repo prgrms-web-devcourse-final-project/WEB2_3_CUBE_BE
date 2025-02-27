@@ -7,6 +7,7 @@ import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.service.RedisService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,46 +16,49 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.io.IOException;
-
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    private final JwtTokenProvider jwtTokenProvider;
-    private final RedisService redisService;
+  private final JwtTokenProvider jwtTokenProvider;
+  private final RedisService redisService;
 
-    @Value("${app.oauth2.redirectUri}")
-    private String redirectUri;
+  @Value("${app.oauth2.redirectUri}")
+  private String redirectUri;
 
-    @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
-                                        Authentication authentication) throws IOException {
-        OAuth2UserPrincipal oAuth2UserPrincipal = (OAuth2UserPrincipal) authentication.getPrincipal();
-        User user = oAuth2UserPrincipal.getUser();
+  @Override
+  public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+      Authentication authentication) throws IOException {
+    OAuth2UserPrincipal oAuth2UserPrincipal = (OAuth2UserPrincipal) authentication.getPrincipal();
+    User user = oAuth2UserPrincipal.getUser();
 
-        log.info("OAuth2 로그인 성공: userId={}, email={}", user.getId(), user.getEmail());
+    log.info("OAuth2 로그인 성공: userId={}, email={}", user.getId(), user.getEmail());
 
-        // JWT 토큰 생성
-        JwtToken jwtToken = jwtTokenProvider.createToken(user.getId().toString());
+    // JWT 토큰 생성
+    JwtToken jwtToken = jwtTokenProvider.createToken(user.getId().toString());
 
-        // Redis에 리프레시 토큰 저장
-        redisService.saveRefreshToken(
-                user.getId().toString(),
-                jwtToken.getRefreshToken(),
-                jwtTokenProvider.getRefreshTokenExpirationTime()
-        );
+    // Redis에 리프레시 토큰 저장
+    redisService.saveRefreshToken(
+        user.getId().toString(),
+        jwtToken.getRefreshToken(),
+        jwtTokenProvider.getRefreshTokenExpirationTime()
+    );
 
-        // 프론트엔드 리다이렉트 URI에 액세스 토큰을 쿼리 파라미터로 추가
-        String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
-                .queryParam("accessToken", jwtToken.getAccessToken())
-                .queryParam("userId", user.getId())
-                .build().toUriString();
-
-        log.info("리다이렉트 URL: {}", targetUrl);
-
-        // 리다이렉트
-        getRedirectStrategy().sendRedirect(request, response, targetUrl);
+    // 프론트엔드 리다이렉트 URI에 액세스 토큰을 쿼리 파라미터로 추가
+    String targetUri = request.getParameter("redirect_uri");
+    if (targetUri == null || targetUri.isBlank()) {
+      targetUri = redirectUri; // 기본값으로 설정된 리디렉트 URI 사용
     }
+
+    String targetUrl = UriComponentsBuilder.fromUriString(targetUri)
+        .queryParam("accessToken", jwtToken.getAccessToken())
+        .queryParam("userId", user.getId())
+        .build().toUriString();
+
+    log.info("리다이렉트 URL: {}", targetUrl);
+
+    // 리다이렉트
+    getRedirectStrategy().sendRedirect(request, response, targetUrl);
+  }
 }
