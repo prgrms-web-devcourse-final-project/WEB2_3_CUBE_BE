@@ -48,7 +48,8 @@ class MyCdServiceTest {
     roomRepository = mock(RoomRepository.class);
     userRepository = mock(UserRepository.class);
     cdGenreTypeRepository = mock(CdGenreTypeRepository.class);
-    myCdService = new MyCdService(myCdRepository, cdRepository, myCdCountRepository, roomRepository, userRepository, cdGenreTypeRepository);
+    myCdService = new MyCdService(myCdRepository, cdRepository, myCdCountRepository, roomRepository,
+        userRepository, cdGenreTypeRepository);
   }
 
   @Test
@@ -141,10 +142,58 @@ class MyCdServiceTest {
     when(cd.getTitle()).thenReturn("Palette");
     when(cd.getArtist()).thenReturn("IU");
 
-    MyCdListResponse response = myCdService.getMyCdList(userId, cursor, 10);
+    MyCdListResponse response = myCdService.getMyCdList(userId, null, cursor, 10);
 
     assertThat(response).isNotNull();
     assertThat(response.getData()).hasSize(1);
+  }
+
+  @Test
+  @DisplayName("내 CD 목록 조회 - 키워드 검색 성공")
+  void getMyCdList_WithKeyword_Success() {
+    Long userId = 1L;
+    String keyword = "IU";
+    PageRequest pageRequest = PageRequest.of(0, 10);
+
+    User user = mock(User.class);
+    Cd cd = mock(Cd.class);
+    MyCd myCd = mock(MyCd.class);
+
+    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+    when(myCdRepository.searchByUserIdAndKeyword(eq(userId), eq(keyword), any(PageRequest.class)))
+        .thenReturn(List.of(myCd));
+
+    when(myCdRepository.countByUserIdAndKeyword(eq(userId), eq(keyword)))
+        .thenReturn(1L);
+
+    when(myCd.getCd()).thenReturn(cd);
+    when(myCd.getId()).thenReturn(1L);
+    when(cd.getId()).thenReturn(1L);
+    when(cd.getTitle()).thenReturn("Palette");
+    when(cd.getArtist()).thenReturn("IU");
+
+    MyCdListResponse response = myCdService.getMyCdList(userId, keyword, null, 10);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getData()).hasSize(1);
+  }
+
+  @Test
+  @DisplayName("내 CD 목록 조회 - 키워드 검색 실패 (결과 없음)")
+  void getMyCdList_WithKeyword_Failure() {
+    Long userId = 1L;
+    String keyword = "Unknown Artist";
+
+    when(userRepository.findById(userId)).thenReturn(Optional.of(mock(User.class)));
+
+    when(myCdRepository.searchByUserIdAndKeyword(eq(userId), eq(keyword), any(PageRequest.class)))
+        .thenReturn(List.of());
+
+    when(myCdRepository.countByUserIdAndKeyword(eq(userId), eq(keyword))).thenReturn(0L);
+
+    assertThatThrownBy(() -> myCdService.getMyCdList(userId, keyword, null, 10))
+        .isInstanceOf(MyCdListEmptyException.class);
   }
 
   @Test
@@ -155,9 +204,10 @@ class MyCdServiceTest {
     when(myCdRepository.findByUserIdOrderByIdAsc(userId, PageRequest.of(0, 10)))
         .thenReturn(List.of());
 
-    assertThatThrownBy(() -> myCdService.getMyCdList(userId, null, 10))
+    assertThatThrownBy(() -> myCdService.getMyCdList(userId, null, null, 10))
         .isInstanceOf(MyCdListEmptyException.class);
   }
+
 
   @Test
   @DisplayName("내 CD 목록 조회 - cursor 없음")
@@ -174,8 +224,7 @@ class MyCdServiceTest {
     when(myCd.getCd()).thenReturn(cd);
     when(myCd.getId()).thenReturn(1L);
 
-    MyCdListResponse response = myCdService.getMyCdList(userId, null, 10);
-
+    MyCdListResponse response = myCdService.getMyCdList(userId, null, null, 10);
     assertThat(response).isNotNull();
     assertThat(response.getData()).hasSize(1);
   }
