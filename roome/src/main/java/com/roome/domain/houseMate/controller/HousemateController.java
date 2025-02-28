@@ -1,8 +1,8 @@
 package com.roome.domain.houseMate.controller;
 
-import com.roome.domain.auth.security.OAuth2UserPrincipal;
 import com.roome.domain.houseMate.dto.HousemateListResponse;
 import com.roome.domain.houseMate.service.HousemateService;
+import com.roome.global.auth.AuthenticatedUser;
 import com.roome.global.exception.ControllerException;
 import com.roome.global.exception.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,7 +38,7 @@ public class HousemateController {
     })
     @GetMapping("/followers")
     public ResponseEntity<HousemateListResponse> getFollowers(
-            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @AuthenticatedUser Long userId,
             @Parameter(description = "페이지네이션 커서 (마지막으로 받은 userId)", example = "10")
             @RequestParam(required = false) Long cursor,
             @Parameter(description = "한 페이지당 조회할 메이트 수(1-100)", example = "20")
@@ -52,7 +51,7 @@ public class HousemateController {
         // 리미티 검증
         validateLimit(limit);
 
-        HousemateListResponse response = housemateService.getFollowerList(principal.getId(), cursor, limit, nickname);
+        HousemateListResponse response = housemateService.getFollowerList(userId, cursor, limit, nickname);
         return ResponseEntity.ok(response);
     }
 
@@ -66,7 +65,7 @@ public class HousemateController {
     })
     @GetMapping("/following")
     public ResponseEntity<HousemateListResponse> getFollowing(
-            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @AuthenticatedUser Long userId,
             @Parameter(description = "페이지네이션 커서 (마지막으로 받은 userId)", example = "10")
             @RequestParam(required = false) Long cursor,
             @Parameter(description = "한 페이지당 조회할 메이트 수(1-100)", example = "20")
@@ -79,8 +78,7 @@ public class HousemateController {
         // 리미티 검증
         validateLimit(limit);
 
-
-        HousemateListResponse response = housemateService.getFollowingList(principal.getId(), cursor, limit, nickname);
+        HousemateListResponse response = housemateService.getFollowingList(userId, cursor, limit, nickname);
         return ResponseEntity.ok(response);
     }
 
@@ -95,13 +93,13 @@ public class HousemateController {
     })
     @PostMapping("/follow/{targetId}")
     public ResponseEntity<Void> addHousemate(
-            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @AuthenticatedUser Long userId,
             @Parameter(description = "추가할 사용자의 ID", example = "1")
             @PathVariable Long targetId) {
 
-        validateFollowTarget(principal.getId(), targetId);
+        validateFollowTarget(userId, targetId);
 
-        housemateService.addHousemate(principal.getId(), targetId);
+        housemateService.addHousemate(userId, targetId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -116,13 +114,13 @@ public class HousemateController {
     })
     @DeleteMapping("/follow/{targetId}")
     public ResponseEntity<Void> removeHousemate(
-            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @AuthenticatedUser Long userId,
             @Parameter(description = "삭제할 사용자의 ID", example = "1")
             @PathVariable Long targetId) {
 
-        validateFollowTarget(principal.getId(), targetId);
+        validateFollowTarget(userId, targetId);
 
-        housemateService.removeHousemate(principal.getId(), targetId);
+        housemateService.removeHousemate(userId, targetId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 

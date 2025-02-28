@@ -3,7 +3,7 @@ package com.roome.domain.user.controller;
 import com.roome.domain.user.dto.request.UpdateProfileRequest;
 import com.roome.domain.user.dto.response.UserProfileResponse;
 import com.roome.domain.user.service.UserProfileService;
-import com.roome.domain.user.temp.UserPrincipal;
+import com.roome.global.auth.AuthenticatedUser;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,7 +15,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,8 +38,8 @@ public class UserProfileController {
     public ResponseEntity<UserProfileResponse> getUserProfile(
             @Parameter(description = "조회할 사용자의 ID", example = "1")
             @PathVariable Long userId,
-            @AuthenticationPrincipal UserPrincipal authUser) {
-        UserProfileResponse response = userProfileService.getUserProfile(userId, authUser.getId());
+            @AuthenticatedUser Long authUserId) {
+        UserProfileResponse response = userProfileService.getUserProfile(userId, authUserId);
         return ResponseEntity.ok(response);
     }
 
@@ -57,11 +56,11 @@ public class UserProfileController {
     public ResponseEntity<UserProfileResponse> updateProfile(
             @Parameter(description = "수정할 프로필 정보")
             @Valid @RequestBody UpdateProfileRequest request,
-            @AuthenticationPrincipal UserPrincipal authUser) {
+            @AuthenticatedUser Long userId) {
         validateNickname(request.getNickname());
         validateBio(request.getBio());
         log.info("[프로필 수정] nickname: {}, bio: {}", request.getNickname(), request.getBio());
-        UserProfileResponse response = userProfileService.updateProfile(authUser.getId(), request);
+        UserProfileResponse response = userProfileService.updateProfile(userId, request);
         return ResponseEntity.ok(response);
     }
 

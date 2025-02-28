@@ -1,8 +1,8 @@
 package com.roome.domain.user.controller;
 
-import com.roome.domain.auth.security.OAuth2UserPrincipal;
 import com.roome.domain.user.dto.response.ImageUploadResponseDto;
 import com.roome.domain.user.service.UserProfileImageService;
+import com.roome.global.auth.AuthenticatedUser;
 import com.roome.global.exception.ControllerException;
 import com.roome.global.exception.ErrorCode;
 import com.roome.global.service.S3Service;
@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -52,7 +51,7 @@ public class UserProfileImageController {
     })
     @RequestMapping(method = {RequestMethod.POST, RequestMethod.PUT})
     public ResponseEntity<ImageUploadResponseDto> uploadProfileImage(
-            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @AuthenticatedUser Long userId,
             @Parameter(description = "업로드할 프로필 이미지 파일 (JPG, JPEG, PNG, GIF 형식, 최대 5MB)")
             @RequestParam("image") MultipartFile image) {
         // 이미지 파일 유효성 검증
@@ -60,10 +59,10 @@ public class UserProfileImageController {
 
         try {
             // S3에 이미지 업로드된 기존 이미지 저장. 없으면 null
-            String originProfileImageUrl = userService.getProfileImageUrl(principal.getId());
+            String originProfileImageUrl = userService.getProfileImageUrl(userId);
             // 새로운 프로필 이미지 업로드
             String imageUrl = s3Service.uploadImage(image, "profile");
-            userService.updateProfileImage(principal.getId(), imageUrl);
+            userService.updateProfileImage(userId, imageUrl);
             log.info("프로필 이미지 업로드 완료: {}", imageUrl);
             //기존 프로필 이미지 삭제
             if (originProfileImageUrl != null && !originProfileImageUrl.isEmpty()) {
@@ -92,7 +91,7 @@ public class UserProfileImageController {
     })
     @DeleteMapping
     public ResponseEntity<?> deleteProfileImage(
-            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @AuthenticatedUser Long userId,
             @Parameter(description = "삭제할 이미지의 S3 URL", example = "https://bucket-name.s3.amazonaws.com/profile/image.jpg")
             @RequestParam("imageUrl") String imageUrl) {
         // URL 유효성 검증
@@ -104,7 +103,7 @@ public class UserProfileImageController {
 
         try {
             s3Service.deleteImage(imageUrl);
-            userService.deleteProfileImage(principal.getId());
+            userService.deleteProfileImage(userId);
 
             return ResponseEntity.ok(imageUrl);
         } catch (Exception e) {
@@ -115,7 +114,7 @@ public class UserProfileImageController {
     // 파일 확장자 추출 메서드
     private String getFileExtension(String filename) {
         int lastDotIndex = filename.lastIndexOf(".");
-        if (lastDotIndex > 0) {
+        if (lastDotIndex >= 0) {  // > 0에서 >= 0으로 변경하여 점으로 시작하는 파일명도 처리
             return filename.substring(lastDotIndex + 1);
         }
         return "";
