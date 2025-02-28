@@ -43,13 +43,13 @@ public class NotificationService {
     // 알림 읽음 처리 서비스
     @Transactional
     public NotificationReadResponse readNotification(Long notificationId, Long receiverId) {
+        // 알림 존재 확인
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOTIFICATION_NOT_FOUND));
         // existsByIdAndReceiverId 활용하여 단일 쿼리로 확인
         if (!notificationRepository.existsByIdAndReceiverId(notificationId, receiverId)) {
             throw new BusinessException(ErrorCode.NOTIFICATION_ACCESS_DENIED);
         }
-
-        Notification notification = notificationRepository.findById(notificationId)
-                                                          .orElseThrow(() -> new BusinessException(ErrorCode.NOTIFICATION_NOT_FOUND));
 
         if (notification.isRead()) {
             throw new BusinessException(ErrorCode.NOTIFICATION_ALREADY_READ);
