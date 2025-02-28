@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: test
+    active: local
   config:
     import: optional:file:.env[.properties]
   autoconfigure:
@@ -91,10 +91,10 @@ springdoc:
 cloud:
   aws:
     credentials:
-      access-key: ${AWS_ACCESS_KEY}  # 월요일에 발급받을 액세스 키
-      secret-key: ${AWS_SECRET_KEY}  # 월요일에 발급받을 시크릿 키
+      access-key: ${AWS_ACCESS_KEY}
+      secret-key: ${AWS_SECRET_KEY}
     s3:
-      bucket: ${AWS_BUCKET_NAME} # 월요일 설정
+      bucket: ${AWS_BUCKET_NAME}
     region:
       static: ap-northeast-2  # 서울 리전
 
@@ -106,12 +106,12 @@ spring:
       on-profile: local
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mariadb://localhost:3306/roome
+    url: ${DATASOURCE_URL}
     username: ${DATASOURCE_USERNAME}
     password: ${DATASOURCE_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update  # create에서 update로 변경하여 기존 데이터 유지
       naming:
         physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
     show-sql: true
