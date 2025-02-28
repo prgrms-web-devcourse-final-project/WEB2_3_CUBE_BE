@@ -95,7 +95,7 @@ public class NotificationController {
         if (notificationId <= 0) {
             throw new ControllerException(ErrorCode.INVALID_CURSOR_VALUE);
         }
-
-        return ResponseEntity.ok(notificationService.readNotification(notificationId, userId));
+        NotificationReadResponse response = notificationService.readNotification(notificationId, userId);
+        return ResponseEntity.ok(response);
     }
 }
