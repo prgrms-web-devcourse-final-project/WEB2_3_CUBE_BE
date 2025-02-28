@@ -21,7 +21,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/mock/rooms")
 @RequiredArgsConstructor
-@Tag(name = "Room", description = "방 조회/테마 업데이트/가구 활성화 및 비활성화")
+@Tag(name = "Mock - Room API", description = "방 조회/테마 업데이트/가구 활성화 및 비활성화")
 public class MockRoomController {
 
     @Operation(summary = "Mock - 방 조회", description = "주어진 방 ID에 해당하는 방 정보 조회")
