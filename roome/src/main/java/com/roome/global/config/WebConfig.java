@@ -15,6 +15,7 @@ public class WebConfig implements WebMvcConfigurer {
     private static final String ALLOW_ALL_PATH = "/**";
     private static final String ALLOWED_METHODS = "*";
     private static final String FRONTEND_LOCALHOST = "http://localhost:5173";
+    private static final String FRONTEND_CLOUDFRONT = "https://desqb38rc2v50.cloudfront.net";
 
     private final AuthenticatedUserArgumentResolver authenticatedUserArgumentResolver;
 
@@ -24,7 +25,8 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addMapping(ALLOW_ALL_PATH)
                 .allowedMethods(ALLOWED_METHODS)
                 .allowedOrigins(
-                        FRONTEND_LOCALHOST
+                        FRONTEND_LOCALHOST,
+                        FRONTEND_CLOUDFRONT
                 )
                 .allowCredentials(true);
     }
