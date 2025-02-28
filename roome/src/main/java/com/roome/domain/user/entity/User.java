@@ -4,11 +4,26 @@ import com.roome.domain.point.entity.Point;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.exception.RoomAuthorizationException;
 import com.roome.global.entity.BaseTimeEntity;
-import jakarta.persistence.*;
-import lombok.*;
-
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PrimaryKeyJoinColumn;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -61,6 +76,7 @@ public class User extends BaseTimeEntity {
   private String refreshToken;
 
   @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  @PrimaryKeyJoinColumn
   private Room room;
 
   @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -68,11 +84,12 @@ public class User extends BaseTimeEntity {
 
   @PrePersist
   public void prePersist() {
-    if (this.lastLogin == null) {
-      this.lastLogin = LocalDateTime.now();
-    }
     if (this.point == null) {
       this.point = new Point(this, 0, 0, 0);
+    }
+
+    if (this.room == null) {
+      this.room = Room.builder().user(this).build();
     }
   }
 
