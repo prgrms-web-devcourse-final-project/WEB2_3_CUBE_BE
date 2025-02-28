@@ -38,12 +38,12 @@ class ReissueControllerTest {
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Test
-  @DisplayName("유효한 리프레시 토큰으로 액세스 토큰 재발급 성공")
-  void reissueToken_Success() throws Exception {
+  @DisplayName("유효한 리프레시 토큰으로 액세스 토큰 재발급 성공 (액세스 토큰이 없을 때)")
+  void reissueToken_Success_NoAccessToken() throws Exception {
     // Given
     String refreshToken = "valid-refresh-token";
     String newAccessToken = "new-access-token";
-    long expiresIn = 3600L; // 초 단위
+    long expiresIn = 3600L;
 
     TokenReissueRequest request = new TokenReissueRequest();
     request.setRefreshToken(refreshToken);
@@ -59,6 +59,59 @@ class ReissueControllerTest {
         .andExpect(jsonPath("$.accessToken").value(newAccessToken))
         .andExpect(jsonPath("$.tokenType").value("Bearer"))
         .andExpect(jsonPath("$.expiresIn").value(expiresIn));
+  }
+
+  @Test
+  @DisplayName("유효한 리프레시 토큰으로 액세스 토큰 재발급 성공 (액세스 토큰 만료 임박)")
+  void reissueToken_Success_AccessTokenNearExpiry() throws Exception {
+    // Given
+    String refreshToken = "valid-refresh-token";
+    String currentAccessToken = "current-access-token-near-expiry";
+    String newAccessToken = "new-access-token";
+    long expiresIn = 3600L; // 초 단위
+
+    TokenReissueRequest request = new TokenReissueRequest();
+    request.setRefreshToken(refreshToken);
+
+    // Mocking
+    when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(true);
+    when(jwtTokenProvider.validateAccessToken(currentAccessToken)).thenReturn(true);
+    when(jwtTokenProvider.getTokenTimeToLive(currentAccessToken)).thenReturn(120000L); // 2분 남음
+    when(tokenService.reissueAccessToken(refreshToken)).thenReturn(newAccessToken);
+    when(jwtTokenProvider.getAccessTokenExpirationTime()).thenReturn(3600000L); // 1시간
+
+    // When & Then
+    mockMvc.perform(
+            post("/api/auth/reissue-token").header("Authorization", "Bearer " + currentAccessToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)).with(csrf()))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.accessToken").value(newAccessToken))
+        .andExpect(jsonPath("$.tokenType").value("Bearer"))
+        .andExpect(jsonPath("$.expiresIn").value(expiresIn));
+  }
+
+  @Test
+  @DisplayName("액세스 토큰이 아직 유효할 때 재발급 실패")
+  void reissueToken_ValidAccessToken_Failure() throws Exception {
+    // Given
+    String refreshToken = "valid-refresh-token";
+    String currentAccessToken = "current-valid-access-token";
+
+    TokenReissueRequest request = new TokenReissueRequest();
+    request.setRefreshToken(refreshToken);
+
+    // Mocking
+    when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(true);
+    when(jwtTokenProvider.validateAccessToken(currentAccessToken)).thenReturn(true);
+    when(jwtTokenProvider.getTokenTimeToLive(currentAccessToken)).thenReturn(600000L); // 10분 남음
+
+    // When & Then
+    mockMvc.perform(
+            post("/api/auth/reissue-token").header("Authorization", "Bearer " + currentAccessToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)).with(csrf()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("액세스 토큰이 아직 유효합니다. 만료 임박 시 재요청하세요."));
   }
 
   @Test
