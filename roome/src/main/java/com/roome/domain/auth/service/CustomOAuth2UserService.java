@@ -69,7 +69,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
       }
 
       // 하루 한 번 로그인 시 포인트 획득
-      accumulateAttendancePoints(user);
+//      accumulateAttendancePoints(user);
 
       return new OAuth2UserPrincipal(user, oAuth2Response);
     } catch (OAuth2AuthenticationException e) {
