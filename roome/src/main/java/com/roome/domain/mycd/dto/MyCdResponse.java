@@ -11,6 +11,7 @@ import lombok.Getter;
 @AllArgsConstructor
 @Builder
 public class MyCdResponse {
+
   private Long myCdId;
   private String title;
   private String artist;

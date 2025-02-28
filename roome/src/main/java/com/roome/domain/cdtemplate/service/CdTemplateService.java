@@ -55,7 +55,8 @@ public class CdTemplateService {
       throw new UnauthorizedCdTemplateAccessException();
     }
 
-    cdTemplate.update(request.getComment1(), request.getComment2(), request.getComment3(), request.getComment4());
+    cdTemplate.update(request.getComment1(), request.getComment2(), request.getComment3(),
+        request.getComment4());
     return CdTemplateResponse.from(cdTemplate);
   }
 

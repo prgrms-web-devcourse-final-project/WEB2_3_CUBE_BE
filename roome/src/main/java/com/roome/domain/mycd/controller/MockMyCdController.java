@@ -45,7 +45,6 @@ public class MockMyCdController {
       @Parameter(description = "검색 키워드 (CD 제목 또는 가수명)", required = false)
       @RequestParam(value = "keyword", required = false) String keyword) {
 
-    // ✅ 기본 앨범 커버 이미지 (Spotify 이미지 URL)
     final String DEFAULT_COVER_URL = "https://i.scdn.co/image/ab67616d0000b273a49a8bb234f8741c80d8ec5a";
 
     // 더미 데이터 30개 생성
@@ -55,12 +54,11 @@ public class MockMyCdController {
           (long) i, "Song " + i, "Artist " + i, "Album " + i,
           LocalDate.of(2020, (i % 12) + 1, (i % 28) + 1),
           List.of("Genre " + (i % 5 + 1)),
-          DEFAULT_COVER_URL,  // ✅ 기본 커버 이미지 적용
+          DEFAULT_COVER_URL,
           "https://youtube.com/watch?v=video" + i, 180000 + (i * 1000)
       ));
     }
 
-    // ✅ 키워드 검색 추가 (제목 또는 가수명)
     List<MyCdResponse> filteredData;
     if (keyword != null && !keyword.isBlank()) {
       mockData = mockData.stream()
@@ -79,11 +77,11 @@ public class MockMyCdController {
           .toList();
     }
 
-    // ✅ 검색된 전체 개수 계산 (검색 결과 개수)
     long totalCount = mockData.size();
 
     // nextCursor 설정 (마지막 요소의 ID)
-    Long nextCursor = filteredData.isEmpty() ? null : filteredData.get(filteredData.size() - 1).getMyCdId();
+    Long nextCursor =
+        filteredData.isEmpty() ? null : filteredData.get(filteredData.size() - 1).getMyCdId();
 
     return ResponseEntity.ok(new MyCdListResponse(filteredData, nextCursor, totalCount));
   }
