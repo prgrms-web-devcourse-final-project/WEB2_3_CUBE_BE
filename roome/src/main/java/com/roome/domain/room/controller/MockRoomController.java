@@ -6,6 +6,7 @@ import com.roome.domain.furniture.dto.ToggleFurnitureResponseDto;
 import com.roome.domain.furniture.entity.FurnitureCapacity;
 import com.roome.domain.furniture.entity.FurnitureType;
 import com.roome.domain.room.dto.*;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.sql.Update;
@@ -22,6 +23,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Tag(name = "Room", description = "방 조회/테마 업데이트/가구 활성화 및 비활성화")
 public class MockRoomController {
+
+    @Operation(summary = "Mock - 방 조회", description = "주어진 방 ID에 해당하는 방 정보 조회")
     @GetMapping("/{roomId}")
     public ResponseEntity<RoomResponseDto> getRoom(
             @PathVariable Long roomId
@@ -30,6 +33,7 @@ public class MockRoomController {
         return ResponseEntity.ok(roomResponseDto);
     }
 
+    @Operation(summary = "Mock - 사용자 방 조회", description = "주어진 사용자 ID에 해당하는 방 정보 조회")
     @GetMapping
     public ResponseEntity<RoomResponseDto> getRoomByUserId(
             @RequestParam("userId") Long userId
@@ -38,6 +42,7 @@ public class MockRoomController {
         return ResponseEntity.ok(roomResponseDto);
     }
 
+    @Operation(summary = "Mock - 방 테마 업데이트", description = "사용자가 지정한 테마로 업데이트")
     @PutMapping("/{roomId}")
     public ResponseEntity<UpdateRoomThemeResponseDto> updateRoomTheme(
             @RequestParam("userId") Long userId,
@@ -49,6 +54,7 @@ public class MockRoomController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Mock - 가구 활성화/비활성화", description = "주어진 방에서 특정 가구를 활성화하거나 비활성화함")
     @PutMapping("/{roomId}/furniture")
     public ResponseEntity<ToggleFurnitureResponseDto> toggleFurnitureVisibility(
             @RequestParam("userId") Long userId,
