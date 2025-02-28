@@ -1,6 +1,5 @@
 package com.roome.domain.user.controller;
 
-import com.roome.domain.auth.security.OAuth2UserPrincipal;
 import com.roome.domain.user.service.UserProfileImageService;
 import com.roome.global.service.S3Service;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,7 +13,11 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
@@ -23,7 +26,6 @@ import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -34,30 +36,36 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class UserProfileImageControllerTest {
 
     private final Long USER_ID = 1L;
+
     @Autowired
     private MockMvc mockMvc;
+
     @MockBean
     private S3Service s3Service;
+
     @MockBean
     private UserProfileImageService userService;
-    private OAuth2UserPrincipal mockPrincipal;
-    private Authentication auth;
 
     @BeforeEach
     void setUp() {
-        // OAuth2UserPrincipal 직접 모킹
-        mockPrincipal = mock(OAuth2UserPrincipal.class);
-        when(mockPrincipal.getId()).thenReturn(USER_ID);
-
-        // 직접 인증 객체 생성
-        auth = new UsernamePasswordAuthenticationToken(mockPrincipal, null, Collections.emptyList());
+        // 인증 설정 - 사용자 ID를 Principal로 사용
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                USER_ID, null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
 
         // S3Service 설정
         when(s3Service.getBucketName()).thenReturn("roome-bucket");
     }
 
+    // AuthenticatedUser 어노테이션을 사용한 인증된 요청을 수행하는 헬퍼 메서드
+    private ResultActions performWithAuthenticatedUser(MockHttpServletRequestBuilder requestBuilder) throws Exception {
+        // SecurityContext에 인증 정보가 이미 설정되어 있으므로 바로 수행
+        return mockMvc.perform(requestBuilder);
+    }
+
     @Test
     @DisplayName("프로필 이미지 업로드 성공 테스트 (POST)")
+    @WithMockUser
     void uploadProfileImageSuccessPostTest() throws Exception {
         // given
         MockMultipartFile imageFile = new MockMultipartFile(
@@ -72,9 +80,8 @@ public class UserProfileImageControllerTest {
         when(userService.getProfileImageUrl(USER_ID)).thenReturn(null);
 
         // when & then
-        mockMvc.perform(multipart("/api/users/image")
-                        .file(imageFile)
-                        .with(authentication(auth)))
+        performWithAuthenticatedUser(multipart("/api/users/image")
+                .file(imageFile))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.imageUrl").value(uploadedImageUrl))
@@ -85,6 +92,7 @@ public class UserProfileImageControllerTest {
 
     @Test
     @DisplayName("프로필 이미지 업로드 성공 테스트 (PUT)")
+    @WithMockUser
     void uploadProfileImageSuccessPutTest() throws Exception {
         // given
         MockMultipartFile imageFile = new MockMultipartFile(
@@ -106,9 +114,7 @@ public class UserProfileImageControllerTest {
         });
 
         // when & then
-        mockMvc.perform(builder
-                        .file(imageFile)
-                        .with(authentication(auth)))
+        performWithAuthenticatedUser(builder.file(imageFile))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.imageUrl").value(uploadedImageUrl))
@@ -119,6 +125,7 @@ public class UserProfileImageControllerTest {
 
     @Test
     @DisplayName("기존 프로필 이미지가 있는 경우 업로드 테스트")
+    @WithMockUser
     void uploadProfileImageWithExistingImageTest() throws Exception {
         // given
         MockMultipartFile imageFile = new MockMultipartFile(
@@ -135,9 +142,8 @@ public class UserProfileImageControllerTest {
         when(s3Service.uploadImage(any(), eq("profile"))).thenReturn(newImageUrl);
 
         // when & then
-        mockMvc.perform(multipart("/api/users/image")
-                        .file(imageFile)
-                        .with(authentication(auth)))
+        performWithAuthenticatedUser(multipart("/api/users/image")
+                .file(imageFile))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.imageUrl").value(newImageUrl));
@@ -148,6 +154,7 @@ public class UserProfileImageControllerTest {
 
     @Test
     @DisplayName("이미지 파일이 없는 경우 테스트")
+    @WithMockUser
     void uploadEmptyImageTest() throws Exception {
         // given
         MockMultipartFile emptyFile = new MockMultipartFile(
@@ -158,9 +165,8 @@ public class UserProfileImageControllerTest {
         );
 
         // when & then
-        mockMvc.perform(multipart("/api/users/image")
-                        .file(emptyFile)
-                        .with(authentication(auth)))
+        performWithAuthenticatedUser(multipart("/api/users/image")
+                .file(emptyFile))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
 
@@ -170,10 +176,10 @@ public class UserProfileImageControllerTest {
 
     @Test
     @DisplayName("이미지 파일이 null인 경우 테스트")
+    @WithMockUser
     void uploadNullImageTest() throws Exception {
         // 파일 없이 요청
-        mockMvc.perform(multipart("/api/users/image")
-                        .with(authentication(auth)))
+        performWithAuthenticatedUser(multipart("/api/users/image"))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
 
@@ -183,6 +189,7 @@ public class UserProfileImageControllerTest {
 
     @Test
     @DisplayName("확장자가 없는 파일 업로드 테스트")
+    @WithMockUser
     void uploadFileWithoutExtensionTest() throws Exception {
         // given
         MockMultipartFile noExtensionFile = new MockMultipartFile(
@@ -193,9 +200,8 @@ public class UserProfileImageControllerTest {
         );
 
         // when & then
-        mockMvc.perform(multipart("/api/users/image")
-                        .file(noExtensionFile)
-                        .with(authentication(auth)))
+        performWithAuthenticatedUser(multipart("/api/users/image")
+                .file(noExtensionFile))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
 
@@ -204,6 +210,7 @@ public class UserProfileImageControllerTest {
 
     @Test
     @DisplayName("지원하지 않는 이미지 형식 업로드 테스트")
+    @WithMockUser
     void uploadUnsupportedImageFormatTest() throws Exception {
         // given
         MockMultipartFile invalidFile = new MockMultipartFile(
@@ -214,9 +221,8 @@ public class UserProfileImageControllerTest {
         );
 
         // when & then
-        mockMvc.perform(multipart("/api/users/image")
-                        .file(invalidFile)
-                        .with(authentication(auth)))
+        performWithAuthenticatedUser(multipart("/api/users/image")
+                .file(invalidFile))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
 
@@ -226,6 +232,7 @@ public class UserProfileImageControllerTest {
 
     @Test
     @DisplayName("너무 큰 이미지 파일 업로드 테스트")
+    @WithMockUser
     void uploadTooLargeImageTest() throws Exception {
         // given
         // 5MB를 초과하는 큰 파일 모의
@@ -238,9 +245,8 @@ public class UserProfileImageControllerTest {
         );
 
         // when & then
-        mockMvc.perform(multipart("/api/users/image")
-                        .file(largeFile)
-                        .with(authentication(auth)))
+        performWithAuthenticatedUser(multipart("/api/users/image")
+                .file(largeFile))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
 
@@ -249,14 +255,14 @@ public class UserProfileImageControllerTest {
 
     @Test
     @DisplayName("프로필 이미지 삭제 성공 테스트")
+    @WithMockUser
     void deleteProfileImageSuccessTest() throws Exception {
         // given
         String imageUrl = "https://roome-bucket.s3.amazonaws.com/profile/12345abcde12345abcde12345abcde12.jpg";
 
         // when & then
-        mockMvc.perform(delete("/api/users/image")
-                        .param("imageUrl", imageUrl)
-                        .with(authentication(auth)))
+        performWithAuthenticatedUser(delete("/api/users/image")
+                .param("imageUrl", imageUrl))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().string(imageUrl));
@@ -267,11 +273,11 @@ public class UserProfileImageControllerTest {
 
     @Test
     @DisplayName("null 이미지 URL로 삭제 시도 테스트")
+    @WithMockUser
     void deleteNullImageUrlTest() throws Exception {
         // when & then
-        mockMvc.perform(delete("/api/users/image")
-                        .param("imageUrl", (String)null)
-                        .with(authentication(auth)))
+        performWithAuthenticatedUser(delete("/api/users/image")
+                .param("imageUrl", (String)null))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
 
@@ -281,11 +287,11 @@ public class UserProfileImageControllerTest {
 
     @Test
     @DisplayName("빈 이미지 URL로 삭제 시도 테스트")
+    @WithMockUser
     void deleteEmptyImageUrlTest() throws Exception {
         // when & then
-        mockMvc.perform(delete("/api/users/image")
-                        .param("imageUrl", "")
-                        .with(authentication(auth)))
+        performWithAuthenticatedUser(delete("/api/users/image")
+                .param("imageUrl", ""))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
 
@@ -295,14 +301,14 @@ public class UserProfileImageControllerTest {
 
     @Test
     @DisplayName("잘못된 이미지 URL로 삭제 시도 테스트")
+    @WithMockUser
     void deleteInvalidImageUrlTest() throws Exception {
         // given
         String invalidImageUrl = "https://invalid-domain.com/image.jpg";
 
         // when & then
-        mockMvc.perform(delete("/api/users/image")
-                        .param("imageUrl", invalidImageUrl)
-                        .with(authentication(auth)))
+        performWithAuthenticatedUser(delete("/api/users/image")
+                .param("imageUrl", invalidImageUrl))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
 
@@ -312,6 +318,7 @@ public class UserProfileImageControllerTest {
 
     @Test
     @DisplayName("S3 업로드 실패 테스트")
+    @WithMockUser
     void s3UploadFailureTest() throws Exception {
         // given
         MockMultipartFile imageFile = new MockMultipartFile(
@@ -324,24 +331,23 @@ public class UserProfileImageControllerTest {
         when(s3Service.uploadImage(any(), eq("profile"))).thenThrow(new IOException("S3 upload failed"));
 
         // when & then
-        mockMvc.perform(multipart("/api/users/image")
-                        .file(imageFile)
-                        .with(authentication(auth)))
+        performWithAuthenticatedUser(multipart("/api/users/image")
+                .file(imageFile))
                 .andDo(print())
                 .andExpect(status().isInternalServerError());
     }
 
     @Test
     @DisplayName("S3 삭제 실패 테스트")
+    @WithMockUser
     void s3DeleteFailureTest() throws Exception {
         // given
         String imageUrl = "https://roome-bucket.s3.amazonaws.com/profile/12345abcde12345abcde12345abcde12.jpg";
         doThrow(new RuntimeException("S3 delete failed")).when(s3Service).deleteImage(anyString());
 
         // when & then
-        mockMvc.perform(delete("/api/users/image")
-                        .param("imageUrl", imageUrl)
-                        .with(authentication(auth)))
+        performWithAuthenticatedUser(delete("/api/users/image")
+                .param("imageUrl", imageUrl))
                 .andDo(print())
                 .andExpect(status().isInternalServerError());
 
@@ -351,6 +357,7 @@ public class UserProfileImageControllerTest {
 
     @Test
     @DisplayName("지원되는 다른 이미지 형식(PNG) 업로드 테스트")
+    @WithMockUser
     void uploadPngImageFormatTest() throws Exception {
         // given
         MockMultipartFile pngFile = new MockMultipartFile(
@@ -364,9 +371,8 @@ public class UserProfileImageControllerTest {
         when(s3Service.uploadImage(any(), eq("profile"))).thenReturn(uploadedImageUrl);
 
         // when & then
-        mockMvc.perform(multipart("/api/users/image")
-                        .file(pngFile)
-                        .with(authentication(auth)))
+        performWithAuthenticatedUser(multipart("/api/users/image")
+                .file(pngFile))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.imageUrl").value(uploadedImageUrl));
@@ -376,6 +382,7 @@ public class UserProfileImageControllerTest {
 
     @Test
     @DisplayName("지원되는 다른 이미지 형식(GIF) 업로드 테스트")
+    @WithMockUser
     void uploadGifImageFormatTest() throws Exception {
         // given
         MockMultipartFile gifFile = new MockMultipartFile(
@@ -389,9 +396,8 @@ public class UserProfileImageControllerTest {
         when(s3Service.uploadImage(any(), eq("profile"))).thenReturn(uploadedImageUrl);
 
         // when & then
-        mockMvc.perform(multipart("/api/users/image")
-                        .file(gifFile)
-                        .with(authentication(auth)))
+        performWithAuthenticatedUser(multipart("/api/users/image")
+                .file(gifFile))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.imageUrl").value(uploadedImageUrl));
@@ -401,6 +407,7 @@ public class UserProfileImageControllerTest {
 
     @Test
     @DisplayName("빈 파일명이지만 확장자가 있는 경우 테스트")
+    @WithMockUser
     void uploadEmptyFilenameWithExtensionTest() throws Exception {
         // given
         MockMultipartFile fileWithExtension = new MockMultipartFile(
@@ -414,9 +421,8 @@ public class UserProfileImageControllerTest {
         when(s3Service.uploadImage(any(), eq("profile"))).thenReturn(uploadedImageUrl);
 
         // when & then
-        mockMvc.perform(multipart("/api/users/image")
-                        .file(fileWithExtension)
-                        .with(authentication(auth)))
+        performWithAuthenticatedUser(multipart("/api/users/image")
+                .file(fileWithExtension))
                 .andDo(print())
                 .andExpect(status().isOk());
 
@@ -425,14 +431,14 @@ public class UserProfileImageControllerTest {
 
     @Test
     @DisplayName("URL에 버킷 이름만 없는 경우 테스트")
+    @WithMockUser
     void deleteImageUrlWithoutBucketNameTest() throws Exception {
         // given - 버킷 이름이 없지만 나머지 패턴은 맞는 URL
         String imageUrl = "https://s3.amazonaws.com/profile/12345abcde12345abcde12345abcde12.jpg";
 
         // when & then
-        mockMvc.perform(delete("/api/users/image")
-                        .param("imageUrl", imageUrl)
-                        .with(authentication(auth)))
+        performWithAuthenticatedUser(delete("/api/users/image")
+                .param("imageUrl", imageUrl))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
 
