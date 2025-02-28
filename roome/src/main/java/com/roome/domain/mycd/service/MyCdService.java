@@ -11,6 +11,7 @@ import com.roome.domain.mycd.dto.MyCdResponse;
 import com.roome.domain.mycd.entity.MyCd;
 import com.roome.domain.mycd.entity.MyCdCount;
 import com.roome.domain.mycd.exception.MyCdAlreadyExistsException;
+import com.roome.domain.mycd.exception.MyCdListEmptyException;
 import com.roome.domain.mycd.exception.MyCdNotFoundException;
 import com.roome.domain.mycd.repository.MyCdCountRepository;
 import com.roome.domain.mycd.repository.MyCdRepository;
@@ -21,8 +22,8 @@ import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.jwt.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -31,7 +32,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -97,16 +97,22 @@ public class MyCdService {
     long totalCount;
 
     if (isKeywordSearch) {
-      myCdsPage = myCdRepository.searchByUserIdAndKeyword(userId, keyword, pageable);
+      myCdsPage = Optional.ofNullable(myCdRepository.searchByUserIdAndKeyword(userId, keyword, pageable))
+          .orElseGet(() -> Page.empty(pageable));
       totalCount = myCdRepository.countByUserIdAndKeyword(userId, keyword);
     } else {
       if (cursor == null || cursor == 0) {
-        myCdsPage = myCdRepository.findByUserIdOrderByIdAsc(userId, pageable);
+        myCdsPage = Optional.ofNullable(myCdRepository.findByUserIdOrderByIdAsc(userId, pageable))
+            .orElseGet(() -> Page.empty(pageable));
       } else {
-        myCdsPage = myCdRepository.findByUserIdAndIdGreaterThanOrderByIdAsc(userId, cursor,
-            pageable);
+        myCdsPage = Optional.ofNullable(myCdRepository.findByUserIdAndIdGreaterThanOrderByIdAsc(userId, cursor, pageable))
+            .orElseGet(() -> Page.empty(pageable));
       }
       totalCount = myCdRepository.countByUserId(userId);
+    }
+
+    if (myCdsPage.isEmpty()) {
+      throw new MyCdListEmptyException();
     }
 
     return MyCdListResponse.fromEntities(myCdsPage.getContent(), totalCount);
