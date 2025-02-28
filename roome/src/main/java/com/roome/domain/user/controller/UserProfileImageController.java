@@ -114,7 +114,7 @@ public class UserProfileImageController {
     // 파일 확장자 추출 메서드
     private String getFileExtension(String filename) {
         int lastDotIndex = filename.lastIndexOf(".");
-        if (lastDotIndex > 0) {
+        if (lastDotIndex >= 0) {  // > 0에서 >= 0으로 변경하여 점으로 시작하는 파일명도 처리
             return filename.substring(lastDotIndex + 1);
         }
         return "";

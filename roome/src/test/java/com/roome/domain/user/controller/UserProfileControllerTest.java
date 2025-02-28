@@ -6,7 +6,6 @@ import com.roome.domain.user.entity.Provider;
 import com.roome.domain.user.entity.Status;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
-import com.roome.domain.user.temp.UserPrincipal;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,9 +17,14 @@ import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collections;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -44,7 +48,6 @@ class UserProfileControllerTest {
     private ObjectMapper objectMapper;
 
     private User testUser;
-    private UserPrincipal userPrincipal;
 
     @BeforeEach
     void setUp() {
@@ -63,10 +66,9 @@ class UserProfileControllerTest {
         // 실제 DB에 저장
         testUser = userRepository.save(testUser);
 
-        // 인증 설정
-        userPrincipal = new UserPrincipal(testUser);
+        // 인증 설정 - 사용자 ID를 Principal로 사용
         Authentication authentication = new UsernamePasswordAuthenticationToken(
-                userPrincipal, null, userPrincipal.getAuthorities());
+                testUser.getId(), null, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
@@ -75,11 +77,18 @@ class UserProfileControllerTest {
         SecurityContextHolder.clearContext();
     }
 
+    // AuthenticatedUser 어노테이션을 사용한 인증된 요청을 수행하는 헬퍼 메서드
+    private ResultActions performWithAuthenticatedUser(MockHttpServletRequestBuilder requestBuilder) throws Exception {
+        // SecurityContext에 인증 정보가 이미 설정되어 있으므로 바로 수행
+        return mockMvc.perform(requestBuilder);
+    }
+
     @Test
     @DisplayName("프로필 조회 성공 - 통합 테스트")
+    @WithMockUser
     void getUserProfile_Success() throws Exception {
         // when & then
-        mockMvc.perform(get("/api/users/{userId}/profile", testUser.getId()))
+        performWithAuthenticatedUser(get("/api/users/{userId}/profile", testUser.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(String.valueOf(testUser.getId())))
                 .andExpect(jsonPath("$.nickname").value("TestUser"))
@@ -90,18 +99,20 @@ class UserProfileControllerTest {
 
     @Test
     @DisplayName("존재하지 않는 사용자 프로필 조회 실패 - 통합 테스트")
+    @WithMockUser
     void getUserProfile_NotFound() throws Exception {
         // 존재하지 않는 ID로 조회
         Long nonExistentUserId = 9999L;
 
         // when & then
-        mockMvc.perform(get("/api/users/{userId}/profile", nonExistentUserId))
+        performWithAuthenticatedUser(get("/api/users/{userId}/profile", nonExistentUserId))
                 .andExpect(status().isNotFound())
                 .andDo(print());
     }
 
     @Test
     @DisplayName("프로필 수정 성공 - 통합 테스트")
+    @WithMockUser
     void updateProfile_Success() throws Exception {
         // given
         UpdateProfileRequest request = UpdateProfileRequest.builder()
@@ -110,9 +121,9 @@ class UserProfileControllerTest {
                 .build();
 
         // when & then
-        mockMvc.perform(patch("/api/users/profile")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        performWithAuthenticatedUser(patch("/api/users/profile")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(String.valueOf(testUser.getId())))
                 .andExpect(jsonPath("$.nickname").value("UpdatedUser"))
@@ -127,6 +138,7 @@ class UserProfileControllerTest {
 
     @Test
     @DisplayName("프로필 수정 실패 - 닉네임 검증 실패 - 통합 테스트")
+    @WithMockUser
     void updateProfile_Fail_NicknameValidation() throws Exception {
         // given
         UpdateProfileRequest request = UpdateProfileRequest.builder()
@@ -135,15 +147,16 @@ class UserProfileControllerTest {
                 .build();
 
         // when & then
-        mockMvc.perform(patch("/api/users/profile")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        performWithAuthenticatedUser(patch("/api/users/profile")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andDo(print());
     }
 
     @Test
     @DisplayName("프로필 수정 실패 - 닉네임 부적합 패턴 테스트")
+    @WithMockUser
     void updateProfile_Fail_NicknameInvalidPattern() throws Exception {
         // given
         UpdateProfileRequest request = UpdateProfileRequest.builder()
@@ -152,15 +165,16 @@ class UserProfileControllerTest {
                 .build();
 
         // when & then
-        mockMvc.perform(patch("/api/users/profile")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        performWithAuthenticatedUser(patch("/api/users/profile")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andDo(print());
     }
 
     @Test
     @DisplayName("프로필 수정 실패 - 자기소개 null 검증 - 통합 테스트")
+    @WithMockUser
     void updateProfile_Fail_BioValidation() throws Exception {
         // given
         UpdateProfileRequest request = UpdateProfileRequest.builder()
@@ -169,15 +183,16 @@ class UserProfileControllerTest {
                 .build();
 
         // when & then
-        mockMvc.perform(patch("/api/users/profile")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        performWithAuthenticatedUser(patch("/api/users/profile")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andDo(print());
     }
 
     @Test
     @DisplayName("프로필 수정 실패 - 자기소개 경계값(정확히 100자) 테스트")
+    @WithMockUser
     void updateProfile_Success_BioBoundary() throws Exception {
         // given - 정확히 100자인 bio
         String hundredCharBio = "a".repeat(100);
@@ -187,15 +202,16 @@ class UserProfileControllerTest {
                 .build();
 
         // when & then - 100자는 성공해야 함
-        mockMvc.perform(patch("/api/users/profile")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        performWithAuthenticatedUser(patch("/api/users/profile")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andDo(print());
     }
 
     @Test
     @DisplayName("프로필 수정 실패 - 자기소개 길이 검증 - 통합 테스트")
+    @WithMockUser
     void updateProfile_Fail_BioLengthValidation() throws Exception {
         // given - 101자인 bio
         String tooLongBio = "a".repeat(101);
@@ -205,9 +221,9 @@ class UserProfileControllerTest {
                 .build();
 
         // when & then
-        mockMvc.perform(patch("/api/users/profile")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        performWithAuthenticatedUser(patch("/api/users/profile")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andDo(print());
     }

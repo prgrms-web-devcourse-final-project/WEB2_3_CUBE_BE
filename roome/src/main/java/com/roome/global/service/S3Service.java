@@ -38,7 +38,10 @@ public class S3Service {
     public String uploadImage(MultipartFile file, String dirName) throws IOException {
         // 파일 이름 생성 (UUID 사용하여 고유한 이름 생성)
         String originalFilename = file.getOriginalFilename();
-        String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
         String storedFileName = UUID.randomUUID().toString().replaceAll("-", "") + extension;
 
         // S3 키 생성 (디렉토리/파일명)
