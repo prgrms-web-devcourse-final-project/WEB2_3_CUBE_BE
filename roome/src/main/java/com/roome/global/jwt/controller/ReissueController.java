@@ -3,6 +3,7 @@ package com.roome.global.jwt.controller;
 import com.roome.domain.auth.dto.response.MessageResponse;
 import com.roome.global.jwt.dto.TokenReissueRequest;
 import com.roome.global.jwt.dto.TokenResponse;
+import com.roome.global.jwt.exception.InvalidJwtTokenException;
 import com.roome.global.jwt.exception.UserNotFoundException;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.jwt.service.TokenService;
@@ -15,8 +16,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -37,7 +40,9 @@ public class ReissueController {
       @ApiResponse(responseCode = "503", description = "데이터베이스 접근 오류"),
       @ApiResponse(responseCode = "500", description = "서버 내부 오류")})
   @PostMapping("/reissue-token")
-  public ResponseEntity<?> reissueTokenreissueToken(@RequestBody TokenReissueRequest request) {
+  public ResponseEntity<?> reissueToken(
+      @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+      @RequestBody TokenReissueRequest request) {
     try {
       String refreshToken = request.getRefreshToken();
 
@@ -51,11 +56,42 @@ public class ReissueController {
         return ResponseEntity.badRequest().body(new MessageResponse("유효하지 않은 리프레시 토큰입니다."));
       }
 
+      // 현재 액세스 토큰 확인
+      String currentAccessToken = null;
+      if (StringUtils.hasText(authorizationHeader) && authorizationHeader.startsWith("Bearer ")) {
+        currentAccessToken = authorizationHeader.substring(7);
+      }
+
+      // 액세스 토큰 검증 및 유효시간 확인
+      boolean accessTokenValid = false;
+      long remainingTime = 0;
+
+      if (currentAccessToken != null) {
+        try {
+          accessTokenValid = jwtTokenProvider.validateAccessToken(currentAccessToken);
+          if (accessTokenValid) {
+            remainingTime = jwtTokenProvider.getTokenTimeToLive(currentAccessToken);
+          }
+        } catch (InvalidJwtTokenException e) {
+          // 토큰이 만료된 경우
+          log.info("액세스 토큰이 만료되었습니다. 새 토큰을 발급합니다.");
+        } catch (Exception e) {
+          // 기타 예외 처리
+          log.warn("액세스 토큰 검증 중 오류 발생: {}", e.getMessage());
+        }
+      }
+
+      // 액세스 토큰이 유효하고 만료까지 5분 이상 남은 경우
+      final long FIVE_MINUTES_IN_MILLIS = 5 * 60 * 1000;
+      if (accessTokenValid && remainingTime > FIVE_MINUTES_IN_MILLIS) {
+        log.info("액세스 토큰이 아직 유효함 (남은 시간: {}ms)", remainingTime);
+        return ResponseEntity.badRequest()
+            .body(new MessageResponse("액세스 토큰이 아직 유효합니다. 만료 임박 시 재요청하세요."));
+      }
+
       // 액세스 토큰 재발급
       String accessToken = tokenService.reissueAccessToken(refreshToken);
-      return ResponseEntity.ok(new TokenResponse(
-          accessToken,
-          "Bearer",
+      return ResponseEntity.ok(new TokenResponse(accessToken, "Bearer",
           jwtTokenProvider.getAccessTokenExpirationTime() / 1000 // 초 단위로 변환
       ));
 
