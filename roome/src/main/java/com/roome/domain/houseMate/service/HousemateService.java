@@ -41,11 +41,6 @@ public class HousemateService {
         userRepository.findById(userId)
                       .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        // 자기 자신 추가 체크
-        if (userId.equals(targetId)) {
-            throw new BusinessException(ErrorCode.SELF_FOLLOW_NOT_ALLOWED);
-        }
-
         // 대상 유저 존재 체크
         userRepository.findById(targetId)
                       .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
