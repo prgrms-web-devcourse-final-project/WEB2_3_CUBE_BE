@@ -9,6 +9,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -69,7 +70,7 @@ class CustomOAuth2UserServiceTest {
             Map.of("nickname", TestUsers.NAME, "profile_image_url", TestUsers.PROFILE_IMAGE)));
   }
 
-  /*@Test
+  @Test
   @DisplayName("신규 유저는 로그인 시 회원가입이 진행된다")
   void signUpNewUserWithOAuth2Login() {
     // given
@@ -103,12 +104,6 @@ class CustomOAuth2UserServiceTest {
       when(userRepository.findByEmail(TestUsers.EMAIL)).thenReturn(Optional.empty());
       when(userRepository.save(any(User.class))).thenReturn(newUser);
 
-      // getOrCreateRoomByUserId 메서드를 모킹
-      when(roomService.getOrCreateRoomByUserId(anyLong())).thenReturn(null);
-
-      // pointHistoryRepository.save() 호출을 방지하기 위한 Mock 설정
-      when(pointHistoryRepository.save(any())).thenReturn(null);
-
       // when
       OAuth2User result = customOAuth2UserService.processOAuth2User(userRequest, oAuth2User);
 
@@ -129,10 +124,14 @@ class CustomOAuth2UserServiceTest {
 
       verify(userRepository).findByEmail(TestUsers.EMAIL);
       verify(userRepository, times(2)).save(any(User.class));
-      verify(roomService).getOrCreateRoomByUserId(anyLong());
-      verify(pointHistoryRepository, atLeastOnce()).save(any());
+
+      // roomService
+      // verify(roomService).getOrCreateRoomByUserId(anyLong());
+
+      // accumulateAttendancePoints가 주석 처리
+      // verify(pointHistoryRepository, atLeastOnce()).save(any());
     }
-  }*/
+  }
 
 
   @Test
@@ -142,10 +141,8 @@ class CustomOAuth2UserServiceTest {
     LocalDateTime now = LocalDateTime.now();
     User existingUser = User.builder().id(1L).name(TestUsers.NAME).nickname(TestUsers.NAME)
         .email(TestUsers.EMAIL).profileImage(TestUsers.PROFILE_IMAGE).provider(Provider.KAKAO)
-        .providerId(TestUsers.PROVIDER_ID).status(Status.OFFLINE)
-        .lastLogin(now.minusDays(1))
-        .point(new Point(null, 0, 0, 0))
-        .build();
+        .providerId(TestUsers.PROVIDER_ID).status(Status.OFFLINE).lastLogin(now.minusDays(1))
+        .point(new Point(null, 0, 0, 0)).build();
 
     OAuth2User oAuth2User = new DefaultOAuth2User(Collections.emptyList(), KakaoAttributes.VALID,
         "id");
