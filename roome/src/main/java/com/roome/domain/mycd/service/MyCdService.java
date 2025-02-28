@@ -90,11 +90,7 @@ public class MyCdService {
     long totalCount;
 
     if (keyword != null && !keyword.isBlank()) {
-      if (cursor == null) {
-        myCds = myCdRepository.searchByUserIdAndKeyword(userId, keyword, PageRequest.of(0, size));
-      } else {
-        myCds = myCdRepository.searchByUserIdAndKeyword(userId, keyword, PageRequest.of(0, size));
-      }
+      myCds = myCdRepository.searchByUserIdAndKeyword(userId, keyword, PageRequest.of(0, size));
       totalCount = myCdRepository.countByUserIdAndKeyword(userId, keyword);
     } else {
       if (cursor == null) {
@@ -104,6 +100,7 @@ public class MyCdService {
       }
       totalCount = myCdRepository.countByUserId(userId);
     }
+
 
     if (myCds.isEmpty()) {
       throw new MyCdListEmptyException();
