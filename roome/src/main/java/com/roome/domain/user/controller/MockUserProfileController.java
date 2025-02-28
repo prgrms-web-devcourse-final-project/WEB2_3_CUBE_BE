@@ -23,7 +23,7 @@ import java.util.UUID;
 @RequestMapping("/mock/users")
 @RequiredArgsConstructor
 @Tag(name = "Profile", description = "프로필 조회 및 수정")
-public class MockUserController {
+public class MockUserProfileController {
 
     private static final Long MOCK_USER_ID = 999L;
 
@@ -57,7 +57,7 @@ public class MockUserController {
     }
 
     @Operation(summary = "프로필 이미지 업로드")
-    @RequestMapping(method = {RequestMethod.POST, RequestMethod.PUT})
+    @RequestMapping(value = "/profile/image", method = {RequestMethod.POST, RequestMethod.PUT})
     public ResponseEntity<ImageUploadResponseDto> uploadMockProfileImage(@AuthenticationPrincipal OAuth2UserPrincipal principal, @RequestParam("image") MultipartFile image) {
         log.info("[Mock 프로필 이미지 업로드] 파일명: {}, 크기: {}", image.getOriginalFilename(), image.getSize());
 
