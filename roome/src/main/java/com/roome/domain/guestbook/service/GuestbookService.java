@@ -17,6 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -64,6 +65,7 @@ public class GuestbookService {
                 .profileImage(user.getProfileImage())
                 .message(requestDto.getMessage())
                 .relation(RelationType.지나가던_나그네)
+                .createdAt(LocalDateTime.now())
                 .build();
 
         guestbookRepository.save(guestbook);
