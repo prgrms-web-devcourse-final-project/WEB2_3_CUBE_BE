@@ -68,6 +68,7 @@ public class AuthController {
       RoomResponseDto roomInfo = roomService.getOrCreateRoomByUserId(userId);
 
       String refreshToken = redisService.getRefreshToken(userId.toString());
+      log.info("User ID: {}, Refresh Token: {}", userId, refreshToken);
 
       LoginResponse loginResponse = LoginResponse.builder()
           .accessToken(accessToken)
