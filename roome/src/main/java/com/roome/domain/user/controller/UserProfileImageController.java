@@ -7,11 +7,15 @@ import com.roome.global.exception.ControllerException;
 import com.roome.global.exception.ErrorCode;
 import com.roome.global.service.S3Service;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,10 +23,11 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+@Tag(name = "Profile Image", description = "사용자 프로필 이미지 관리를 위한 API")
 @Slf4j
+@Validated
 @RestController
 @RequestMapping("/api/users/image")
-@Tag(name = "프로필 이미지", description = "프로필 이미지 업로드 및 삭제")
 public class UserProfileImageController {
     // 허용할 이미지 확장자 목록
     private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png", "gif");
@@ -36,10 +41,20 @@ public class UserProfileImageController {
     private UserProfileImageService userService;
 
 
-    // 프로필 이미지 업로드
-    @Operation(summary = "프로필 이미지 업로드", description = "사용자의 프로필 이미지를 업로드합니다. PUT과 POST 모두 지원합니다.")
+    @Operation(summary = "프로필 이미지 업로드",
+            description = "사용자의 프로필 이미지를 업로드합니다. PUT과 POST 모두 지원합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "이미지 업로드 성공"),
+            @ApiResponse(responseCode = "400", description = "이미지 파일이 없거나 비어 있음 (IMAGE_NOT_FOUND)"),
+            @ApiResponse(responseCode = "400", description = "지원되지 않는 이미지 형식 (INVALID_IMAGE_FORMAT)"),
+            @ApiResponse(responseCode = "400", description = "이미지 크기가 제한(5MB)을 초과함 (IMAGE_SIZE_EXCEEDED)"),
+            @ApiResponse(responseCode = "500", description = "이미지 업로드 중 오류 발생 (S3_UPLOAD_ERROR)")
+    })
     @RequestMapping(method = {RequestMethod.POST, RequestMethod.PUT})
-    public ResponseEntity<ImageUploadResponseDto> uploadProfileImage(@AuthenticationPrincipal OAuth2UserPrincipal principal, @RequestParam("image") MultipartFile image) {
+    public ResponseEntity<ImageUploadResponseDto> uploadProfileImage(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @Parameter(description = "업로드할 프로필 이미지 파일 (JPG, JPEG, PNG, GIF 형식, 최대 5MB)")
+            @RequestParam("image") MultipartFile image) {
         // 이미지 파일 유효성 검증
         validateImageFile(image);
 
@@ -68,10 +83,18 @@ public class UserProfileImageController {
         }
     }
 
-    // 프로필 이미지 삭제
-    @Operation(summary = "프로필 이미지 삭제", description = "사용자의 프로필 이미지를 삭제합니다.")
+    @Operation(summary = "프로필 이미지 삭제",
+            description = "사용자의 프로필 이미지를 삭제합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "이미지 삭제 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 이미지 URL (INVALID_IMAGE_URL)"),
+            @ApiResponse(responseCode = "500", description = "이미지 삭제 중 오류 발생 (S3_DELETE_ERROR)")
+    })
     @DeleteMapping
-    public ResponseEntity<?> deleteProfileImage(@AuthenticationPrincipal OAuth2UserPrincipal principal, @RequestParam("imageUrl") String imageUrl) {
+    public ResponseEntity<?> deleteProfileImage(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @Parameter(description = "삭제할 이미지의 S3 URL", example = "https://bucket-name.s3.amazonaws.com/profile/image.jpg")
+            @RequestParam("imageUrl") String imageUrl) {
         // URL 유효성 검증
         if (imageUrl == null || imageUrl
                 .trim()

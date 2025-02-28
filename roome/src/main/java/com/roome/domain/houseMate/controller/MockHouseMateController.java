@@ -25,17 +25,18 @@ public class MockHouseMateController {
 
     //mock 데이터 생성
     private final List<HousemateInfo> mockHousemates = new ArrayList<>();
+
     {
         for (long i = 1; i <= 50; i++) {
             mockHousemates.add(
                     HousemateInfo.builder()
-                                 .userId(i)
-                                 .nickname("사용자 " + i)
-                                 .profileImage("https://github.com/user-attachments/assets/mock-image-" + i)
-                                 .bio("사용자 " + i + "의 상태메시지입니다.")
-                                 .status(i % 2 == 0 ? Status.ONLINE : Status.OFFLINE)
-                                 .build()
-                              );
+                            .userId(i)
+                            .nickname("사용자 " + i)
+                            .profileImage("https://github.com/user-attachments/assets/mock-image-" + i)
+                            .bio("사용자 " + i + "의 상태메시지입니다.")
+                            .status(i % 2 == 0 ? Status.ONLINE : Status.OFFLINE)
+                            .build()
+            );
         }
     }
 
@@ -55,11 +56,11 @@ public class MockHouseMateController {
             @RequestParam(required = false) String nickname) {
 
         List<HousemateInfo> filteredList = mockHousemates.stream()
-                                                         .filter(mate -> cursor == null || mate.getUserId() > cursor)
-                                                         .filter(mate -> nickname == null ||
-                                                                 mate.getNickname().toLowerCase().contains(nickname.toLowerCase()))
-                                                         .limit(limit + 1)
-                                                         .collect(Collectors.toList());
+                .filter(mate -> cursor == null || mate.getUserId() > cursor)
+                .filter(mate -> nickname == null ||
+                        mate.getNickname().toLowerCase().contains(nickname.toLowerCase()))
+                .limit(limit + 1L)
+                .collect(Collectors.toList());
 
         boolean hasNext = filteredList.size() > limit;
         List<HousemateInfo> resultList = hasNext
@@ -71,10 +72,10 @@ public class MockHouseMateController {
                 : null;
 
         HousemateListResponse response = HousemateListResponse.builder()
-                                                              .housemates(resultList)
-                                                              .nextCursor(nextCursor != null ? String.valueOf(nextCursor) : null)
-                                                              .hasNext(hasNext)
-                                                              .build();
+                .housemates(resultList)
+                .nextCursor(nextCursor != null ? String.valueOf(nextCursor) : null)
+                .hasNext(hasNext)
+                .build();
 
         return ResponseEntity.ok(response);
     }
@@ -95,11 +96,11 @@ public class MockHouseMateController {
             @RequestParam(required = false) String nickname) {
 
         List<HousemateInfo> filteredList = mockHousemates.stream()
-                                                         .filter(mate -> cursor == null || mate.getUserId() > cursor)
-                                                         .filter(mate -> nickname == null ||
-                                                                 mate.getNickname().toLowerCase().contains(nickname.toLowerCase()))
-                                                         .limit(limit + 1)
-                                                         .collect(Collectors.toList());
+                .filter(mate -> cursor == null || mate.getUserId() > cursor)
+                .filter(mate -> nickname == null ||
+                        mate.getNickname().toLowerCase().contains(nickname.toLowerCase()))
+                .limit(limit + 1)
+                .collect(Collectors.toList());
 
         boolean hasNext = filteredList.size() > limit;
         List<HousemateInfo> resultList = hasNext
@@ -111,10 +112,10 @@ public class MockHouseMateController {
                 : null;
 
         HousemateListResponse response = HousemateListResponse.builder()
-                                                              .housemates(resultList)
-                                                              .nextCursor(nextCursor != null ? String.valueOf(nextCursor) : null)
-                                                              .hasNext(hasNext)
-                                                              .build();
+                .housemates(resultList)
+                .nextCursor(nextCursor != null ? String.valueOf(nextCursor) : null)
+                .hasNext(hasNext)
+                .build();
 
         return ResponseEntity.ok(response);
     }

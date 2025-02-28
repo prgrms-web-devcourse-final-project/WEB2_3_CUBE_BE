@@ -7,6 +7,8 @@ import com.roome.domain.user.entity.Provider;
 import com.roome.domain.user.entity.Status;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.temp.UserPrincipal;
+import com.roome.global.exception.BusinessException;
+import com.roome.global.exception.ErrorCode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,7 +29,8 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -138,47 +140,21 @@ class NotificationControllerTest {
     }
 
     @Test
-    @DisplayName("알림 생성 성공")
-    void createNotification_Success() throws Exception {
+    @DisplayName("이미 읽은 알림을 다시 읽음 처리하는 경우 실패")
+    void readNotification_AlreadyRead_Fail() throws Exception {
         // given
-        CreateNotificationRequest request = CreateNotificationRequest
-                .builder()
-                .senderId(2L)
-                .receiverId(3L)
-                .targetId(4L)
-                .type(NotificationType.GUESTBOOK)
-                .build();
+        Long notificationId = 1L;
 
-        when(notificationService.createNotification(any(CreateNotificationRequest.class))).thenReturn(1L);
+        // notificationService.readNotification 메서드가 이미 읽은 알림에 대해 예외를 던지도록 설정
+        when(notificationService.readNotification(eq(notificationId), any()))
+                .thenThrow(new BusinessException(ErrorCode.NOTIFICATION_ALREADY_READ));
 
         // when & then
         mockMvc
-                .perform(post("/api/notifications")
-                                 .contentType(MediaType.APPLICATION_JSON)
-                                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.notificationId").value(1))
-                .andDo(print());
-    }
-
-    @Test
-    @DisplayName("알림 생성 실패 - 잘못된 요청")
-    void createNotification_Fail_InvalidRequest() throws Exception {
-        // given
-        CreateNotificationRequest request = CreateNotificationRequest
-                .builder()
-                .senderId(null)  // 필수 값 누락
-                .receiverId(3L)
-                .targetId(4L)
-                .type(NotificationType.GUESTBOOK)
-                .build();
-
-        // when & then
-        mockMvc
-                .perform(post("/api/notifications")
-                                 .contentType(MediaType.APPLICATION_JSON)
-                                 .content(objectMapper.writeValueAsString(request)))
+                .perform(patch("/api/notifications/{notificationId}/read", notificationId))
                 .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("이미 읽음 처리된 알림입니다."))
+                .andExpect(jsonPath("$.code").value(400))
                 .andDo(print());
     }
 }
