@@ -72,6 +72,9 @@ app:
       - http://localhost:5173
       - http://localhost:3000
 
+toss:
+  secret-key: ${TOSS_SECRET_KEY}
+
 server:
   shutdown: graceful
 

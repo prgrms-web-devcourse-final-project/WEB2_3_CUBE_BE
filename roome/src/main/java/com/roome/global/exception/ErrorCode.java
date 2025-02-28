@@ -57,6 +57,13 @@ public enum ErrorCode {
   GUESTBOOK_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 방명록을 찾을 수 없습니다."),
   GUESTBOOK_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "방의 주인이거나 방명록 작성자가 아닙니다."),
 
+  // 결제 관련 예외
+  PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 결제 정보를 찾을 수 없습니다."),
+  PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "결제 금액이 일치하지 않습니다."),
+  PAYMENT_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "결제 검증에 실패했습니다."),
+  PAYMENT_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "결제 처리 중 오류가 발생했습니다."),
+  PAYMENT_ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 결제에 대한 접근 권한이 없습니다."),
+
   // 서평 관련 예외
   MY_BOOK_REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "서평을 찾을 수 없습니다."),
   MY_BOOK_REVIEW_ACCESS_DENIED(HttpStatus.BAD_REQUEST, "서평에 대한 권한이 없는 사용자입니다."),
