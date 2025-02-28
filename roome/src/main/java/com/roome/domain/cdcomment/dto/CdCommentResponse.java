@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 @Getter
 @AllArgsConstructor
 public class CdCommentResponse {
+
   private Long id;
   private Long myCdId;
   private Long userId;

@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CdCommentCreateRequest {
+
   @NotBlank
   private String timestamp;
 

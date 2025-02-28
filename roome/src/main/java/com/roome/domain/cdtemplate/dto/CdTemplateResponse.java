@@ -7,6 +7,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class CdTemplateResponse {
+
   private Long id;
   private Long myCdId;
   private String comment1;

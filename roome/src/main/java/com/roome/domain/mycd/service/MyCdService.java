@@ -11,7 +11,6 @@ import com.roome.domain.mycd.dto.MyCdResponse;
 import com.roome.domain.mycd.entity.MyCd;
 import com.roome.domain.mycd.entity.MyCdCount;
 import com.roome.domain.mycd.exception.MyCdAlreadyExistsException;
-import com.roome.domain.mycd.exception.MyCdListEmptyException;
 import com.roome.domain.mycd.exception.MyCdNotFoundException;
 import com.roome.domain.mycd.repository.MyCdCountRepository;
 import com.roome.domain.mycd.repository.MyCdRepository;
@@ -23,11 +22,16 @@ import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.jwt.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -86,27 +90,26 @@ public class MyCdService {
   public MyCdListResponse getMyCdList(Long userId, String keyword, Long cursor, int size) {
     validateUser(userId);
 
-    List<MyCd> myCds;
+    boolean isKeywordSearch = keyword != null && !keyword.trim().isEmpty();
+    Pageable pageable = PageRequest.of(0, size, Sort.by(Sort.Direction.ASC, "id"));
+
+    Page<MyCd> myCdsPage;
     long totalCount;
 
-    if (keyword != null && !keyword.isBlank()) {
-      myCds = myCdRepository.searchByUserIdAndKeyword(userId, keyword, PageRequest.of(0, size));
+    if (isKeywordSearch) {
+      myCdsPage = myCdRepository.searchByUserIdAndKeyword(userId, keyword, pageable);
       totalCount = myCdRepository.countByUserIdAndKeyword(userId, keyword);
     } else {
-      if (cursor == null) {
-        myCds = myCdRepository.findByUserIdOrderByIdAsc(userId, PageRequest.of(0, size));
+      if (cursor == null || cursor == 0) {
+        myCdsPage = myCdRepository.findByUserIdOrderByIdAsc(userId, pageable);
       } else {
-        myCds = myCdRepository.findByUserIdAndIdGreaterThanOrderByIdAsc(userId, cursor, PageRequest.of(0, size));
+        myCdsPage = myCdRepository.findByUserIdAndIdGreaterThanOrderByIdAsc(userId, cursor,
+            pageable);
       }
       totalCount = myCdRepository.countByUserId(userId);
     }
 
-
-    if (myCds.isEmpty()) {
-      throw new MyCdListEmptyException();
-    }
-
-    return MyCdListResponse.fromEntities(myCds, totalCount);
+    return MyCdListResponse.fromEntities(myCdsPage.getContent(), totalCount);
   }
 
   public MyCdResponse getMyCd(Long userId, Long myCdId) {

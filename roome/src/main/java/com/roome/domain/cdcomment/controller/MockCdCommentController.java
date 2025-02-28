@@ -50,7 +50,8 @@ public class MockCdCommentController {
   ) {
     List<CdCommentResponse> mockData = List.of(
         new CdCommentResponse(1L, myCdId, 2L, "현구", "3:40", "이 곡 진짜 좋네요!", LocalDateTime.now()),
-        new CdCommentResponse(2L, myCdId, 3L, "음악좋아하는사람", "2:10", "현구님 추천 감사합니다!", LocalDateTime.now())
+        new CdCommentResponse(2L, myCdId, 3L, "음악좋아하는사람", "2:10", "현구님 추천 감사합니다!",
+            LocalDateTime.now())
     );
 
     return ResponseEntity.ok(new CdCommentListResponse(mockData, page, size, 12, 3));
@@ -66,7 +67,8 @@ public class MockCdCommentController {
   ) {
     List<CdCommentResponse> mockData = List.of(
         new CdCommentResponse(1L, myCdId, 2L, "현구", "4:00", "이 곡 진짜 좋네요!", LocalDateTime.now()),
-        new CdCommentResponse(2L, myCdId, 3L, "음악좋아하는사람", "2:45", "현구님 추천 감사합니다!", LocalDateTime.now())
+        new CdCommentResponse(2L, myCdId, 3L, "음악좋아하는사람", "2:45", "현구님 추천 감사합니다!",
+            LocalDateTime.now())
     );
 
     return ResponseEntity.ok(new CdCommentListResponse(mockData, page, size, 2, 1));
