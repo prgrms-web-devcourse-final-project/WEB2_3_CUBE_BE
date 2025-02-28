@@ -7,11 +7,9 @@ import com.roome.global.exception.ControllerException;
 import com.roome.global.exception.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -72,7 +70,7 @@ public class HousemateController {
             @Parameter(description = "페이지네이션 커서 (마지막으로 받은 userId)", example = "10")
             @RequestParam(required = false) Long cursor,
             @Parameter(description = "한 페이지당 조회할 메이트 수(1-100)", example = "20")
-            @RequestParam(defaultValue = "20") @Max(100) @Min(1) int limit,
+            @RequestParam(defaultValue = "20") int limit,
             @Parameter(description = "닉네임으로 검색", example = "김철수")
             @RequestParam(required = false) String nickname) {
 

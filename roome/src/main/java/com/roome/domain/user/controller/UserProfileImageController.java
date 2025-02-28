@@ -125,12 +125,6 @@ public class UserProfileImageController {
     private boolean isValidImageUrl(String imageUrl) {
         String bucketName = s3Service.getBucketName();
 
-        if (imageUrl == null || imageUrl
-                .trim()
-                .isEmpty()) {
-            return false;
-        }
-
         // URL에 버킷 이름이 포함되어 있는지 확인
         boolean containsBucketName = imageUrl.contains(bucketName);
 

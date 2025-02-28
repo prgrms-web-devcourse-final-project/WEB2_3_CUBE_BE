@@ -15,6 +15,8 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -55,8 +57,8 @@ public class UserProfileImageControllerTest {
     }
 
     @Test
-    @DisplayName("프로필 이미지 업로드 성공 테스트")
-    void uploadProfileImageSuccessTest() throws Exception {
+    @DisplayName("프로필 이미지 업로드 성공 테스트 (POST)")
+    void uploadProfileImageSuccessPostTest() throws Exception {
         // given
         MockMultipartFile imageFile = new MockMultipartFile(
                 "image",
@@ -67,6 +69,7 @@ public class UserProfileImageControllerTest {
 
         String uploadedImageUrl = "https://roome-bucket.s3.amazonaws.com/profile/12345abcde12345abcde12345abcde12.jpg";
         when(s3Service.uploadImage(any(), eq("profile"))).thenReturn(uploadedImageUrl);
+        when(userService.getProfileImageUrl(USER_ID)).thenReturn(null);
 
         // when & then
         mockMvc.perform(multipart("/api/users/image")
@@ -78,6 +81,69 @@ public class UserProfileImageControllerTest {
                 .andExpect(jsonPath("$.fileName").value("test-image.jpg"));
 
         verify(userService).updateProfileImage(eq(USER_ID), eq(uploadedImageUrl));
+    }
+
+    @Test
+    @DisplayName("프로필 이미지 업로드 성공 테스트 (PUT)")
+    void uploadProfileImageSuccessPutTest() throws Exception {
+        // given
+        MockMultipartFile imageFile = new MockMultipartFile(
+                "image",
+                "test-image.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "test image content".getBytes()
+        );
+
+        String uploadedImageUrl = "https://roome-bucket.s3.amazonaws.com/profile/12345abcde12345abcde12345abcde12.jpg";
+        when(s3Service.uploadImage(any(), eq("profile"))).thenReturn(uploadedImageUrl);
+        when(userService.getProfileImageUrl(USER_ID)).thenReturn(null);
+
+        // PUT 요청 생성
+        MockMultipartHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/api/users/image");
+        builder.with(request -> {
+            request.setMethod("PUT");
+            return request;
+        });
+
+        // when & then
+        mockMvc.perform(builder
+                        .file(imageFile)
+                        .with(authentication(auth)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.imageUrl").value(uploadedImageUrl))
+                .andExpect(jsonPath("$.fileName").value("test-image.jpg"));
+
+        verify(userService).updateProfileImage(eq(USER_ID), eq(uploadedImageUrl));
+    }
+
+    @Test
+    @DisplayName("기존 프로필 이미지가 있는 경우 업로드 테스트")
+    void uploadProfileImageWithExistingImageTest() throws Exception {
+        // given
+        MockMultipartFile imageFile = new MockMultipartFile(
+                "image",
+                "test-image.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "test image content".getBytes()
+        );
+
+        String existingImageUrl = "https://roome-bucket.s3.amazonaws.com/profile/existing123456789012345678901234.jpg";
+        String newImageUrl = "https://roome-bucket.s3.amazonaws.com/profile/new1234567890123456789012345678901.jpg";
+
+        when(userService.getProfileImageUrl(USER_ID)).thenReturn(existingImageUrl);
+        when(s3Service.uploadImage(any(), eq("profile"))).thenReturn(newImageUrl);
+
+        // when & then
+        mockMvc.perform(multipart("/api/users/image")
+                        .file(imageFile)
+                        .with(authentication(auth)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.imageUrl").value(newImageUrl));
+
+        verify(userService).updateProfileImage(eq(USER_ID), eq(newImageUrl));
+        verify(s3Service).deleteImage(eq(existingImageUrl));
     }
 
     @Test
@@ -263,5 +329,113 @@ public class UserProfileImageControllerTest {
                         .with(authentication(auth)))
                 .andDo(print())
                 .andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    @DisplayName("S3 삭제 실패 테스트")
+    void s3DeleteFailureTest() throws Exception {
+        // given
+        String imageUrl = "https://roome-bucket.s3.amazonaws.com/profile/12345abcde12345abcde12345abcde12.jpg";
+        doThrow(new RuntimeException("S3 delete failed")).when(s3Service).deleteImage(anyString());
+
+        // when & then
+        mockMvc.perform(delete("/api/users/image")
+                        .param("imageUrl", imageUrl)
+                        .with(authentication(auth)))
+                .andDo(print())
+                .andExpect(status().isInternalServerError());
+
+        verify(s3Service).deleteImage(eq(imageUrl));
+        verify(userService, never()).deleteProfileImage(anyLong());
+    }
+
+    @Test
+    @DisplayName("지원되는 다른 이미지 형식(PNG) 업로드 테스트")
+    void uploadPngImageFormatTest() throws Exception {
+        // given
+        MockMultipartFile pngFile = new MockMultipartFile(
+                "image",
+                "test-image.png",
+                MediaType.IMAGE_PNG_VALUE,
+                "test png content".getBytes()
+        );
+
+        String uploadedImageUrl = "https://roome-bucket.s3.amazonaws.com/profile/12345abcde12345abcde12345abcde12.png";
+        when(s3Service.uploadImage(any(), eq("profile"))).thenReturn(uploadedImageUrl);
+
+        // when & then
+        mockMvc.perform(multipart("/api/users/image")
+                        .file(pngFile)
+                        .with(authentication(auth)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.imageUrl").value(uploadedImageUrl));
+
+        verify(userService).updateProfileImage(eq(USER_ID), eq(uploadedImageUrl));
+    }
+
+    @Test
+    @DisplayName("지원되는 다른 이미지 형식(GIF) 업로드 테스트")
+    void uploadGifImageFormatTest() throws Exception {
+        // given
+        MockMultipartFile gifFile = new MockMultipartFile(
+                "image",
+                "test-image.gif",
+                "image/gif",
+                "test gif content".getBytes()
+        );
+
+        String uploadedImageUrl = "https://roome-bucket.s3.amazonaws.com/profile/12345abcde12345abcde12345abcde12.gif";
+        when(s3Service.uploadImage(any(), eq("profile"))).thenReturn(uploadedImageUrl);
+
+        // when & then
+        mockMvc.perform(multipart("/api/users/image")
+                        .file(gifFile)
+                        .with(authentication(auth)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.imageUrl").value(uploadedImageUrl));
+
+        verify(userService).updateProfileImage(eq(USER_ID), eq(uploadedImageUrl));
+    }
+
+    @Test
+    @DisplayName("빈 파일명이지만 확장자가 있는 경우 테스트")
+    void uploadEmptyFilenameWithExtensionTest() throws Exception {
+        // given
+        MockMultipartFile fileWithExtension = new MockMultipartFile(
+                "image",
+                ".jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "test image content".getBytes()
+        );
+
+        String uploadedImageUrl = "https://roome-bucket.s3.amazonaws.com/profile/12345abcde12345abcde12345abcde12.jpg";
+        when(s3Service.uploadImage(any(), eq("profile"))).thenReturn(uploadedImageUrl);
+
+        // when & then
+        mockMvc.perform(multipart("/api/users/image")
+                        .file(fileWithExtension)
+                        .with(authentication(auth)))
+                .andDo(print())
+                .andExpect(status().isOk());
+
+        verify(userService).updateProfileImage(eq(USER_ID), eq(uploadedImageUrl));
+    }
+
+    @Test
+    @DisplayName("URL에 버킷 이름만 없는 경우 테스트")
+    void deleteImageUrlWithoutBucketNameTest() throws Exception {
+        // given - 버킷 이름이 없지만 나머지 패턴은 맞는 URL
+        String imageUrl = "https://s3.amazonaws.com/profile/12345abcde12345abcde12345abcde12.jpg";
+
+        // when & then
+        mockMvc.perform(delete("/api/users/image")
+                        .param("imageUrl", imageUrl)
+                        .with(authentication(auth)))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+
+        verify(s3Service, never()).deleteImage(anyString());
     }
 }
