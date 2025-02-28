@@ -76,4 +76,14 @@ public class Furniture {
         user.payPoints(FurnitureUpgradePrice.getPrice(furnitureType, level));
         level++;
     }
+
+    public Furniture(Room room, FurnitureType furnitureType) {
+        this.room = room;
+        this.furnitureType = furnitureType;
+        this.isVisible = false; // 기본값 설정
+        this.level = 1; // 기본값 설정
+        this.createdAt = LocalDateTime.now(); // 생성 시간 자동 설정
+        this.updatedAt = LocalDateTime.now(); // 업데이트 시간 기본값 설정
+    }
+
 }

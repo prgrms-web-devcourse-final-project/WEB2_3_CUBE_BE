@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +41,7 @@ public class RoomService {
     private final CdCommentRepository cdCommentRepository;
 
     @Transactional
-    public RoomResponseDto createRoom(Long userId){
+    public RoomResponseDto createRoom(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> {
                     log.error("방 생성 실패: 사용자(userId={})를 찾을 수 없음", userId);
@@ -50,28 +51,22 @@ public class RoomService {
         Room newRoom = Room.builder()
                 .user(user)
                 .theme(RoomTheme.BASIC)
-                .furnitures(new ArrayList<>())
+                .furnitures(new ArrayList<>()) // 빈 리스트 초기화
                 .build();
 
         Room savedRoom = roomRepository.save(newRoom);
+        roomRepository.flush();
 
-        // 기본 가구 추가 (책꽂이 & CD 랙)
-        List<Furniture> defaultFurnitures = List.of(
-                Furniture.builder()
-                        .room(savedRoom)
-                        .furnitureType(FurnitureType.BOOKSHELF)
-                        .isVisible(false)  // 기본값: 보이지 않음
-                        .level(1)  // 기본값: 1레벨
-                        .build(),
-                Furniture.builder()
-                        .room(savedRoom)
-                        .furnitureType(FurnitureType.CD_RACK)
-                        .isVisible(false)
-                        .level(1)
-                        .build()
+        // 기본 가구 추가 및 저장
+        List<Furniture> defaultFurnitures = addDefaultFurniture(savedRoom);
+
+        // 방에 가구 추가
+        savedRoom.getFurnitures().addAll(defaultFurnitures);
+
+        // 가구 생성 완료 로그
+        defaultFurnitures.forEach(furniture ->
+                log.info("가구 생성 완료: 방(roomId={})에 가구({}) 추가됨", savedRoom.getId(), furniture.getFurnitureType())
         );
-
-        furnitureRepository.saveAll(defaultFurnitures);
 
         Long savedMusic = 0L;
         Long savedBooks = 0L;
@@ -80,8 +75,26 @@ public class RoomService {
 
         log.info("방 생성 완료: 방(roomId={}) 생성됨 (userId={})", savedRoom.getId(), userId);
         return RoomResponseDto.from(savedRoom, savedMusic, savedBooks, writtenReviews, writtenMusicLogs);
-
     }
+
+    private List<Furniture> addDefaultFurniture(Room room) {
+        try {
+            List<Furniture> defaultFurniture = new ArrayList<>();
+            defaultFurniture.add(new Furniture(room, FurnitureType.BOOKSHELF));
+            defaultFurniture.add(new Furniture(room, FurnitureType.CD_RACK));
+
+            List<Furniture> savedFurniture = furnitureRepository.saveAll(defaultFurniture);
+
+            log.info("기본 가구 생성 완료: roomId={}, 가구 개수={}", room.getId(), savedFurniture.size());
+            return savedFurniture;
+        } catch (Exception e) {
+            log.error("기본 가구 추가 중 오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("기본 가구 추가 실패", e);
+        }
+    }
+
+
+
 
     @Transactional(readOnly = true)
     public RoomResponseDto getRoomById(Long roomId){
