@@ -17,10 +17,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -100,7 +102,8 @@ public class AuthController {
   @Transactional
   @PostMapping("/logout")
   public ResponseEntity<?> logout(
-      @RequestHeader(value = "Authorization", required = false) String authHeader) {
+      @RequestHeader(value = "Authorization", required = false) String authHeader,
+      HttpServletResponse response) {
     try {
       if (authHeader != null && authHeader.startsWith("Bearer ")) {
         String accessToken = authHeader.substring(7);
@@ -116,6 +119,13 @@ public class AuthController {
         if (expiration > 0) {
           redisService.addToBlacklist(accessToken, expiration);
         }
+
+        // 리프레시 토큰 쿠키 삭제
+        ResponseCookie cookie = ResponseCookie.from("refresh_token", "")
+            .maxAge(0)
+            .path("/")
+            .build();
+        response.addHeader("Set-Cookie", cookie.toString());
       }
 
       return ResponseEntity.ok(Map.of("message", "로그아웃 되었습니다."));
