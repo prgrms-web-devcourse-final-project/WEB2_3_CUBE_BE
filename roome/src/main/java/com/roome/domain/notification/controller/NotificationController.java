@@ -2,7 +2,7 @@ package com.roome.domain.notification.controller;
 
 import com.roome.domain.notification.dto.*;
 import com.roome.domain.notification.service.NotificationService;
-import com.roome.domain.user.temp.UserPrincipal;
+import com.roome.global.auth.AuthenticatedUser;
 import com.roome.global.exception.ControllerException;
 import com.roome.global.exception.ErrorCode;
 import jakarta.validation.Valid;
@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -51,7 +50,7 @@ public class NotificationController {
             @Parameter(description = "읽음 상태로 필터링 (true: 읽은 알림, false: 읽지 않은 알림, null: 모든 알림)", example = "false")
             @RequestParam(required = false) Boolean read,
 
-            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+            @AuthenticatedUser Long userId) {
 
         // 커서 검증
         if (cursor != null && cursor <= 0) {
@@ -70,7 +69,7 @@ public class NotificationController {
                 .cursor(cursor)
                 .limit(limit)
                 .read(read)
-                .receiverId(userPrincipal.getId())
+                .receiverId(userId)
                 .build();
 
         return ResponseEntity.ok(notificationService.getNotifications(condition));
@@ -90,13 +89,13 @@ public class NotificationController {
             @Parameter(description = "읽음 처리할 알림의 ID", example = "1")
             @PathVariable Long notificationId,
 
-            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+            @AuthenticatedUser Long userId) {
 
         // 알림 ID 검증
         if (notificationId <= 0) {
             throw new ControllerException(ErrorCode.INVALID_CURSOR_VALUE);
         }
 
-        return ResponseEntity.ok(notificationService.readNotification(notificationId, userPrincipal.getId()));
+        return ResponseEntity.ok(notificationService.readNotification(notificationId, userId));
     }
 }
