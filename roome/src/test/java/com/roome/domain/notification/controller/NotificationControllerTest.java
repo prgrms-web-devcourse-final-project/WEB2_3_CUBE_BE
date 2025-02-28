@@ -7,7 +7,6 @@ import com.roome.domain.user.entity.Provider;
 import com.roome.domain.user.entity.Status;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
-import com.roome.domain.user.temp.UserPrincipal;
 import com.roome.global.exception.ErrorCode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,8 +18,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collections;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -44,7 +48,6 @@ class NotificationControllerTest {
 
     private User testUser;
     private User senderUser;
-    private UserPrincipal mockUserPrincipal;
 
     @BeforeEach
     void setUp() {
@@ -74,19 +77,14 @@ class NotificationControllerTest {
 
         senderUser = userRepository.save(senderUser);
 
-        // UserPrincipal 생성
-        mockUserPrincipal = new UserPrincipal(testUser);
-
         // SecurityContext에 인증된 사용자 정보 설정
         Authentication authentication = new UsernamePasswordAuthenticationToken(
-                mockUserPrincipal,
+                testUser.getId(), // Principal로 직접 사용자 ID 사용
                 null,
-                mockUserPrincipal.getAuthorities()
+                Collections.emptyList()
         );
 
-        SecurityContextHolder
-                .getContext()
-                .setAuthentication(authentication);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
     @AfterEach
@@ -96,16 +94,22 @@ class NotificationControllerTest {
         SecurityContextHolder.clearContext();
     }
 
+    // AuthenticatedUser 어노테이션을 사용한 인증된 요청을 수행하는 헬퍼 메서드
+    private ResultActions performWithAuthenticatedUser(MockHttpServletRequestBuilder requestBuilder) throws Exception {
+        // SecurityContext에 인증 정보가 이미 설정되어 있으므로 바로 수행
+        return mockMvc.perform(requestBuilder);
+    }
+
     @Test
     @DisplayName("알림 목록 조회 성공")
+    @WithMockUser
     void getNotifications_Success() throws Exception {
         // given
         // 알림 데이터 생성 및 저장
         createTestNotification(NotificationType.GUESTBOOK, false);
 
         // when & then
-        mockMvc
-                .perform(get("/api/notifications").param("limit", "10"))
+        performWithAuthenticatedUser(get("/api/notifications").param("limit", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.notifications").isArray())
                 .andExpect(jsonPath("$.notifications[0].type").value("GUESTBOOK"))
@@ -115,12 +119,12 @@ class NotificationControllerTest {
 
     @Test
     @DisplayName("유효하지 않은 cursor 값으로 알림 목록 조회 실패")
+    @WithMockUser
     void getNotifications_InvalidCursor_Fail() throws Exception {
         // when & then
-        mockMvc
-                .perform(get("/api/notifications")
-                        .param("cursor", "-1")
-                        .param("limit", "10"))
+        performWithAuthenticatedUser(get("/api/notifications")
+                .param("cursor", "-1")
+                .param("limit", "10"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("유효하지 않은 cursor 값입니다."))
                 .andExpect(jsonPath("$.code").value(400))
@@ -129,11 +133,11 @@ class NotificationControllerTest {
 
     @Test
     @DisplayName("유효하지 않은 limit 값(하한)으로 알림 목록 조회 실패")
+    @WithMockUser
     void getNotifications_InvalidLimitLower_Fail() throws Exception {
         // when & then
-        mockMvc
-                .perform(get("/api/notifications")
-                        .param("limit", "0"))
+        performWithAuthenticatedUser(get("/api/notifications")
+                .param("limit", "0"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("유효하지 않은 limit 값입니다. (1-100 사이의 값을 입력해주세요)"))
                 .andExpect(jsonPath("$.code").value(400))
@@ -142,11 +146,11 @@ class NotificationControllerTest {
 
     @Test
     @DisplayName("유효하지 않은 limit 값(상한)으로 알림 목록 조회 실패")
+    @WithMockUser
     void getNotifications_InvalidLimitUpper_Fail() throws Exception {
         // when & then
-        mockMvc
-                .perform(get("/api/notifications")
-                        .param("limit", "101"))
+        performWithAuthenticatedUser(get("/api/notifications")
+                .param("limit", "101"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("유효하지 않은 limit 값입니다. (1-100 사이의 값을 입력해주세요)"))
                 .andExpect(jsonPath("$.code").value(400))
@@ -155,13 +159,13 @@ class NotificationControllerTest {
 
     @Test
     @DisplayName("알림 읽음 처리 성공")
+    @WithMockUser
     void readNotification_Success() throws Exception {
         // given
         Notification notification = createTestNotification(NotificationType.GUESTBOOK, false);
 
         // when & then
-        mockMvc
-                .perform(patch("/api/notifications/{notificationId}/read", notification.getId()))
+        performWithAuthenticatedUser(patch("/api/notifications/{notificationId}/read", notification.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.type").value("GUESTBOOK"))
                 .andExpect(jsonPath("$.targetId").value(3))
@@ -171,13 +175,13 @@ class NotificationControllerTest {
 
     @Test
     @DisplayName("유효하지 않은 notificationId로 알림 읽음 처리 실패")
+    @WithMockUser
     void readNotification_InvalidId_Fail() throws Exception {
         // given
         Long invalidNotificationId = -1L;
 
         // when & then
-        mockMvc
-                .perform(patch("/api/notifications/{notificationId}/read", invalidNotificationId))
+        performWithAuthenticatedUser(patch("/api/notifications/{notificationId}/read", invalidNotificationId))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("유효하지 않은 cursor 값입니다."))
                 .andExpect(jsonPath("$.code").value(400))
@@ -186,13 +190,13 @@ class NotificationControllerTest {
 
     @Test
     @DisplayName("이미 읽은 알림을 다시 읽음 처리하는 경우 실패")
+    @WithMockUser
     void readNotification_AlreadyRead_Fail() throws Exception {
         // given
         Notification notification = createTestNotification(NotificationType.GUESTBOOK);
 
         // when & then
-        mockMvc
-                .perform(patch("/api/notifications/{notificationId}/read", notification.getId()))
+        performWithAuthenticatedUser(patch("/api/notifications/{notificationId}/read", notification.getId()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("이미 읽음 처리된 알림입니다."))
                 .andExpect(jsonPath("$.code").value(400))
@@ -201,13 +205,13 @@ class NotificationControllerTest {
 
     @Test
     @DisplayName("존재하지 않는 알림에 대한 읽음 처리 실패")
+    @WithMockUser
     void readNotification_NotFound_Fail() throws Exception {
         // given
         Long notificationId = 999L;
 
         // when & then
-        mockMvc
-                .perform(patch("/api/notifications/{notificationId}/read", notificationId))
+        performWithAuthenticatedUser(patch("/api/notifications/{notificationId}/read", notificationId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value(ErrorCode.NOTIFICATION_NOT_FOUND.getMessage()))
                 .andExpect(jsonPath("$.code").value(ErrorCode.NOTIFICATION_NOT_FOUND.getStatus().value()))
@@ -216,6 +220,7 @@ class NotificationControllerTest {
 
     @Test
     @DisplayName("권한이 없는 알림에 대한 읽음 처리 실패")
+    @WithMockUser
     void readNotification_AccessDenied_Fail() throws Exception {
         // given
         // 다른 사용자의 알림 생성
@@ -241,8 +246,7 @@ class NotificationControllerTest {
         otherUserNotification = notificationRepository.save(otherUserNotification);
 
         // when & then
-        mockMvc
-                .perform(patch("/api/notifications/{notificationId}/read", otherUserNotification.getId()))
+        performWithAuthenticatedUser(patch("/api/notifications/{notificationId}/read", otherUserNotification.getId()))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("해당 알림에 접근 권한이 없습니다."))
                 .andExpect(jsonPath("$.code").value(403))
