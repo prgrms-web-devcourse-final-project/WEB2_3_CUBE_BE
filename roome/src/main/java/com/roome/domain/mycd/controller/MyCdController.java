@@ -31,10 +31,11 @@ public class MyCdController {
   @GetMapping
   public ResponseEntity<MyCdListResponse> getMyCdList(
       @AuthenticatedUser Long userId,
-      @RequestParam(value = "cursor", required = false, defaultValue = "0") Long cursor,  // ✅ 기본값 0L 설정
-      @RequestParam(value = "size", defaultValue = "10") int size
+      @RequestParam(value = "cursor", required = false) Long cursor,
+      @RequestParam(value = "size", defaultValue = "10") int size,
+      @RequestParam(value = "keyword", required = false) String keyword
   ) {
-    return ResponseEntity.ok(myCdService.getMyCdList(userId, cursor, size));
+    return ResponseEntity.ok(myCdService.getMyCdList(userId, keyword, cursor, size));
   }
 
   @GetMapping("/{myCdId}")
