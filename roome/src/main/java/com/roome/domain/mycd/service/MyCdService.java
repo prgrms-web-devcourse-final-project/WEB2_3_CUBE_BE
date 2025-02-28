@@ -83,21 +83,30 @@ public class MyCdService {
     return MyCdResponse.fromEntity(myCd);
   }
 
-  public MyCdListResponse getMyCdList(Long userId, Long cursor, int size) {
+  public MyCdListResponse getMyCdList(Long userId, String keyword, Long cursor, int size) {
     validateUser(userId);
 
     List<MyCd> myCds;
-    if (cursor == null) {
-      myCds = myCdRepository.findByUserIdOrderByIdAsc(userId, PageRequest.of(0, size));
+    long totalCount;
+
+    if (keyword != null && !keyword.isBlank()) {
+      myCds = myCdRepository.searchByUserIdAndKeyword(userId, keyword, PageRequest.of(0, size));
+      totalCount = myCdRepository.countByUserIdAndKeyword(userId, keyword);
     } else {
-      myCds = myCdRepository.findByUserIdAndIdGreaterThanOrderByIdAsc(userId, cursor, PageRequest.of(0, size));
+      if (cursor == null) {
+        myCds = myCdRepository.findByUserIdOrderByIdAsc(userId, PageRequest.of(0, size));
+      } else {
+        myCds = myCdRepository.findByUserIdAndIdGreaterThanOrderByIdAsc(userId, cursor, PageRequest.of(0, size));
+      }
+      totalCount = myCdRepository.countByUserId(userId);
     }
+
 
     if (myCds.isEmpty()) {
       throw new MyCdListEmptyException();
     }
 
-    return MyCdListResponse.fromEntities(myCds);
+    return MyCdListResponse.fromEntities(myCds, totalCount);
   }
 
   public MyCdResponse getMyCd(Long userId, Long myCdId) {

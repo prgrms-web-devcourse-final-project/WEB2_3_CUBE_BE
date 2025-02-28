@@ -41,7 +41,12 @@ public class MockMyCdController {
       @Parameter(description = "커서 기반 페이지네이션 (마지막 조회한 myCdId)")
       @RequestParam(value = "cursor", required = false) Long cursor,
       @Parameter(description = "한 번에 가져올 개수 (기본값: 15)")
-      @RequestParam(value = "size", defaultValue = "15") int size) {
+      @RequestParam(value = "size", defaultValue = "15") int size,
+      @Parameter(description = "검색 키워드 (CD 제목 또는 가수명)", required = false)
+      @RequestParam(value = "keyword", required = false) String keyword) {
+
+    // ✅ 기본 앨범 커버 이미지 (Spotify 이미지 URL)
+    final String DEFAULT_COVER_URL = "https://i.scdn.co/image/ab67616d0000b273a49a8bb234f8741c80d8ec5a";
 
     // 더미 데이터 30개 생성
     List<MyCdResponse> mockData = new ArrayList<>();
@@ -49,29 +54,40 @@ public class MockMyCdController {
       mockData.add(new MyCdResponse(
           (long) i, "Song " + i, "Artist " + i, "Album " + i,
           LocalDate.of(2020, (i % 12) + 1, (i % 28) + 1),
-          List.of("Genre " + (i % 5 + 1)), DEFAULT_COVER_URL,
+          List.of("Genre " + (i % 5 + 1)),
+          DEFAULT_COVER_URL,  // ✅ 기본 커버 이미지 적용
           "https://youtube.com/watch?v=video" + i, 180000 + (i * 1000)
       ));
     }
 
-    // 커서 기반 페이지네이션 적용
+    // ✅ 키워드 검색 추가 (제목 또는 가수명)
     List<MyCdResponse> filteredData;
-    if (cursor == null || cursor == 0) {
-      // 첫 페이지 요청 (cursor 없음 또는 0일 경우)
-      filteredData = mockData.stream().limit(size).toList();
-    } else {
-      // cursor 이후 데이터 중 size 개수만큼 필터링
-      filteredData = mockData.stream()
-          .filter(cd -> cd.getMyCdId() > cursor) // cursor보다 큰 ID만 선택
-          .limit(size) // size만큼 제한
+    if (keyword != null && !keyword.isBlank()) {
+      mockData = mockData.stream()
+          .filter(cd -> cd.getTitle().toLowerCase().contains(keyword.toLowerCase()) ||
+              cd.getArtist().toLowerCase().contains(keyword.toLowerCase()))
           .toList();
     }
+
+    // 커서 기반 페이지네이션 적용
+    if (cursor == null || cursor == 0) {
+      filteredData = mockData.stream().limit(size).toList();
+    } else {
+      filteredData = mockData.stream()
+          .filter(cd -> cd.getMyCdId() > cursor) // cursor보다 큰 ID만 선택
+          .limit(size)
+          .toList();
+    }
+
+    // ✅ 검색된 전체 개수 계산 (검색 결과 개수)
+    long totalCount = mockData.size();
 
     // nextCursor 설정 (마지막 요소의 ID)
     Long nextCursor = filteredData.isEmpty() ? null : filteredData.get(filteredData.size() - 1).getMyCdId();
 
-    return ResponseEntity.ok(new MyCdListResponse(filteredData, nextCursor));
+    return ResponseEntity.ok(new MyCdListResponse(filteredData, nextCursor, totalCount));
   }
+
 
   @Operation(summary = "Mock - 특정 CD 조회", description = "사용자의 특정 CD 정보를 조회")
   @GetMapping("/{myCdId}")
