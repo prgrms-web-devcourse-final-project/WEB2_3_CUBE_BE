@@ -52,16 +52,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
       // 기존 사용자 확인 또는 생성
       User user = updateOrCreateUser(oAuth2Response);
 
-      // 첫 로그인 시 방 자동 생성
-      if (user.getLastLogin() == null) {
-        try {
-          roomService.getOrCreateRoomByUserId(user.getId());
-          log.info("사용자 {}의 방이 확인/생성되었습니다.", user.getId());
-        } catch (Exception e) {
-          log.error("방 확인/생성 중 오류: {}", e.getMessage(), e);
-        }
-      }
-
       // 마지막 로그인 시간 갱신
       user.updateLastLogin();
       if (user.getId() != null) {
