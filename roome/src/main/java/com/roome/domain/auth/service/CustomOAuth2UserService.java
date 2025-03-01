@@ -62,12 +62,50 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 //      accumulateAttendancePoints(user);
 
       return new OAuth2UserPrincipal(user, oAuth2Response);
+    } catch (IllegalArgumentException e) {
+      String errorMsg =
+          "지원하지 않는 OAuth2 제공자: " + userRequest.getClientRegistration().getRegistrationId();
+      log.error(errorMsg, e);
+      throw new OAuth2AuthenticationException(new OAuth2Error("invalid_provider"), errorMsg, e);
+
+    } catch (NullPointerException e) {
+      String errorMsg = "OAuth2 인증 데이터 누락: " + e.getMessage();
+      log.error(errorMsg, e);
+      log.error("OAuth2 요청 데이터: {}", userRequest);
+      log.error("OAuth2 응답 데이터: {}", oAuth2User.getAttributes());
+      throw new OAuth2AuthenticationException(new OAuth2Error("missing_data"), errorMsg, e);
+
+    } catch (ClassCastException e) {
+      String errorMsg = "OAuth2 데이터 형식 오류: " + e.getMessage();
+      log.error(errorMsg, e);
+      log.error("OAuth2 속성: {}", oAuth2User.getAttributes());
+      throw new OAuth2AuthenticationException(new OAuth2Error("data_format_error"), errorMsg, e);
+
     } catch (OAuth2AuthenticationException e) {
-      log.error("OAuth2 인증 중 오류 발생: {}", e.getMessage());
+      log.error("OAuth2 인증 실패: {}", e.getMessage(), e);
       throw e;
+
     } catch (Exception e) {
-      log.error("OAuth2 처리 중 내부 오류: {}", e.getMessage());
-      throw new OAuth2AuthenticationException(new OAuth2Error("invalid_token"), "OAuth2 인증 실패", e);
+      StringBuilder errorDetail = new StringBuilder();
+      errorDetail.append("예외 타입: ").append(e.getClass().getName()).append("\n");
+      errorDetail.append("예외 메시지: ").append(e.getMessage()).append("\n");
+      errorDetail.append("스택 트레이스:\n");
+
+      for (StackTraceElement element : e.getStackTrace()) {
+        errorDetail.append("   at ").append(element.toString()).append("\n");
+      }
+
+      if (e.getCause() != null) {
+        errorDetail.append("원인 예외: ").append(e.getCause().getClass().getName()).append("\n");
+        errorDetail.append("원인 메시지: ").append(e.getCause().getMessage()).append("\n");
+      }
+
+      log.error("OAuth2 처리 중 상세 오류 정보:\n{}", errorDetail.toString());
+
+      String errorMsg = String.format("인증 처리 오류 [%s]: %s", e.getClass().getSimpleName(),
+          e.getMessage());
+      throw new OAuth2AuthenticationException(new OAuth2Error("auth_processing_error"), errorMsg,
+          e);
     }
   }
 
@@ -87,14 +125,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     Provider provider = Provider.valueOf(response.getProvider().name());
     String providerId = response.getProviderId();
 
-    // provider id로 사용자 찾기
-    return userRepository.findByProviderAndProviderId(provider, providerId).map(existingUser -> {
-      // 기존 사용자 정보 업데이트
-      existingUser.updateProfile(response.getName(), response.getProfileImageUrl(),
-          existingUser.getBio());
-      return existingUser;
-    }).orElseGet(() -> {
-      // provider 다르면 이메일이 같아도 새 계정 생성
+    // provider + providerId 로 기존 유저 확인
+    return userRepository.findByProviderAndProviderId(provider, providerId).orElseGet(() -> {
+      // provider가 다르면 같은 이메일이어도 새로운 계정 생성
       log.info("새 사용자 생성: 이메일={}, 제공자={}", response.getEmail(), provider);
       return userRepository.save(
           User.builder().name(response.getName()).nickname(response.getName())
