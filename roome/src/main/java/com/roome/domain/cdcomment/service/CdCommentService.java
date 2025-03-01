@@ -27,6 +27,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -37,6 +38,7 @@ public class CdCommentService {
   private final MyCdRepository myCdRepository;
   private final UserRepository userRepository;
   private final ApplicationEventPublisher eventPublisher;// 이벤트 발행자
+
   public CdCommentResponse addComment(Long userId, Long myCdId, CdCommentCreateRequest request) {
     MyCd myCd = myCdRepository.findById(myCdId)
         .orElseThrow(MyCdNotFoundException::new);
@@ -57,15 +59,15 @@ public class CdCommentService {
     Long cdOwnerId = myCd.getUser().getId();
     if (!userId.equals(cdOwnerId)) {
       log.info("CD 코멘트 알림 이벤트 발행: 발신자={}, 수신자={}, CD={}, 코멘트={}",
-              userId, cdOwnerId, myCdId, savedComment.getId());
+          userId, cdOwnerId, myCdId, savedComment.getId());
 
       try {
         eventPublisher.publishEvent(new CdCommentCreatedEvent(
-                this,
-                userId,         // 발신자 (댓글 작성자)
-                cdOwnerId,      // 수신자 (CD 소유자)
-                myCdId,         // CD ID
-                savedComment.getId() // 코멘트 ID
+            this,
+            userId,         // 발신자 (댓글 작성자)
+            cdOwnerId,      // 수신자 (CD 소유자)
+            myCdId,         // CD ID
+            savedComment.getId() // 코멘트 ID
         ));
       } catch (Exception e) {
         log.error("CD 코멘트 알림 이벤트 발행 중 오류 발생: {}", e.getMessage(), e);
@@ -109,14 +111,14 @@ public class CdCommentService {
         commentPage.getTotalPages());
   }
 
-  public CdCommentListResponse getAllComments(Long myCdId) {
+  public List<CdCommentResponse> getAllComments(Long myCdId) {
     List<CdComment> comments = cdCommentRepository.findByMyCdId(myCdId);
 
     if (comments.isEmpty()) {
       throw new CdCommentListEmptyException();
     }
 
-    List<CdCommentResponse> responseList = comments.stream()
+    return comments.stream()
         .map(comment -> new CdCommentResponse(
             comment.getId(),
             comment.getMyCd().getId(),
@@ -127,8 +129,6 @@ public class CdCommentService {
             comment.getCreatedAt()
         ))
         .collect(Collectors.toList());
-
-    return new CdCommentListResponse(responseList, 0, responseList.size(), responseList.size(), 1);
   }
 
   public CdCommentListResponse searchComments(Long myCdId, String keyword, int page, int size) {
