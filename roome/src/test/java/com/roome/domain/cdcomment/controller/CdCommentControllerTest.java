@@ -77,6 +77,26 @@ class CdCommentControllerTest {
         .andExpect(jsonPath("$.data[0].content").value("이 곡 최고네요!"));
   }
 
+  @DisplayName("CD 전체 댓글 목록 조회 성공")
+  @WithMockUser
+  @Test
+  void getAllComments_Success() throws Exception {
+    List<CdCommentResponse> response = List.of(
+        createCdCommentResponse(1L, createCdCommentCreateRequest()),
+        createCdCommentResponse(2L, new CdCommentCreateRequest("04:20", "이 곡도 좋아요!"))
+    );
+
+    BDDMockito.given(cdCommentService.getAllComments(eq(1L)))
+        .willReturn(response);
+
+    mockMvc.perform(get("/api/my-cd/1/comments/all")
+            .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(2))
+        .andExpect(jsonPath("$[0].content").value("이 곡 최고네요!"))
+        .andExpect(jsonPath("$[1].content").value("이 곡도 좋아요!"));
+  }
+
   @DisplayName("CD 댓글 검색 성공")
   @WithMockUser
   @Test
