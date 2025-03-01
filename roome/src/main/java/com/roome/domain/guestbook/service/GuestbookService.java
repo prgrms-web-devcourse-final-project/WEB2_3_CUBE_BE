@@ -3,6 +3,7 @@ package com.roome.domain.guestbook.service;
 import com.roome.domain.guestbook.dto.*;
 import com.roome.domain.guestbook.entity.Guestbook;
 import com.roome.domain.guestbook.entity.RelationType;
+import com.roome.domain.guestbook.notificationEvent.GuestBookCreatedEvent;
 import com.roome.domain.guestbook.repository.GuestbookRepository;
 import com.roome.domain.point.service.PointService;
 import com.roome.domain.room.entity.Room;
@@ -13,6 +14,8 @@ import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -21,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GuestbookService {
@@ -28,6 +32,7 @@ public class GuestbookService {
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
     private final PointService pointService;
+    private final ApplicationEventPublisher eventPublisher; // 이벤트 발행자
 
     public GuestbookListResponseDto getGuestbook(Long roomId, int page, int size) {
         Room room = roomRepository.findById(roomId)
@@ -72,6 +77,24 @@ public class GuestbookService {
 
         // 방명록 보상 포인트 적립
         pointService.addGuestbookReward(userId);
+
+        Long roomOwnerId = room.getUser().getId();
+        if (!userId.equals(roomOwnerId)) {
+            log.info("방명록 알림 이벤트 발행: 발신자={}, 수신자={}, 방명록={}",
+                    userId, roomOwnerId, guestbook.getGuestbookId());
+
+            try {
+                eventPublisher.publishEvent(new GuestBookCreatedEvent(
+                        this,
+                        userId,          // 발신자 (방명록 작성자)
+                        roomOwnerId,     // 수신자 (방 소유자)
+                        guestbook.getGuestbookId() // 방명록 ID
+                ));
+            } catch (Exception e) {
+                log.error("방명록 알림 이벤트 발행 중 오류 발생: {}", e.getMessage(), e);
+                // 알림 발행 실패가 비즈니스 로직에 영향을 주지 않도록 예외를 잡아서 처리
+            }
+        }
 
         return GuestbookResponseDto.from(guestbook);
     }
