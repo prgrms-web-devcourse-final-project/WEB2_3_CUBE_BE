@@ -5,19 +5,8 @@ import com.roome.domain.furniture.entity.FurnitureType;
 import com.roome.domain.furniture.exception.BookshelfFullException;
 import com.roome.domain.room.exception.RoomAuthorizationException;
 import com.roome.domain.user.entity.User;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.MapsId;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +46,9 @@ public class Room {
   @Builder.Default
   private List<Furniture> furnitures = new ArrayList<>();
 
+  @Version
+  private Integer version;
+  
   public static Room init(User user, LocalDateTime now) {
     Room room = new Room();
     room.user = user;
@@ -103,5 +95,14 @@ public class Room {
 
   public void setFurnitures(List<Furniture> furnitures) {
     this.furnitures = furnitures;
+  }
+
+  public static Room createRoom(User user, RoomTheme theme) {
+    Room room = new Room();
+    room.id = user.getId();  // userId와 동일한 값 설정
+    room.user = user;
+    room.theme = theme;
+    room.furnitures = new ArrayList<>();
+    return room;
   }
 }

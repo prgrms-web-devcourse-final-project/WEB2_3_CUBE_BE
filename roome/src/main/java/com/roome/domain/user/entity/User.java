@@ -1,5 +1,7 @@
 package com.roome.domain.user.entity;
 
+import com.roome.domain.furniture.entity.Furniture;
+import com.roome.domain.furniture.entity.FurnitureType;
 import com.roome.domain.point.entity.Point;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.exception.RoomAuthorizationException;
@@ -17,6 +19,9 @@ import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -102,7 +107,7 @@ public class User extends BaseTimeEntity {
     user.point = Point.init(user, now);
     return user;
   }
-
+  
   public void updateProfile(String nickname, String bio) {
     boolean updated = false;
     if (nickname != null && !nickname.equals(this.nickname)) {

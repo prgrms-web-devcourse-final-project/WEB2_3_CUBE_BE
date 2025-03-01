@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -38,7 +39,9 @@ public class GuestbookService {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
-        Page<Guestbook> guestbookPage = guestbookRepository.findByRoom(room, PageRequest.of(page - 1, size));
+        Page<Guestbook> guestbookPage = guestbookRepository.findByRoom(
+                room,
+                PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt")));
 
         List<GuestbookResponseDto> guestbooks = guestbookPage.stream()
                 .map(GuestbookResponseDto::from)
@@ -88,7 +91,8 @@ public class GuestbookService {
                         this,
                         userId,          // 발신자 (방명록 작성자)
                         roomOwnerId,     // 수신자 (방 소유자)
-                        guestbook.getGuestbookId() // 방명록 ID
+                        guestbook.getGuestbookId(), // 방명록 ID
+                        guestbook.getCreatedAt() // 알림 생성 시간
                 ));
             } catch (Exception e) {
                 log.error("방명록 알림 이벤트 발행 중 오류 발생: {}", e.getMessage(), e);
@@ -97,6 +101,12 @@ public class GuestbookService {
         }
 
         return GuestbookResponseDto.from(guestbook);
+    }
+
+    @Transactional
+    public GuestbookListResponseDto addGuestbookWithPagination(Long roomId, Long userId, GuestbookRequestDto requestDto, int size) {
+        addGuestbook(roomId, userId, requestDto); // 기존 메서드 호출 (방명록 추가)
+        return getGuestbook(roomId, 1, size); // 첫 번째 페이지 데이터 반환
     }
 
     @Transactional

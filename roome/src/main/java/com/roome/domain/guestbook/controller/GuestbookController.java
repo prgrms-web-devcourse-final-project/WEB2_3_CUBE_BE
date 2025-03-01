@@ -28,12 +28,13 @@ public class GuestbookController {
 
     @Operation(summary = "방명록 추가", description = "주어진 방 ID에 방명록 추가")
     @PostMapping("/{roomId}")
-    public ResponseEntity<GuestbookResponseDto> addGuestbook(
+    public ResponseEntity<GuestbookListResponseDto> addGuestbook(
             @PathVariable Long roomId,
             @RequestParam("userId") Long userId, // JWT 인증된 사용자 정보
+            @RequestParam(value = "size", required = false, defaultValue = "2") int size,
             @Valid @RequestBody GuestbookRequestDto requestDto
     ) {
-        return ResponseEntity.ok(guestbookService.addGuestbook(roomId, userId, requestDto));
+        return ResponseEntity.ok(guestbookService.addGuestbookWithPagination(roomId, userId, requestDto, size));
     }
 
     @Operation(summary = "방명록 삭제", description = "주어진 방명록 ID에 해당하는 방명록 삭제")

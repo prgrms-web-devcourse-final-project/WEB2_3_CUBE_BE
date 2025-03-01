@@ -35,13 +35,22 @@ public class Furniture {
     private Boolean isVisible;
 
     @ColumnDefault(value = "1")
-    private int level = 1;
+    private int level;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public static Furniture createDefault(Room room, FurnitureType type) {
+        return Furniture.builder()
+                .room(room)
+                .furnitureType(type)
+                .level(1) // 기본 레벨 1
+                .isVisible(false)
+                .build();
+    }
 
 
     @PrePersist

@@ -24,6 +24,7 @@ import com.roome.global.jwt.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +33,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -88,7 +90,7 @@ public class MyCdService {
   }
 
   public MyCdListResponse getMyCdList(Long userId, String keyword, Long cursor, int size) {
-    validateUser(userId);
+    log.info("조회할 사용자 ID: {}", userId); // 조회 대상 사용자 로그 확인
 
     boolean isKeywordSearch = keyword != null && !keyword.trim().isEmpty();
     Pageable pageable = PageRequest.of(0, size, Sort.by(Sort.Direction.ASC, "id"));
@@ -117,6 +119,7 @@ public class MyCdService {
 
     return MyCdListResponse.fromEntities(myCdsPage.getContent(), totalCount);
   }
+
 
   public MyCdResponse getMyCd(Long userId, Long myCdId) {
     validateUser(userId);

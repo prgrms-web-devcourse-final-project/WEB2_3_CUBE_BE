@@ -68,7 +68,8 @@ public class HousemateService {
                     this,
                     userId,    // 발신자 (하우스메이트 추가한 사용자)
                     targetId,  // 수신자 (하우스메이트로 추가된 사용자)
-                    targetId   // 대상 ID (하우스메이트로 추가된 사용자의 ID)
+                    targetId,   // 대상 ID (하우스메이트로 추가된 사용자의 ID)
+                    newHousemate.getCreatedAt() // 알림 생성 시간
             ));
         } catch (Exception e) {
             log.error("하우스메이트 알림 이벤트 발행 중 오류 발생: {}", e.getMessage(), e);

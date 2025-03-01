@@ -38,6 +38,12 @@ public class Guestbook {
     @Enumerated(EnumType.STRING)
     private RelationType relation;
 
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
+
+
     @Builder
     public Guestbook(Room room, User user, String nickname, String profileImage, String message, RelationType relation) {
         this.room = room;
