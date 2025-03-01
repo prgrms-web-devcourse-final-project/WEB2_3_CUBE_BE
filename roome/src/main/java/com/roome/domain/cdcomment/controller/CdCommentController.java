@@ -46,10 +46,10 @@ public class CdCommentController {
 
   @Operation(summary = "CD 전체 댓글 목록 조회", description = "특정 CD의 모든 댓글을 조회합니다.")
   @GetMapping("/{myCdId}/comments/all")
-  public ResponseEntity<CdCommentListResponse> getAllComments(
+  public ResponseEntity<List<CdCommentResponse>> getAllComments(
       @Parameter(description = "댓글을 조회할 CD의 ID") @PathVariable Long myCdId
   ) {
-    CdCommentListResponse response = cdCommentService.getAllComments(myCdId);
+    List<CdCommentResponse> response = cdCommentService.getAllComments(myCdId);
     return ResponseEntity.ok(response);
   }
 
