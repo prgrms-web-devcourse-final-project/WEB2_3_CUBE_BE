@@ -85,6 +85,26 @@ public class CdCommentService {
         commentPage.getTotalPages());
   }
 
+  public List<CdCommentResponse> getAllComments(Long myCdId) {
+    List<CdComment> comments = cdCommentRepository.findByMyCdId(myCdId);
+
+    if (comments.isEmpty()) {
+      throw new CdCommentListEmptyException();
+    }
+
+    return comments.stream()
+        .map(comment -> new CdCommentResponse(
+            comment.getId(),
+            comment.getMyCd().getId(),
+            comment.getUser().getId(),
+            comment.getUser().getNickname(),
+            comment.getTimestamp(),
+            comment.getContent(),
+            comment.getCreatedAt()
+        ))
+        .collect(Collectors.toList());
+  }
+
   public CdCommentListResponse searchComments(Long myCdId, String keyword, int page, int size) {
     Pageable pageable = PageRequest.of(page, size);
     Page<CdComment> commentPage = cdCommentRepository.findByMyCdIdAndKeyword(myCdId, keyword,
