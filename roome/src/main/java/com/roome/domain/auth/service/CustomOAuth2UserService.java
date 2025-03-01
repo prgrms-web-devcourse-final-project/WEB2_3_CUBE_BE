@@ -78,36 +78,29 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
       user.accumulatePoints(point);
 
       pointHistoryRepository.save(
-          PointHistory.builder()
-              .user(user)
-              .amount(point)
-              .reason(PointReason.DAILY_ATTENDANCE)
+          PointHistory.builder().user(user).amount(point).reason(PointReason.DAILY_ATTENDANCE)
               .build());
     }
   }
 
   private User updateOrCreateUser(OAuth2Response response) {
-    return userRepository.findByEmail(response.getEmail())
-        .map(existingUser -> {
-          // 기존 사용자 정보 업데이트
-          existingUser.updateProfile(response.getName(), response.getProfileImageUrl(),
-              existingUser.getBio());
-          existingUser.updateProvider(Provider.valueOf(response.getProvider().name()));
-          existingUser.updateProviderId(response.getProviderId());
-          return existingUser;
-        })
-        .orElseGet(() -> userRepository.save(
-            User.builder()
-                .name(response.getName())
-                .nickname(response.getName())
-                .email(response.getEmail())
-                .profileImage(response.getProfileImageUrl())
-                .provider(Provider.valueOf(response.getProvider().name()))
-                .providerId(response.getProviderId())
-                .status(Status.OFFLINE)
-                .lastLogin(LocalDateTime.now())
-                .point(new Point(null, 0, 0, 0))
-                .build()
-        ));
+    Provider provider = Provider.valueOf(response.getProvider().name());
+    String providerId = response.getProviderId();
+
+    // provider id로 사용자 찾기
+    return userRepository.findByProviderAndProviderId(provider, providerId).map(existingUser -> {
+      // 기존 사용자 정보 업데이트
+      existingUser.updateProfile(response.getName(), response.getProfileImageUrl(),
+          existingUser.getBio());
+      return existingUser;
+    }).orElseGet(() -> {
+      // provider 다르면 이메일이 같아도 새 계정 생성
+      log.info("새 사용자 생성: 이메일={}, 제공자={}", response.getEmail(), provider);
+      return userRepository.save(
+          User.builder().name(response.getName()).nickname(response.getName())
+              .email(response.getEmail()).profileImage(response.getProfileImageUrl())
+              .provider(provider).providerId(providerId).status(Status.OFFLINE)
+              .lastLogin(LocalDateTime.now()).point(new Point(null, 0, 0, 0)).build());
+    });
   }
 }
