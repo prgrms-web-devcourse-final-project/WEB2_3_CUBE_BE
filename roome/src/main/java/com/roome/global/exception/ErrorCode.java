@@ -94,6 +94,8 @@ public enum ErrorCode {
   NOTIFICATION_EXPIRED(HttpStatus.GONE, "만료된 알림입니다."),
   INVALID_NOTIFICATION_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 알림 타입입니다."),
   INVALID_NOTIFICATION_REQUEST(HttpStatus.BAD_REQUEST, "알림 생성 요청이 유효하지 않습니다."),
+  NOTIFICATION_EVENT_PROCESSING_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "알림 이벤트 처리 중 오류가 발생했습니다."),
+  NOTIFICATION_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "알림 생성에 실패했습니다."),
 
   // Point 관련 예외
   INSUFFICIENT_POINTS(HttpStatus.BAD_REQUEST, "포인트가 부족합니다."),

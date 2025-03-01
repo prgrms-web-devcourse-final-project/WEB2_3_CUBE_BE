@@ -5,7 +5,6 @@ import com.roome.domain.user.entity.Provider;
 import com.roome.domain.user.entity.Status;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
-import com.roome.global.auth.AuthenticatedUserArgumentResolver;
 import com.roome.global.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,7 +20,6 @@ import org.springframework.security.test.context.TestSecurityContextHolder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -101,7 +99,7 @@ class HousemateControllerTest {
     void addHousemateTest() throws Exception {
         // 요청 생성
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                post("/api/mates/follow/" + targetUser.getId())
+                post("/api/mates/" + targetUser.getId())
                         .contentType(MediaType.APPLICATION_JSON));
 
         // 결과 확인
@@ -252,7 +250,7 @@ class HousemateControllerTest {
 
         // 요청 수행
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                delete("/api/mates/follow/" + targetUser.getId())
+                delete("/api/mates/" + targetUser.getId())
                         .contentType(MediaType.APPLICATION_JSON));
 
         // 결과 확인
@@ -267,7 +265,7 @@ class HousemateControllerTest {
     void removeNonExistentHousemateTest() throws Exception {
         // 하우스메이트로 추가되지 않은 상태에서 삭제 시도
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                delete("/api/mates/follow/" + targetUser.getId())
+                delete("/api/mates/" + targetUser.getId())
                         .contentType(MediaType.APPLICATION_JSON));
 
         // 결과 확인
@@ -283,7 +281,7 @@ class HousemateControllerTest {
     void cannotAddSelfAsHousemate() throws Exception {
         // 자기 자신을 하우스메이트로 추가 시도
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                post("/api/mates/follow/" + testUser.getId())
+                post("/api/mates/" + testUser.getId())
                         .contentType(MediaType.APPLICATION_JSON));
 
         // 결과 확인
@@ -299,7 +297,7 @@ class HousemateControllerTest {
     void cannotAddNonExistentUser() throws Exception {
         // 존재하지 않는 사용자를 하우스메이트로 추가 시도
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                post("/api/mates/follow/999999")
+                post("/api/mates/999999")
                         .contentType(MediaType.APPLICATION_JSON));
 
         // 결과 확인
@@ -318,7 +316,7 @@ class HousemateControllerTest {
 
         // 이미 하우스메이트인 사용자를 다시 추가 시도
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                post("/api/mates/follow/" + targetUser.getId())
+                post("/api/mates/" + targetUser.getId())
                         .contentType(MediaType.APPLICATION_JSON));
 
         // 결과 확인
@@ -334,7 +332,7 @@ class HousemateControllerTest {
     void cannotAddHousemateWithInvalidTargetId() throws Exception {
         // 유효하지 않은 targetId로 하우스메이트 추가 시도
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                post("/api/mates/follow/-1")
+                post("/api/mates/-1")
                         .contentType(MediaType.APPLICATION_JSON));
 
         // 결과 확인
@@ -350,7 +348,7 @@ class HousemateControllerTest {
     void cannotRemoveHousemateWithInvalidTargetId() throws Exception {
         // 유효하지 않은 targetId로 하우스메이트 삭제 시도
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                delete("/api/mates/follow/-1")
+                delete("/api/mates/-1")
                         .contentType(MediaType.APPLICATION_JSON));
 
         // 결과 확인
@@ -366,7 +364,7 @@ class HousemateControllerTest {
     void cannotRemoveSelfAsHousemate() throws Exception {
         // 자기 자신을 하우스메이트에서 삭제 시도
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                delete("/api/mates/follow/" + testUser.getId())
+                delete("/api/mates/" + testUser.getId())
                         .contentType(MediaType.APPLICATION_JSON));
 
         // 결과 확인
