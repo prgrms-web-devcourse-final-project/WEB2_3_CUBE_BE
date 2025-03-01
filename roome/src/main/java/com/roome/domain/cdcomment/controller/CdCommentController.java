@@ -33,14 +33,18 @@ public class CdCommentController {
     return ResponseEntity.ok(response);
   }
 
-  @Operation(summary = "CD 댓글 목록 조회", description = "특정 CD의 댓글 목록을 조회합니다.")
+  @Operation(summary = "CD 댓글 목록 조회 및 검색", description = "특정 CD의 댓글 목록을 조회하거나 키워드를 포함하는 댓글을 검색합니다.")
   @GetMapping("/{myCdId}/comments")
   public ResponseEntity<CdCommentListResponse> getComments(
       @Parameter(description = "댓글을 조회할 CD의 ID", example = "1") @PathVariable Long myCdId,
-      @Parameter(description = "페이지 번호", example = "0") @RequestParam(value = "page", required = false, defaultValue = "0") int page,
-      @Parameter(description = "페이지 크기", example = "10") @RequestParam(value = "size", required = false, defaultValue = "10") int size
+      @Parameter(description = "검색할 키워드 (입력하지 않으면 전체 조회)", example = "좋아요")
+      @RequestParam(value = "query", required = false) String keyword,
+      @Parameter(description = "페이지 번호", example = "0")
+      @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+      @Parameter(description = "페이지 크기", example = "10")
+      @RequestParam(value = "size", required = false, defaultValue = "10") int size
   ) {
-    CdCommentListResponse response = cdCommentService.getComments(myCdId, page, size);
+    CdCommentListResponse response = cdCommentService.getComments(myCdId, keyword, page, size);
     return ResponseEntity.ok(response);
   }
 
@@ -50,18 +54,6 @@ public class CdCommentController {
       @Parameter(description = "댓글을 조회할 CD의 ID") @PathVariable Long myCdId
   ) {
     List<CdCommentResponse> response = cdCommentService.getAllComments(myCdId);
-    return ResponseEntity.ok(response);
-  }
-
-  @Operation(summary = "CD 댓글 검색", description = "특정 CD의 댓글 중 키워드를 포함하는 댓글을 검색합니다.")
-  @GetMapping("/{myCdId}/comments/search")
-  public ResponseEntity<CdCommentListResponse> searchComments(
-      @Parameter(description = "댓글을 검색할 CD의 ID", example = "1") @PathVariable Long myCdId,
-      @Parameter(description = "검색할 키워드", example = "좋아요") @RequestParam("query") String keyword,
-      @Parameter(description = "페이지 번호", example = "0") @RequestParam(value = "page", required = false, defaultValue = "0") int page,
-      @Parameter(description = "페이지 크기", example = "5") @RequestParam(value = "size", required = false, defaultValue = "5") int size
-  ) {
-    CdCommentListResponse response = cdCommentService.searchComments(myCdId, keyword, page, size);
     return ResponseEntity.ok(response);
   }
 

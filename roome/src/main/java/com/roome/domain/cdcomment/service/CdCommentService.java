@@ -15,7 +15,6 @@ import com.roome.domain.mycd.repository.MyCdRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.ForbiddenException;
-import com.roome.global.exception.UnauthorizedException;
 import com.roome.global.jwt.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
 import java.util.List;
@@ -87,16 +86,24 @@ public class CdCommentService {
   }
 
   @Transactional
-  public CdCommentListResponse getComments(Long myCdId, int page, int size) {
-    PageRequest pageRequest = PageRequest.of(page, size);
-    Page<CdComment> commentPage = cdCommentRepository.findByMyCdId(myCdId, pageRequest);
+  public CdCommentListResponse getComments(Long myCdId, String keyword, int page, int size) {
+    Pageable pageable = PageRequest.of(page, size);
+    Page<CdComment> commentPage;
+
+    if (keyword == null || keyword.trim().isEmpty()) {
+      // 키워드가 없으면 전체 댓글 조회
+      commentPage = cdCommentRepository.findByMyCdId(myCdId, pageable);
+    } else {
+      // 키워드가 있으면 해당 키워드 포함된 댓글 검색
+      commentPage = cdCommentRepository.findByMyCdIdAndKeyword(myCdId, keyword, pageable);
+    }
 
     if (commentPage.isEmpty()) {
       throw new CdCommentListEmptyException();
     }
 
-    List<CdCommentResponse> comments = commentPage.getContent().stream()
-        .map(comment -> new CdCommentResponse(
+    return new CdCommentListResponse(
+        commentPage.map(comment -> new CdCommentResponse(
             comment.getId(),
             comment.getMyCd().getId(),
             comment.getUser().getId(),
@@ -104,11 +111,12 @@ public class CdCommentService {
             comment.getTimestamp(),
             comment.getContent(),
             comment.getCreatedAt()
-        ))
-        .collect(Collectors.toList());
-
-    return new CdCommentListResponse(comments, page, size, commentPage.getTotalElements(),
-        commentPage.getTotalPages());
+        )).toList(),
+        page,
+        size,
+        commentPage.getTotalElements(),
+        commentPage.getTotalPages()
+    );
   }
 
   public List<CdCommentResponse> getAllComments(Long myCdId) {
