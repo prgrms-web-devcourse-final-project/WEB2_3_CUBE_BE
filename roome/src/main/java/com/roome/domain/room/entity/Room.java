@@ -57,6 +57,15 @@ public class Room {
   @Builder.Default
   private List<Furniture> furnitures = new ArrayList<>();
 
+  public static Room init(User user, LocalDateTime now) {
+    Room room = new Room();
+    room.user = user;
+    room.theme = RoomTheme.BASIC;
+    room.createdAt = now;
+    room.furnitures.addAll(Furniture.createDefaultFurnitures(room, now));
+    return room;
+  }
+
   public int getMaxMusic() {
     return furnitures.stream()
         .filter(f -> f.getFurnitureType() == FurnitureType.CD_RACK)
