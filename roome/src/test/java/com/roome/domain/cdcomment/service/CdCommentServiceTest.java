@@ -98,6 +98,40 @@ class CdCommentServiceTest {
   }
 
   @Test
+  @DisplayName("CD 전체 댓글 목록 조회 성공")
+  void getAllComments_Success() {
+    List<CdComment> comments = List.of(
+        cdComment,
+        CdComment.builder()
+            .id(2L)
+            .user(user)
+            .myCd(myCd)
+            .timestamp("04:20")
+            .content("이 곡도 좋아요!")
+            .build()
+    );
+
+    when(cdCommentRepository.findByMyCdId(1L)).thenReturn(comments);
+
+    List<CdCommentResponse> response = cdCommentService.getAllComments(1L);
+
+    assertThat(response).hasSize(2);
+    assertThat(response.get(0).getContent()).isEqualTo("이 곡 최고네요!");
+    assertThat(response.get(1).getContent()).isEqualTo("이 곡도 좋아요!");
+  }
+
+  @Test
+  @DisplayName("CD 전체 댓글 목록이 비어있을 때 예외 발생")
+  void getAllComments_EmptyList() {
+    // 빈 리스트 반환 설정
+    doReturn(List.of()).when(cdCommentRepository).findByMyCdId(1L);
+
+    // 예외 발생 검증
+    assertThatThrownBy(() -> cdCommentService.getAllComments(1L))
+        .isInstanceOf(CdCommentListEmptyException.class);
+  }
+
+  @Test
   @DisplayName("댓글 목록이 비어있을 때 예외 발생")
   void getComments_EmptyList() {
     Pageable pageable = PageRequest.of(0, 5);
