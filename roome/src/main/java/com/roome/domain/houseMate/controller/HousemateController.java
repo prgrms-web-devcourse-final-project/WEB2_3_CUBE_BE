@@ -1,6 +1,8 @@
 package com.roome.domain.houseMate.controller;
 
 import com.roome.domain.houseMate.dto.HousemateListResponse;
+import com.roome.domain.houseMate.dto.HousemateResponseDto;
+import com.roome.domain.houseMate.entity.AddedHousemate;
 import com.roome.domain.houseMate.service.HousemateService;
 import com.roome.global.auth.AuthenticatedUser;
 import com.roome.global.exception.ControllerException;
@@ -91,16 +93,18 @@ public class HousemateController {
             @ApiResponse(responseCode = "404", description = "존재하지 않는 사용자 (USER_NOT_FOUND)"),
             @ApiResponse(responseCode = "409", description = "이미 추가된 하우스메이트 (ALREADY_HOUSEMATE)")
     })
-    @PostMapping("/follow/{targetId}")
-    public ResponseEntity<Void> addHousemate(
+    @PostMapping("/{targetId}")
+    public ResponseEntity<HousemateResponseDto> addHousemate(
             @AuthenticatedUser Long userId,
             @Parameter(description = "추가할 사용자의 ID", example = "1")
             @PathVariable Long targetId) {
 
         validateFollowTarget(userId, targetId);
 
-        housemateService.addHousemate(userId, targetId);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        AddedHousemate addedHousemate = housemateService.addHousemate(userId, targetId);
+        HousemateResponseDto responseDto = housemateService.toResponseDto(addedHousemate);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
     @Operation(summary = "하우스메이트 삭제",
@@ -112,7 +116,7 @@ public class HousemateController {
             @ApiResponse(responseCode = "400", description = "하우스메이트로 추가되지 않은 사용자 (NOT_HOUSEMATE)"),
             @ApiResponse(responseCode = "404", description = "존재하지 않는 사용자 (USER_NOT_FOUND)")
     })
-    @DeleteMapping("/follow/{targetId}")
+    @DeleteMapping("/{targetId}")
     public ResponseEntity<Void> removeHousemate(
             @AuthenticatedUser Long userId,
             @Parameter(description = "삭제할 사용자의 ID", example = "1")
@@ -152,4 +156,5 @@ public class HousemateController {
             throw new ControllerException(ErrorCode.INVALID_CURSOR_VALUE);
         }
     }
+
 }
