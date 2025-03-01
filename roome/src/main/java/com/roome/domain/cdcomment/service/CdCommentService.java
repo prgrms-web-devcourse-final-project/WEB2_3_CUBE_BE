@@ -85,16 +85,13 @@ public class CdCommentService {
     );
   }
 
-  @Transactional
   public CdCommentListResponse getComments(Long myCdId, String keyword, int page, int size) {
     Pageable pageable = PageRequest.of(page, size);
     Page<CdComment> commentPage;
 
     if (keyword == null || keyword.trim().isEmpty()) {
-      // 키워드가 없으면 전체 댓글 조회
       commentPage = cdCommentRepository.findByMyCdId(myCdId, pageable);
     } else {
-      // 키워드가 있으면 해당 키워드 포함된 댓글 검색
       commentPage = cdCommentRepository.findByMyCdIdAndKeyword(myCdId, keyword, pageable);
     }
 
@@ -112,12 +109,13 @@ public class CdCommentService {
             comment.getContent(),
             comment.getCreatedAt()
         )).toList(),
-        page,
+        page + 1,
         size,
         commentPage.getTotalElements(),
         commentPage.getTotalPages()
     );
   }
+
 
   public List<CdCommentResponse> getAllComments(Long myCdId) {
     List<CdComment> comments = cdCommentRepository.findByMyCdId(myCdId);
