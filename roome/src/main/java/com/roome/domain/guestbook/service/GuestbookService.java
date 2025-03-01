@@ -103,6 +103,12 @@ public class GuestbookService {
     }
 
     @Transactional
+    public GuestbookListResponseDto addGuestbookWithPagination(Long roomId, Long userId, GuestbookRequestDto requestDto, int size) {
+        addGuestbook(roomId, userId, requestDto); // 기존 메서드 호출 (방명록 추가)
+        return getGuestbook(roomId, 1, size); // 첫 번째 페이지 데이터 반환
+    }
+
+    @Transactional
     public void deleteGuestbook(Long guestbookId, Long userId) {
         Guestbook guestbook = guestbookRepository.findById(guestbookId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.GUESTBOOK_NOT_FOUND));

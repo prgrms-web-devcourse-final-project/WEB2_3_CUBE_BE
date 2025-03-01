@@ -36,6 +36,7 @@ public class GuestbookControllerTest {
     private Long roomId = 1L;
     private Long userId = 1L;
     private Long guestbookId = 1L;
+    private final int size = 2;
 
     @BeforeEach
     public void setUp() {
@@ -75,20 +76,28 @@ public class GuestbookControllerTest {
     }
 
     @Test
-    @DisplayName("방명록을 추가할 수 있다")
+    @DisplayName("방명록을 추가한 후 첫 번째 페이지를 반환한다")
     public void testAddGuestbook_Success() {
         // given
         GuestbookRequestDto requestDto = new GuestbookRequestDto("Nice place!");
-        GuestbookResponseDto guestbookResponseDto = new GuestbookResponseDto(guestbookId, userId, "User", "profile.jpg", "Nice place!", LocalDateTime.now(), "하우스메이트");
-        when(guestbookService.addGuestbook(roomId, userId, requestDto)).thenReturn(guestbookResponseDto);
+        GuestbookListResponseDto guestbookListResponseDto = new GuestbookListResponseDto(
+                roomId,
+                Collections.singletonList(new GuestbookResponseDto(
+                        guestbookId, userId, "User", "profile.jpg", "Nice place!",
+                        LocalDateTime.now(), "하우스메이트")
+                ),
+                new PaginationDto(1, size, 1)
+        );
+        when(guestbookService.addGuestbookWithPagination(roomId, userId, requestDto, size))
+                .thenReturn(guestbookListResponseDto);
 
         // when
-        ResponseEntity<GuestbookResponseDto> response = guestbookController.addGuestbook(roomId, userId, requestDto);
+        ResponseEntity<GuestbookListResponseDto> response = guestbookController.addGuestbook(roomId, userId, size, requestDto);
 
         // then
         assertNotNull(response);
         assertEquals(200, response.getStatusCodeValue());
-        assertEquals("Nice place!", response.getBody().getMessage());
+        assertEquals("Nice place!", response.getBody().getGuestbook().get(0).getMessage());
     }
 
     @Test
@@ -96,10 +105,12 @@ public class GuestbookControllerTest {
     public void testAddGuestbook_RoomNotFound() {
         // given
         GuestbookRequestDto requestDto = new GuestbookRequestDto("Nice place!");
-        when(guestbookService.addGuestbook(roomId, userId, requestDto)).thenThrow(new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+        when(guestbookService.addGuestbookWithPagination(roomId, userId, requestDto, size))
+                .thenThrow(new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
         // when
-        BusinessException exception = assertThrows(BusinessException.class, () -> guestbookController.addGuestbook(roomId, userId, requestDto));
+        BusinessException exception = assertThrows(
+                BusinessException.class, () -> guestbookController.addGuestbook(roomId, userId, size, requestDto));
 
         // then
         assertEquals(ErrorCode.ROOM_NOT_FOUND, exception.getErrorCode());
@@ -110,10 +121,12 @@ public class GuestbookControllerTest {
     public void testAddGuestbook_UserNotFound() {
         // given
         GuestbookRequestDto requestDto = new GuestbookRequestDto("Nice place!");
-        when(guestbookService.addGuestbook(roomId, 999L, requestDto)).thenThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
+        when(guestbookService.addGuestbookWithPagination(roomId, 999L, requestDto, size))
+                .thenThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // when
-        BusinessException exception = assertThrows(BusinessException.class, () -> guestbookController.addGuestbook(roomId, 999L, requestDto));
+        BusinessException exception = assertThrows(
+                BusinessException.class, () -> guestbookController.addGuestbook(roomId, 999L, size, requestDto));
 
         // then
         assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
