@@ -1,5 +1,7 @@
 package com.roome.domain.user.entity;
 
+import com.roome.domain.furniture.entity.Furniture;
+import com.roome.domain.furniture.entity.FurnitureType;
 import com.roome.domain.point.entity.Point;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.exception.RoomAuthorizationException;
@@ -18,6 +20,8 @@ import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -90,6 +94,14 @@ public class User extends BaseTimeEntity {
 
     if (this.room == null) {
       this.room = Room.builder().user(this).build();
+
+      // 기본 가구 추가 (CD_RACK, BOOKSHELF)
+      List<Furniture> defaultFurniture = List.of(
+              Furniture.createDefault(this.room, FurnitureType.CD_RACK),
+              Furniture.createDefault(this.room, FurnitureType.BOOKSHELF)
+      );
+
+      this.room.getFurnitures().addAll(defaultFurniture);
     }
   }
 
