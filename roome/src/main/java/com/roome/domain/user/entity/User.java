@@ -20,6 +20,7 @@ import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import lombok.AccessLevel;
@@ -85,25 +86,6 @@ public class User extends BaseTimeEntity {
 
   @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   private Point point;
-
-  @PrePersist
-  public void prePersist() {
-    if (this.point == null) {
-      this.point = new Point(this, 0, 0, 0);
-    }
-
-    if (this.room == null) {
-      this.room = Room.builder().user(this).build();
-
-      // 기본 가구 추가 (CD_RACK, BOOKSHELF)
-      List<Furniture> defaultFurniture = List.of(
-              Furniture.createDefault(this.room, FurnitureType.CD_RACK),
-              Furniture.createDefault(this.room, FurnitureType.BOOKSHELF)
-      );
-
-      this.room.getFurnitures().addAll(defaultFurniture);
-    }
-  }
 
   public void updateProfile(String nickname, String bio) {
     boolean updated = false;

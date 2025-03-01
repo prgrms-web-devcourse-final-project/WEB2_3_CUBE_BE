@@ -129,11 +129,25 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     return userRepository.findByProviderAndProviderId(provider, providerId).orElseGet(() -> {
       // provider가 다르면 같은 이메일이어도 새로운 계정 생성
       log.info("새 사용자 생성: 이메일={}, 제공자={}", response.getEmail(), provider);
-      return userRepository.save(
-          User.builder().name(response.getName()).nickname(response.getName())
-              .email(response.getEmail()).profileImage(response.getProfileImageUrl())
-              .provider(provider).providerId(providerId).status(Status.OFFLINE)
-              .lastLogin(LocalDateTime.now()).point(new Point(null, 0, 0, 0)).build());
+      User newUser = userRepository.save(
+              User.builder()
+                      .name(response.getName())
+                      .nickname(response.getName())
+                      .email(response.getEmail())
+                      .profileImage(response.getProfileImageUrl())
+                      .provider(provider)
+                      .providerId(providerId)
+                      .status(Status.OFFLINE)
+                      .lastLogin(LocalDateTime.now())
+                      .build()
+      );
+
+      // 새로운 유저 생성 시 RoomService를 이용하여 방 생성
+      log.info("방 생성 시도 - userId={}", newUser.getId());
+      roomService.createRoom(newUser.getId());
+      log.info("방 생성 완료 - userId={}", newUser.getId());
+
+      return newUser;
     });
   }
 }

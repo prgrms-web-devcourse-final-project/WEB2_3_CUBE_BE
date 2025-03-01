@@ -54,6 +54,9 @@ public class RoomService {
                 .build();
 
         Room savedRoom = roomRepository.save(newRoom);
+        roomRepository.flush();
+
+        log.info("방 생성 완료: 방(roomId={}) 생성됨 (userId={})", savedRoom.getId(), userId);
 
         // 기본 가구 추가 (책꽂이 & CD 랙)
         List<Furniture> defaultFurnitures = List.of(
@@ -72,6 +75,9 @@ public class RoomService {
         );
 
         furnitureRepository.saveAll(defaultFurnitures);
+        furnitureRepository.flush();
+
+        log.info("기본 가구 추가 완료: 방(roomId={})에 책꽂이 & CD 랙 생성 완료", savedRoom.getId());
 
         Long savedMusic = 0L;
         Long savedBooks = 0L;
@@ -122,10 +128,11 @@ public class RoomService {
                         return createRoom(userId);
                     } catch (BusinessException e) {
                         log.error("방을 생성하려 했으나 사용자(userId={})를 찾을 수 없음", userId, e);
-                        throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+                        throw e; // 이미 던지고 있는 예외이므로 그대로 전달
                     }
                 });
     }
+
 
     @Transactional
     public String updateRoomTheme(Long userId, Long roomId, String newTheme){
