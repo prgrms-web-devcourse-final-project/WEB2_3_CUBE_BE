@@ -25,7 +25,7 @@ public class CdComment {
   @ManyToOne(fetch = FetchType.LAZY)
   private MyCd myCd;
 
-  private String timestamp;
+  private int timestamp;
   private String content;
 
   @Column(updatable = false)
@@ -37,7 +37,7 @@ public class CdComment {
   }
 
   @Builder
-  public CdComment(Long id, User user, MyCd myCd, String timestamp, String content) {
+  public CdComment(Long id, User user, MyCd myCd, int timestamp, String content) {
     this.id = id;
     this.user = user;
     this.myCd = myCd;
