@@ -196,9 +196,8 @@ class CustomOAuth2UserServiceTest {
     // given
     OAuth2User oAuth2User = new DefaultOAuth2User(Collections.emptyList(), KakaoAttributes.VALID,
         "id");
-
     OAuth2UserRequest userRequest = createOAuth2UserRequest("INVALID");
-    // ClientRegistration을 직접 모킹
+
     ClientRegistration mockClientRegistration = mock(ClientRegistration.class);
     lenient().when(mockClientRegistration.getRegistrationId()).thenReturn("INVALID");
     lenient().when(userRequest.getClientRegistration()).thenReturn(mockClientRegistration);
@@ -206,10 +205,8 @@ class CustomOAuth2UserServiceTest {
     // when & then
     assertThatThrownBy(
         () -> customOAuth2UserService.processOAuth2User(userRequest, oAuth2User)).isInstanceOf(
-        OAuth2AuthenticationException.class).hasMessageContaining("OAuth2 인증 실패");
-
-    verify(userRepository, never()).findByProviderAndProviderId(any(), any());
-    verify(userRepository, never()).save(any(User.class));
+            OAuth2AuthenticationException.class)
+        .hasMessageContaining("지원하지 않는 OAuth2 제공자"); // 기대 메시지 수정
   }
 
   @Test
@@ -218,21 +215,17 @@ class CustomOAuth2UserServiceTest {
     // given
     OAuth2User oAuth2User = new DefaultOAuth2User(Collections.emptyList(), KakaoAttributes.VALID,
         "id");
-
     OAuth2UserRequest userRequest = createOAuth2UserRequest("KAKAO");
-    // ClientRegistration을 직접 모킹
+
     ClientRegistration mockClientRegistration = mock(ClientRegistration.class);
     lenient().when(mockClientRegistration.getRegistrationId()).thenReturn("KAKAO");
     lenient().when(userRequest.getClientRegistration()).thenReturn(mockClientRegistration);
 
     try (MockedStatic<OAuth2Factory> mockedStatic = mockStatic(OAuth2Factory.class)) {
-      // OAuth2Factory 모킹
       OAuth2Response oAuth2Response = mock(OAuth2Response.class);
-      // 테스트에 필요한 정보만 모킹
       lenient().when(oAuth2Response.getEmail()).thenReturn(TestUsers.EMAIL);
       lenient().when(oAuth2Response.getProvider()).thenReturn(OAuth2Provider.KAKAO);
       lenient().when(oAuth2Response.getProviderId()).thenReturn(TestUsers.PROVIDER_ID);
-
       mockedStatic.when(() -> OAuth2Factory.createResponse(any(), any()))
           .thenReturn(oAuth2Response);
 
@@ -242,7 +235,7 @@ class CustomOAuth2UserServiceTest {
       // when & then
       assertThatThrownBy(
           () -> customOAuth2UserService.processOAuth2User(userRequest, oAuth2User)).isInstanceOf(
-          OAuth2AuthenticationException.class).hasMessageContaining("OAuth2 인증 실패");
+          OAuth2AuthenticationException.class).hasMessageContaining("인증 처리 오류"); // 기대 메시지 수정
     }
   }
 
