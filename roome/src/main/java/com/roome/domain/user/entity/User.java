@@ -98,7 +98,6 @@ public class User extends BaseTimeEntity {
     user.profileImage = profileImage;
     user.provider = provider;
     user.providerId = providerId;
-    user.lastLogin = now;
     user.room = Room.init(user, now);
     user.point = Point.init(user, now);
     return user;
@@ -160,7 +159,7 @@ public class User extends BaseTimeEntity {
 
   public boolean isAttendanceToday(LocalDateTime now) {
     LocalDateTime midnight = now.with(LocalTime.MIDNIGHT);
-    return midnight.isEqual(lastLogin) || midnight.isAfter(lastLogin);
+    return lastLogin != null && (lastLogin.isEqual(midnight) || lastLogin.isAfter(midnight));
   }
 
   public void accumulatePoints(int point) {
@@ -181,7 +180,7 @@ public class User extends BaseTimeEntity {
     this.lastGuestbookReward = date;
   }
 
-  public void updateLastLogin() {
-    this.lastLogin = LocalDateTime.now();
+  public void updateLastLogin(LocalDateTime now) {
+    this.lastLogin = now;
   }
 }
