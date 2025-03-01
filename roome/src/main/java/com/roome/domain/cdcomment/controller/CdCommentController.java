@@ -17,13 +17,13 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "CD 댓글", description = "CD 댓글 관련 API")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/my-cd")
+@RequestMapping("/api/my-cd/{myCdId}/comments")
 public class CdCommentController {
 
   private final CdCommentService cdCommentService;
 
   @Operation(summary = "CD 댓글 작성", description = "사용자가 특정 CD에 대한 댓글을 작성합니다.")
-  @PostMapping("/{myCdId}/comment")
+  @PostMapping
   public ResponseEntity<CdCommentResponse> create(
       @AuthenticatedUser Long userId,
       @Parameter(description = "댓글을 추가할 CD의 ID", example = "1") @PathVariable Long myCdId,
@@ -34,13 +34,14 @@ public class CdCommentController {
   }
 
   @Operation(summary = "CD 댓글 목록 조회 및 검색", description = "특정 CD의 댓글 목록을 조회하거나 키워드를 포함하는 댓글을 검색합니다.")
-  @GetMapping("/{myCdId}/comments")
+  @GetMapping
   public ResponseEntity<CdCommentListResponse> getComments(
-      @Parameter(description = "댓글을 조회할 CD의 ID", example = "1") @PathVariable Long myCdId,
+      @Parameter(description = "댓글을 조회할 CD의 ID", example = "1")
+      @PathVariable Long myCdId,
       @Parameter(description = "검색할 키워드 (입력하지 않으면 전체 조회)", example = "좋아요")
-      @RequestParam(value = "query", required = false) String keyword,
+      @RequestParam(value = "keyword", required = false) String keyword,
       @Parameter(description = "페이지 번호", example = "0")
-      @RequestParam(value = "page", required = false) int page,
+      @RequestParam(value = "page", required = false, defaultValue = "0") int page,
       @Parameter(description = "페이지 크기", example = "10")
       @RequestParam(value = "size", required = false, defaultValue = "10") int size
   ) {
@@ -49,7 +50,7 @@ public class CdCommentController {
   }
 
   @Operation(summary = "CD 전체 댓글 목록 조회", description = "특정 CD의 모든 댓글을 조회합니다.")
-  @GetMapping("/{myCdId}/comments/all")
+  @GetMapping("/all")
   public ResponseEntity<List<CdCommentResponse>> getAllComments(
       @Parameter(description = "댓글을 조회할 CD의 ID") @PathVariable Long myCdId
   ) {
@@ -58,7 +59,7 @@ public class CdCommentController {
   }
 
   @Operation(summary = "CD 댓글 삭제", description = "특정 사용자가 자신이 작성한 댓글을 삭제합니다.")
-  @DeleteMapping("/comments/{commentId}")
+  @DeleteMapping("/{commentId}")
   public ResponseEntity<Void> deleteComment(
       @AuthenticatedUser Long userId,
       @Parameter(description = "삭제할 댓글 ID", example = "1") @PathVariable Long commentId

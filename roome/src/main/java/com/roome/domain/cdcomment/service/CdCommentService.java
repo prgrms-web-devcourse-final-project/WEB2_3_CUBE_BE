@@ -117,7 +117,6 @@ public class CdCommentService {
     );
   }
 
-
   public List<CdCommentResponse> getAllComments(Long myCdId) {
     List<CdComment> comments = cdCommentRepository.findByMyCdId(myCdId);
 
