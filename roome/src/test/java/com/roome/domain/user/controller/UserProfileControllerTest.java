@@ -1,6 +1,8 @@
 package com.roome.domain.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.roome.domain.houseMate.entity.AddedHousemate;
+import com.roome.domain.houseMate.repository.HousemateRepository;
 import com.roome.domain.user.dto.request.UpdateProfileRequest;
 import com.roome.domain.user.entity.Provider;
 import com.roome.domain.user.entity.Status;
@@ -34,8 +36,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("test") // test 프로필 사용
-@Transactional // 각 테스트 후 롤백
+@ActiveProfiles("test")
+@Transactional
 class UserProfileControllerTest {
 
     @Autowired
@@ -45,9 +47,13 @@ class UserProfileControllerTest {
     private UserRepository userRepository;
 
     @Autowired
+    private HousemateRepository housemateRepository;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     private User testUser;
+    private User friendUser;
 
     @BeforeEach
     void setUp() {
@@ -66,6 +72,21 @@ class UserProfileControllerTest {
         // 실제 DB에 저장
         testUser = userRepository.save(testUser);
 
+        // 친구 테스트용 사용자 생성
+        friendUser = User.builder()
+                .email("friend@example.com")
+                .name("Friend User")
+                .nickname("FriendUser")
+                .profileImage("friend.jpg")
+                .status(Status.ONLINE)
+                .provider(Provider.GOOGLE)
+                .providerId("friend123")
+                .bio("안녕하세요. 친구 유저입니다.")
+                .build();
+
+        // 실제 DB에 저장
+        friendUser = userRepository.save(friendUser);
+
         // 인증 설정 - 사용자 ID를 Principal로 사용
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 testUser.getId(), null, Collections.emptyList());
@@ -75,6 +96,8 @@ class UserProfileControllerTest {
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+        housemateRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     // AuthenticatedUser 어노테이션을 사용한 인증된 요청을 수행하는 헬퍼 메서드
@@ -84,9 +107,9 @@ class UserProfileControllerTest {
     }
 
     @Test
-    @DisplayName("프로필 조회 성공 - 통합 테스트")
+    @DisplayName("자기 자신의 프로필 조회 성공 - 통합 테스트")
     @WithMockUser
-    void getUserProfile_Success() throws Exception {
+    void getUserProfile_Self_Success() throws Exception {
         // when & then
         performWithAuthenticatedUser(get("/api/users/{userId}/profile", testUser.getId()))
                 .andExpect(status().isOk())
@@ -94,6 +117,47 @@ class UserProfileControllerTest {
                 .andExpect(jsonPath("$.nickname").value("TestUser"))
                 .andExpect(jsonPath("$.profileImage").value("test.jpg"))
                 .andExpect(jsonPath("$.bio").value("안녕하세요. 테스트 유저입니다."))
+                .andExpect(jsonPath("$.myProfile").value(true))
+                .andExpect(jsonPath("$.following").value(false))  // isFollowing으로 변경
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("친구가 아닌 다른 사용자 프로필 조회 성공 - 통합 테스트")
+    @WithMockUser
+    void getUserProfile_NotFriend_Success() throws Exception {
+        // when & then
+        performWithAuthenticatedUser(get("/api/users/{userId}/profile", friendUser.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(String.valueOf(friendUser.getId())))
+                .andExpect(jsonPath("$.nickname").value("FriendUser"))
+                .andExpect(jsonPath("$.profileImage").value("friend.jpg"))
+                .andExpect(jsonPath("$.bio").value("안녕하세요. 친구 유저입니다."))
+                .andExpect(jsonPath("$.myProfile").value(false))
+                .andExpect(jsonPath("$.following").value(false))  // isFollowing으로 변경
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("친구인 다른 사용자 프로필 조회 성공 - 통합 테스트")
+    @WithMockUser
+    void getUserProfile_Friend_Success() throws Exception {
+        // given: 친구 관계 설정
+        AddedHousemate housemate = AddedHousemate.builder()
+                .userId(testUser.getId())
+                .addedId(friendUser.getId())
+                .build();
+        housemateRepository.save(housemate);
+
+        // when & then
+        performWithAuthenticatedUser(get("/api/users/{userId}/profile", friendUser.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(String.valueOf(friendUser.getId())))
+                .andExpect(jsonPath("$.nickname").value("FriendUser"))
+                .andExpect(jsonPath("$.profileImage").value("friend.jpg"))
+                .andExpect(jsonPath("$.bio").value("안녕하세요. 친구 유저입니다."))
+                .andExpect(jsonPath("$.myProfile").value(false))
+                .andExpect(jsonPath("$.following").value(true))
                 .andDo(print());
     }
 
@@ -128,6 +192,8 @@ class UserProfileControllerTest {
                 .andExpect(jsonPath("$.id").value(String.valueOf(testUser.getId())))
                 .andExpect(jsonPath("$.nickname").value("UpdatedUser"))
                 .andExpect(jsonPath("$.bio").value("프로필이 수정되었습니다."))
+                .andExpect(jsonPath("$.myProfile").value(true))
+                .andExpect(jsonPath("$.following").value(false))  // isFollowing으로 변경
                 .andDo(print());
 
         // DB에서 직접 확인 (선택사항)

@@ -1,5 +1,6 @@
 package com.roome.domain.user.service;
 
+import com.roome.domain.houseMate.repository.HousemateRepository;
 import com.roome.domain.mybook.entity.MyBook;
 import com.roome.domain.mybook.entity.repository.MyBookRepository;
 import com.roome.domain.mycd.entity.MyCd;
@@ -31,18 +32,19 @@ public class UserProfileService {
     private final UserRepository userRepository;
     private final MyCdRepository myCdRepository;
     private final MyBookRepository myBookRepository;
+    private final HousemateRepository housemateRepository;
 
-    public UserProfileResponse getUserProfile(Long targetUserId, Long currentUserId) {
+    public UserProfileResponse getUserProfile(Long userId, Long authUserId) {
         // 사용자 정보 한 번만 조회
-        User targetUser = userRepository.findById(targetUserId)
+        User targetUser = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 1. CD 장르 상위 3개 가져오기
-        List<String> topCdGenres = getTopCdGenres(targetUserId);
+        List<String> topCdGenres = getTopCdGenres(userId);
         // 2. 책 장르 상위 3개 가져오기
-        List<String> topBookGenres = getTopBookGenres(targetUserId);
+        List<String> topBookGenres = getTopBookGenres(userId);
         // 3. 유사한 취향을 가진 사용자 추천
-        List<User> recommendedUsers = recommendSimilarUsers(targetUserId);
+        List<User> recommendedUsers = recommendSimilarUsers(userId);
         // 4. DTO로 변환
         List<RecommendedUserDto> recommendedUserDtoList = recommendedUsers.stream()
                 .map(user -> RecommendedUserDto.builder()
@@ -52,15 +54,22 @@ public class UserProfileService {
                         .build())
                 .collect(Collectors.toList());
 
+        boolean isFollowing = false;
+        if (!targetUser.getId().equals(authUserId)) { // 자기 자신이 아닌 경우만 확인
+            isFollowing = housemateRepository.existsByUserIdAndAddedId(authUserId, userId);
+        }
+
+
         // 5. 응답 DTO 생성
         return UserProfileResponse.builder()
-                .id(targetUserId.toString())
+                .id(userId.toString())
                 .nickname(targetUser.getNickname())
                 .profileImage(targetUser.getProfileImage())
                 .bio(targetUser.getBio())
                 .musicGenres(topCdGenres)
                 .bookGenres(topBookGenres)
-                .isMyProfile(targetUserId.equals(currentUserId))
+                .isMyProfile(userId.equals(authUserId))
+                .isFollowing(isFollowing)
                 .recommendedUsers(recommendedUserDtoList)
                 .build();
     }
