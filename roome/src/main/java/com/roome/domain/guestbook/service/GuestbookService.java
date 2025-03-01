@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -38,7 +39,9 @@ public class GuestbookService {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
-        Page<Guestbook> guestbookPage = guestbookRepository.findByRoom(room, PageRequest.of(page - 1, size));
+        Page<Guestbook> guestbookPage = guestbookRepository.findByRoom(
+                room,
+                PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt")));
 
         List<GuestbookResponseDto> guestbooks = guestbookPage.stream()
                 .map(GuestbookResponseDto::from)
