@@ -14,6 +14,7 @@ import com.roome.domain.mycd.exception.MyCdNotFoundException;
 import com.roome.domain.mycd.repository.MyCdRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
+import com.roome.global.exception.ForbiddenException;
 import com.roome.global.exception.UnauthorizedException;
 import com.roome.global.jwt.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
@@ -108,14 +109,14 @@ public class CdCommentService {
         commentPage.getTotalPages());
   }
 
-  public List<CdCommentResponse> getAllComments(Long myCdId) {
+  public CdCommentListResponse getAllComments(Long myCdId) {
     List<CdComment> comments = cdCommentRepository.findByMyCdId(myCdId);
 
     if (comments.isEmpty()) {
       throw new CdCommentListEmptyException();
     }
 
-    return comments.stream()
+    List<CdCommentResponse> responseList = comments.stream()
         .map(comment -> new CdCommentResponse(
             comment.getId(),
             comment.getMyCd().getId(),
@@ -126,6 +127,8 @@ public class CdCommentService {
             comment.getCreatedAt()
         ))
         .collect(Collectors.toList());
+
+    return new CdCommentListResponse(responseList, 0, responseList.size(), responseList.size(), 1);
   }
 
   public CdCommentListResponse searchComments(Long myCdId, String keyword, int page, int size) {
@@ -159,27 +162,15 @@ public class CdCommentService {
     CdComment comment = cdCommentRepository.findById(commentId)
         .orElseThrow(CdCommentNotFoundException::new);
 
-    if (!comment.getUser().getId().equals(userId)) {
-      throw new UnauthorizedException();
+    Long roomOwnerId = comment.getMyCd().getUser().getId();
+
+    // 댓글 작성자 또는 방 주인만 삭제 가능
+    if (!comment.getUser().getId().equals(userId) && !roomOwnerId.equals(userId)) {
+      throw new ForbiddenException("해당 댓글을 삭제할 권한이 없습니다.");
     }
 
     cdCommentRepository.delete(comment);
   }
 
-  @Transactional
-  public void deleteMultipleComments(Long userId, List<Long> commentIds) {
-    List<CdComment> comments = cdCommentRepository.findAllById(commentIds);
 
-    if (comments.isEmpty()) {
-      throw new CdCommentNotFoundException();
-    }
-
-    for (CdComment comment : comments) {
-      if (!comment.getUser().getId().equals(userId)) {
-        throw new UnauthorizedException();
-      }
-    }
-
-    cdCommentRepository.deleteAll(comments);
-  }
 }

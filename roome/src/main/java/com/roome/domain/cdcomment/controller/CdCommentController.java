@@ -46,10 +46,10 @@ public class CdCommentController {
 
   @Operation(summary = "CD 전체 댓글 목록 조회", description = "특정 CD의 모든 댓글을 조회합니다.")
   @GetMapping("/{myCdId}/comments/all")
-  public ResponseEntity<List<CdCommentResponse>> getAllComments(
+  public ResponseEntity<CdCommentListResponse> getAllComments(
       @Parameter(description = "댓글을 조회할 CD의 ID") @PathVariable Long myCdId
   ) {
-    List<CdCommentResponse> response = cdCommentService.getAllComments(myCdId);
+    CdCommentListResponse response = cdCommentService.getAllComments(myCdId);
     return ResponseEntity.ok(response);
   }
 
@@ -72,16 +72,6 @@ public class CdCommentController {
       @Parameter(description = "삭제할 댓글 ID", example = "1") @PathVariable Long commentId
   ) {
     cdCommentService.deleteComment(userId, commentId);
-    return ResponseEntity.noContent().build();
-  }
-
-  @Operation(summary = "CD 댓글 여러 개 삭제", description = "사용자가 여러 개의 댓글을 한 번에 삭제합니다.")
-  @DeleteMapping("/comments")
-  public ResponseEntity<Void> deleteMultipleComments(
-      @AuthenticatedUser Long userId,
-      @Parameter(description = "삭제할 댓글 ID 목록", example = "[1,2,3]") @RequestParam List<Long> commentIds
-  ) {
-    cdCommentService.deleteMultipleComments(userId, commentIds);
     return ResponseEntity.noContent().build();
   }
 }

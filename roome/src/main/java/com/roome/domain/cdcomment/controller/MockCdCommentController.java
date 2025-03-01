@@ -49,9 +49,8 @@ public class MockCdCommentController {
       @Parameter(description = "한 번에 가져올 댓글 개수 (기본값: 99999)") @RequestParam(value = "size", required = false, defaultValue = "99999") int size
   ) {
     List<CdCommentResponse> mockData = List.of(
-        new CdCommentResponse(1L, myCdId, 2L, "현구", "3:40", "이 곡 진짜 좋네요!", LocalDateTime.now()),
-        new CdCommentResponse(2L, myCdId, 3L, "음악좋아하는사람", "2:10", "현구님 추천 감사합니다!",
-            LocalDateTime.now())
+        new CdCommentResponse(1L, myCdId, 2L, "현구", 220, "이 곡 진짜 좋네요!", LocalDateTime.now()),  // ✅ "3:40" → 220초
+        new CdCommentResponse(2L, myCdId, 3L, "음악좋아하는사람", 130, "현구님 추천 감사합니다!", LocalDateTime.now()) // ✅ "2:10" → 130초
     );
 
     return ResponseEntity.ok(new CdCommentListResponse(mockData, page, size, 12, 3));
@@ -66,9 +65,8 @@ public class MockCdCommentController {
       @Parameter(description = "한 번에 가져올 댓글 개수 (기본값: 5)") @RequestParam(value = "size", required = false, defaultValue = "5") int size
   ) {
     List<CdCommentResponse> mockData = List.of(
-        new CdCommentResponse(1L, myCdId, 2L, "현구", "4:00", "이 곡 진짜 좋네요!", LocalDateTime.now()),
-        new CdCommentResponse(2L, myCdId, 3L, "음악좋아하는사람", "2:45", "현구님 추천 감사합니다!",
-            LocalDateTime.now())
+        new CdCommentResponse(1L, myCdId, 2L, "현구", 240, "이 곡 진짜 좋네요!", LocalDateTime.now()),  // ✅ "4:00" → 240초
+        new CdCommentResponse(2L, myCdId, 3L, "음악좋아하는사람", 165, "현구님 추천 감사합니다!", LocalDateTime.now()) // ✅ "2:45" → 165초
     );
 
     return ResponseEntity.ok(new CdCommentListResponse(mockData, page, size, 2, 1));
@@ -82,12 +80,4 @@ public class MockCdCommentController {
     return ResponseEntity.noContent().build();
   }
 
-  @Operation(summary = "Mock - 다중 CD 댓글 삭제", description = "CD의 여러 댓글을 삭제합니다.")
-  @DeleteMapping("/comments")
-  public ResponseEntity<Void> deleteMultipleComments(
-      @Parameter(description = "삭제할 댓글 ID 목록 (예: 1,2,3)", required = true) @RequestParam List<Long> commentIds
-  ) {
-    return ResponseEntity.noContent().build();
-  }
 }
-
