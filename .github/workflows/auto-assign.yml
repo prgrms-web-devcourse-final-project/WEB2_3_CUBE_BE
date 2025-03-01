@@ -1,5 +1,4 @@
-# 리뷰어 설정
 addReviewers: true
 reviewers:
   - 'jhyngu'
-numberOfReviewers: 1  # 지정할 리뷰어 수 (여기서는 1명으로 변경했습니다. 리뷰어가 한 명뿐이라면)
+numberOfReviewers: 1

@@ -354,7 +354,7 @@ class UserProfileServiceTest {
         when(myCdRepository.findByUserId(targetUserId)).thenReturn(Collections.emptyList());
         when(myBookRepository.findAllByUserId(targetUserId)).thenReturn(Collections.emptyList());
         // 다른 사용자 조회이므로 친구 관계 확인 로직이 호출됨
-        when(housemateRepository.existsByUserIdAndAddedId(eq(targetUserId), eq(currentUserId))).thenReturn(false);
+        when(housemateRepository.existsByUserIdAndAddedId(eq(currentUserId), eq(targetUserId))).thenReturn(false);
 
         // when
         UserProfileResponse response = userProfileService.getUserProfile(targetUserId, currentUserId);
@@ -371,7 +371,7 @@ class UserProfileServiceTest {
         assertThat(response.getBookGenres()).isEmpty();
 
         // 친구 관계 검증 메소드 호출 확인
-        verify(housemateRepository).existsByUserIdAndAddedId(eq(targetUserId), eq(currentUserId));
+        verify(housemateRepository).existsByUserIdAndAddedId(eq(currentUserId), eq(targetUserId));
     }
 
     @Test
