@@ -75,12 +75,10 @@ class CdCommentServiceTest {
 
     when(cdCommentRepository.findByMyCdId(1L)).thenReturn(comments);
 
-    CdCommentListResponse response = cdCommentService.getAllComments(1L);
+    List<CdCommentResponse> response = cdCommentService.getAllComments(1L);
 
-    assertThat(response.getData()).hasSize(1);
-    assertThat(response.getData().get(0).getContent()).isEqualTo("이 곡 최고네요!");
-    assertThat(response.getTotalElements()).isEqualTo(1);
-    assertThat(response.getTotalPages()).isEqualTo(1);
+    assertThat(response).hasSize(1);
+    assertThat(response.get(0).getContent()).isEqualTo("이 곡 최고네요!");
   }
 
   @Test
