@@ -9,6 +9,7 @@ import com.roome.domain.notification.service.NotificationService;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import com.roome.global.notificationEvent.NotificationEvent;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -31,6 +32,7 @@ public class NotificationEventListenerTest {
     private NotificationEventListener notificationEventListener;
 
     @Test
+    @DisplayName("알림 이벤트 처리가 성공적으로 이루어져야 한다")
     void handleNotificationEvent_Success() {
         // Given
         NotificationEvent mockEvent = mock(NotificationEvent.class);
@@ -49,6 +51,7 @@ public class NotificationEventListenerTest {
     }
 
     @Test
+    @DisplayName("유효하지 않은 데이터로 알림 이벤트를 처리할 경우 예외가 발생해야 한다")
     void handleNotificationEvent_WithInvalidData_ThrowsException() {
         // Given
         NotificationEvent mockEvent = mock(NotificationEvent.class);
@@ -62,6 +65,7 @@ public class NotificationEventListenerTest {
     }
 
     @Test
+    @DisplayName("알림 서비스에서 예외가 발생할 경우 비즈니스 예외로 변환되어야 한다")
     void handleNotificationEvent_WithServiceException_ThrowsBusinessException() {
         // Given
         NotificationEvent mockEvent = mock(NotificationEvent.class);
@@ -77,6 +81,7 @@ public class NotificationEventListenerTest {
     }
 
     @Test
+    @DisplayName("CD 댓글 생성 이벤트 처리가 성공적으로 이루어져야 한다")
     void handleCdCommentCreated_Success() {
         // Given
         Object source = new Object();
@@ -93,6 +98,7 @@ public class NotificationEventListenerTest {
     }
 
     @Test
+    @DisplayName("방명록 생성 이벤트 처리가 성공적으로 이루어져야 한다")
     void handleGuestBookCreated_Success() {
         // Given
         Object source = new Object();
@@ -109,6 +115,7 @@ public class NotificationEventListenerTest {
     }
 
     @Test
+    @DisplayName("하우스메이트 생성 이벤트 처리가 성공적으로 이루어져야 한다")
     void handleHouseMateCreated_Success() {
         // Given
         Object source = new Object();
@@ -125,6 +132,7 @@ public class NotificationEventListenerTest {
     }
 
     @Test
+    @DisplayName("CD 댓글 생성 이벤트 처리 중 예외가 발생하면 비즈니스 예외로 변환되어야 한다")
     void handleCdCommentCreated_WithException() {
         // Given
         Object source = new Object();
@@ -138,6 +146,7 @@ public class NotificationEventListenerTest {
     }
 
     @Test
+    @DisplayName("방명록 생성 이벤트 처리 중 예외가 발생하면 비즈니스 예외로 변환되어야 한다")
     void handleGuestBookCreated_WithException() {
         // Given
         Object source = new Object();
@@ -151,6 +160,7 @@ public class NotificationEventListenerTest {
     }
 
     @Test
+    @DisplayName("하우스메이트 생성 이벤트 처리 중 예외가 발생하면 비즈니스 예외로 변환되어야 한다")
     void handleHouseMateCreated_WithException() {
         // Given
         Object source = new Object();
@@ -165,6 +175,7 @@ public class NotificationEventListenerTest {
 
     // 추가 테스트
     @Test
+    @DisplayName("방명록 생성 이벤트의 targetId가 올바르게 전달되는지 검증한다")
     void handleGuestBookCreated_VerifyTargetId() {
         // Given
         Object source = new Object();

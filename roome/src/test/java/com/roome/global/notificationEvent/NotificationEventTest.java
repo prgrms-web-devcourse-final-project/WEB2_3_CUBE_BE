@@ -4,6 +4,7 @@ import com.roome.domain.cdcomment.notificationEvent.CdCommentCreatedEvent;
 import com.roome.domain.guestbook.notificationEvent.GuestBookCreatedEvent;
 import com.roome.domain.houseMate.notificationEvent.HouseMateCreatedEvent;
 import com.roome.domain.notification.dto.NotificationType;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,6 +19,7 @@ public class NotificationEventTest {
 
     // CD 댓글 생성 이벤트 테스트
     @Test
+    @DisplayName("CD 댓글 생성 이벤트가 올바른 정보를 포함하는지 검증한다")
     void testCdCommentCreatedEvent() {
         // Given
         Object source = new Object();
@@ -41,6 +43,7 @@ public class NotificationEventTest {
 
     // 방명록 생성 이벤트 테스트
     @Test
+    @DisplayName("방명록 생성 이벤트가 올바른 정보를 포함하는지 검증한다")
     void testGuestBookCreatedEvent() {
         // Given
         Object source = new Object();
@@ -61,6 +64,7 @@ public class NotificationEventTest {
 
     // 하우스메이트 생성 이벤트 테스트
     @Test
+    @DisplayName("하우스메이트 생성 이벤트가 올바른 정보를 포함하는지 검증한다")
     void testHouseMateCreatedEvent() {
         // Given
         Object source = new Object();
