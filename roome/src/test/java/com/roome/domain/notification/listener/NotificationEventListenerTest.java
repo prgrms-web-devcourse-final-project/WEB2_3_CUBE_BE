@@ -7,7 +7,6 @@ import com.roome.domain.notification.dto.CreateNotificationRequest;
 import com.roome.domain.notification.dto.NotificationType;
 import com.roome.domain.notification.service.NotificationService;
 import com.roome.global.exception.BusinessException;
-import com.roome.global.exception.ErrorCode;
 import com.roome.global.notificationEvent.NotificationEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +15,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -86,7 +87,7 @@ public class NotificationEventListenerTest {
         // Given
         Object source = new Object();
         CdCommentCreatedEvent event = new CdCommentCreatedEvent(
-                source, 1L, 2L, 3L, 4L);
+                source, 1L, 2L, 3L, 4L, LocalDateTime.now());
 
         when(notificationService.createNotification(any())).thenReturn(1L);
 
@@ -103,7 +104,7 @@ public class NotificationEventListenerTest {
         // Given
         Object source = new Object();
         GuestBookCreatedEvent event = new GuestBookCreatedEvent(
-                source, 1L, 2L, 3L);
+                source, 1L, 2L, 3L, LocalDateTime.now());
 
         when(notificationService.createNotification(any())).thenReturn(1L);
 
@@ -120,7 +121,7 @@ public class NotificationEventListenerTest {
         // Given
         Object source = new Object();
         HouseMateCreatedEvent event = new HouseMateCreatedEvent(
-                source, 1L, 2L, 3L);
+                source, 1L, 2L, 3L, LocalDateTime.now());
 
         when(notificationService.createNotification(any())).thenReturn(1L);
 
@@ -137,7 +138,7 @@ public class NotificationEventListenerTest {
         // Given
         Object source = new Object();
         CdCommentCreatedEvent event = new CdCommentCreatedEvent(
-                source, 1L, 2L, 3L, 4L);
+                source, 1L, 2L, 3L, 4L, LocalDateTime.now());
 
         when(notificationService.createNotification(any())).thenThrow(new RuntimeException("Service error"));
 
@@ -151,7 +152,7 @@ public class NotificationEventListenerTest {
         // Given
         Object source = new Object();
         GuestBookCreatedEvent event = new GuestBookCreatedEvent(
-                source, 1L, 2L, 3L);
+                source, 1L, 2L, 3L,LocalDateTime.now());
 
         when(notificationService.createNotification(any())).thenThrow(new RuntimeException("Service error"));
 
@@ -165,7 +166,7 @@ public class NotificationEventListenerTest {
         // Given
         Object source = new Object();
         HouseMateCreatedEvent event = new HouseMateCreatedEvent(
-                source, 1L, 2L, 3L);
+                source, 1L, 2L, 3L, LocalDateTime.now());
 
         when(notificationService.createNotification(any())).thenThrow(new RuntimeException("Service error"));
 
@@ -181,7 +182,7 @@ public class NotificationEventListenerTest {
         Object source = new Object();
         Long guestbookId = 3L;
         GuestBookCreatedEvent event = new GuestBookCreatedEvent(
-                source, 1L, 2L, guestbookId);
+                source, 1L, 2L, guestbookId, LocalDateTime.now());
 
         when(notificationService.createNotification(any())).thenReturn(1L);
 
