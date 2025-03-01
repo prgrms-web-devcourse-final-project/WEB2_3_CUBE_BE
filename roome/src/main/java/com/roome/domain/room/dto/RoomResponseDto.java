@@ -17,6 +17,7 @@ public class RoomResponseDto {
     private Long roomId;
     private Long userId;
     private String theme;
+    private String nickname;
     private LocalDateTime createdAt;
     private List<FurnitureResponseDto> furnitures;
     private StorageLimitsDto storageLimits;
@@ -27,6 +28,7 @@ public class RoomResponseDto {
                 .roomId(room.getId())
                 .userId(room.getUser().getId())
                 .theme(room.getTheme().getThemeName())
+                .nickname(room.getUser().getNickname())
                 .createdAt(room.getCreatedAt())
                 .furnitures(room.getFurnitures() != null
                         ? room.getFurnitures().stream().map(FurnitureResponseDto::from).collect(Collectors.toList())
