@@ -6,7 +6,6 @@ import com.roome.domain.cdcomment.dto.CdCommentListResponse;
 import com.roome.domain.cdcomment.dto.CdCommentResponse;
 import com.roome.domain.cdcomment.service.CdCommentService;
 import com.roome.global.exception.ForbiddenException;
-import com.roome.global.exception.UnauthorizedException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.BDDMockito;
@@ -83,23 +82,20 @@ class CdCommentControllerTest {
   @WithMockUser
   @Test
   void getAllComments_Success() throws Exception {
-    CdCommentListResponse response = new CdCommentListResponse(
-        List.of(
-            createCdCommentResponse(1L, createCdCommentCreateRequest()),
-            createCdCommentResponse(2L, new CdCommentCreateRequest(260, "이 곡도 좋아요!"))
-        ),
-        0, 2, 2, 1 // ✅ 페이지네이션 정보 추가
+    List<CdCommentResponse> response = List.of(
+        createCdCommentResponse(1L, createCdCommentCreateRequest()),
+        createCdCommentResponse(2L, new CdCommentCreateRequest(260, "이 곡도 좋아요!"))
     );
 
     BDDMockito.given(cdCommentService.getAllComments(eq(1L)))
-        .willReturn(response); // ✅ CdCommentListResponse로 변경
+        .willReturn(response);
 
     mockMvc.perform(get("/api/my-cd/1/comments/all")
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data.length()").value(2)) // ✅ $.length() → $.data.length() 수정
-        .andExpect(jsonPath("$.data[0].content").value("이 곡 최고네요!"))
-        .andExpect(jsonPath("$.data[1].content").value("이 곡도 좋아요!"));
+        .andExpect(jsonPath("$.length()").value(2))
+        .andExpect(jsonPath("$[0].content").value("이 곡 최고네요!"))
+        .andExpect(jsonPath("$[1].content").value("이 곡도 좋아요!"));
   }
 
   @DisplayName("CD 댓글 검색 성공")
