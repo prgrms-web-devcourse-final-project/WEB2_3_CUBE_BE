@@ -40,7 +40,7 @@ public class CdCommentController {
       @Parameter(description = "검색할 키워드 (입력하지 않으면 전체 조회)", example = "좋아요")
       @RequestParam(value = "query", required = false) String keyword,
       @Parameter(description = "페이지 번호", example = "0")
-      @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+      @RequestParam(value = "page", required = false) int page,
       @Parameter(description = "페이지 크기", example = "10")
       @RequestParam(value = "size", required = false, defaultValue = "10") int size
   ) {

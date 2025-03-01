@@ -86,7 +86,8 @@ public class CdCommentService {
   }
 
   public CdCommentListResponse getComments(Long myCdId, String keyword, int page, int size) {
-    Pageable pageable = PageRequest.of(page, size);
+    int adjustedPage = page - 1;
+    Pageable pageable = PageRequest.of(adjustedPage, size);
     Page<CdComment> commentPage;
 
     if (keyword == null || keyword.trim().isEmpty()) {
@@ -109,7 +110,7 @@ public class CdCommentService {
             comment.getContent(),
             comment.getCreatedAt()
         )).toList(),
-        page + 1,
+        page,
         size,
         commentPage.getTotalElements(),
         commentPage.getTotalPages()
