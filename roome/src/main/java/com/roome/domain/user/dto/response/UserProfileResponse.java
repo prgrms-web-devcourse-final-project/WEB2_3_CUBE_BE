@@ -17,5 +17,5 @@ public class UserProfileResponse {
     private List<String> bookGenres;
     private List<RecommendedUserDto> recommendedUsers;
     private boolean isMyProfile;
-
+    private boolean isFollowing;
 }

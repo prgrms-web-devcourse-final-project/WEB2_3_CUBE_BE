@@ -6,6 +6,7 @@ import com.roome.domain.book.entity.Genre;
 import com.roome.domain.cd.entity.Cd;
 import com.roome.domain.cd.entity.CdGenre;
 import com.roome.domain.cd.entity.CdGenreType;
+import com.roome.domain.houseMate.repository.HousemateRepository;
 import com.roome.domain.mybook.entity.MyBook;
 import com.roome.domain.mybook.entity.repository.MyBookRepository;
 import com.roome.domain.mycd.entity.MyCd;
@@ -47,6 +48,9 @@ class UserProfileServiceTest {
 
     @Mock
     private MyBookRepository myBookRepository;
+
+    @Mock
+    private HousemateRepository housemateRepository;
 
     @InjectMocks
     private UserProfileService userProfileService;
@@ -349,6 +353,8 @@ class UserProfileServiceTest {
         when(userRepository.findById(targetUserId)).thenReturn(Optional.of(anotherUser));
         when(myCdRepository.findByUserId(targetUserId)).thenReturn(Collections.emptyList());
         when(myBookRepository.findAllByUserId(targetUserId)).thenReturn(Collections.emptyList());
+        // 다른 사용자 조회이므로 친구 관계 확인 로직이 호출됨
+        when(housemateRepository.existsByUserIdAndAddedId(eq(targetUserId), eq(currentUserId))).thenReturn(false);
 
         // when
         UserProfileResponse response = userProfileService.getUserProfile(targetUserId, currentUserId);
@@ -360,8 +366,12 @@ class UserProfileServiceTest {
         assertThat(response.getProfileImage()).isEqualTo("another.jpg");
         assertThat(response.getBio()).isEqualTo("다른 테스트 사용자입니다.");
         assertThat(response.isMyProfile()).isFalse();
+        assertThat(response.isFollowing()).isFalse(); // 필드명 isFollowing 확인
         assertThat(response.getMusicGenres()).isEmpty();
         assertThat(response.getBookGenres()).isEmpty();
+
+        // 친구 관계 검증 메소드 호출 확인
+        verify(housemateRepository).existsByUserIdAndAddedId(eq(targetUserId), eq(currentUserId));
     }
 
     @Test
