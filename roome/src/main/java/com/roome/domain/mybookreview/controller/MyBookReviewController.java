@@ -19,10 +19,10 @@ public class MyBookReviewController {
     private final MyBookReviewService myBookReviewService;
 
     @Operation(summary = "서평 등록", description = "서평을 등록할 수 있다.")
-    @PostMapping("/api/mybooks-review")
+    @PostMapping("/api/mybooks/{myBookId}/review")
     public ResponseEntity<MyBookReviewResponse> create(
             @AuthenticationPrincipal Long loginUserId,
-            @RequestParam("myBookId") Long myBookId,
+            @PathVariable("myBookId") Long myBookId,
             @RequestBody MyBookReviewCreateRequest request
     ) {
         MyBookReviewResponse response = myBookReviewService.create(loginUserId, myBookId, request);
@@ -30,30 +30,30 @@ public class MyBookReviewController {
     }
 
     @Operation(summary = "서평 조회", description = "서평을 조회할 수 있다.")
-    @GetMapping("/api/mybooks-review")
-    public ResponseEntity<MyBookReviewResponse> read(@RequestParam("myBookId") Long myBookId) {
+    @GetMapping("/api/mybooks/{myBookId}/review")
+    public ResponseEntity<MyBookReviewResponse> read(@PathVariable("myBookId") Long myBookId) {
         MyBookReviewResponse response = myBookReviewService.read(myBookId);
         return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "서평 수정", description = "서평을 수정할 수 있다.")
-    @PutMapping("/api/mybooks-review/{myBookReviewId}")
+    @PatchMapping("/api/mybooks/{myBookId}/review")
     public ResponseEntity<MyBookReviewResponse> update(
             @AuthenticationPrincipal Long loginUserId,
-            @PathVariable("myBookReviewId") Long myBookReviewId,
+            @PathVariable("myBookId") Long myBookId,
             @RequestBody MyBookReviewUpdateRequest request
     ) {
-        MyBookReviewResponse response = myBookReviewService.update(loginUserId, myBookReviewId, request);
+        MyBookReviewResponse response = myBookReviewService.update(loginUserId, myBookId, request);
         return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "서평 삭제", description = "서평을 삭제할 수 있다.")
-    @DeleteMapping("/api/mybooks-review/{myBookReviewId}")
+    @DeleteMapping("/api/mybooks/{myBookId}/review")
     public ResponseEntity<Void> delete(
             @AuthenticationPrincipal Long loginUserId,
-            @PathVariable("myBookReviewId") Long myBookReviewId
+            @PathVariable("myBookId") Long myBookId
     ) {
-        myBookReviewService.delete(loginUserId, myBookReviewId);
+        myBookReviewService.delete(loginUserId, myBookId);
         return ResponseEntity.ok().build();
     }
 }

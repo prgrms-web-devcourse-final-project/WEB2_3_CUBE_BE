@@ -31,7 +31,9 @@ public class MyBookReviewService {
         myBook.validateOwner(loginUserId);
 
         myBookReviewRepository.findByMyBookId(myBook.getId())
-                .ifPresent(exist -> { throw new MyBookReviewDuplicateException(); });
+                .ifPresent(exist -> {
+                    throw new MyBookReviewDuplicateException();
+                });
 
         MyBookReview myBookReview = myBookReviewRepository.save(request.toEntity(myBook, user));
         return MyBookReviewResponse.from(myBookReview);
@@ -45,8 +47,9 @@ public class MyBookReviewService {
     }
 
     @Transactional
-    public MyBookReviewResponse update(Long loginUserId, Long myBookReviewId, MyBookReviewUpdateRequest request) {
-        MyBookReview review = myBookReviewRepository.getById(myBookReviewId);
+    public MyBookReviewResponse update(Long loginUserId, Long myBookId, MyBookReviewUpdateRequest request) {
+        MyBookReview review = myBookReviewRepository.findByMyBookId(myBookId)
+                .orElseThrow(MyBookReviewNotFoundException::new);
         review.validateOwner(loginUserId);
 
         review.update(request.toEntity());
@@ -54,8 +57,9 @@ public class MyBookReviewService {
     }
 
     @Transactional
-    public void delete(Long loginUserId, Long myBookReviewId) {
-        MyBookReview review = myBookReviewRepository.getById(myBookReviewId);
+    public void delete(Long loginUserId, Long myBookId) {
+        MyBookReview review = myBookReviewRepository.findByMyBookId(myBookId)
+                .orElseThrow(MyBookReviewNotFoundException::new);
         review.validateOwner(loginUserId);
 
         myBookReviewRepository.delete(review);
