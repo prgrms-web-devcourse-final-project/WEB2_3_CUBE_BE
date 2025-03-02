@@ -106,18 +106,12 @@ public class UserService {
           log.debug("[회원탈퇴] 가구 삭제 완료: {}개", furnitures.size());
         }
 
-        // 방을 다시 조회하여 최신 상태 유지
-        room = roomRepository.findById(room.getId()).orElse(null);
-        if (room == null) {
-          log.warn("[회원탈퇴] 이미 삭제된 방 (roomId={})", room.getId());
-          return;
-        }
-
         // 방 삭제
         roomRepository.delete(room);
         log.debug("[회원탈퇴] 방 삭제 완료: roomId={}", room.getId());
       } catch (Exception e) {
-        log.error("[회원탈퇴] 방 및 가구 삭제 실패: roomId={}, 오류={}", room.getId(), e.getMessage());
+        log.error("[회원탈퇴] 방 및 가구 삭제 실패: userId={}, roomId={}, 오류={}", userId, room.getId(),
+            e.getMessage(), e);
         throw new RuntimeException("방 및 가구 삭제 중 오류 발생: " + e.getMessage(), e);
       }
     }, () -> log.info("[회원탈퇴] 방이 존재하지 않음: userId={}", userId));
