@@ -9,6 +9,7 @@ import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Getter
@@ -60,6 +61,23 @@ public class Furniture {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public static List<Furniture> createDefaultFurnitures(Room room, LocalDateTime now) {
+        Furniture bookshelf = init(room, FurnitureType.BOOKSHELF, now);
+        Furniture cdRack = init(room, FurnitureType.CD_RACK, now);
+        return List.of(bookshelf, cdRack);
+    }
+
+    public static Furniture init(Room room, FurnitureType furnitureType, LocalDateTime now) {
+        Furniture furniture = new Furniture();
+        furniture.room = room;
+        furniture.furnitureType = furnitureType;
+        furniture.isVisible = false;
+        furniture.level = 1;
+        furniture.createdAt = now;
+        furniture.updatedAt= now;
+        return furniture;
     }
 
     public int getMaxCapacity(){

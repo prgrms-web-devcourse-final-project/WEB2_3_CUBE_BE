@@ -47,6 +47,17 @@ public class Point {
     this.updatedAt = LocalDateTime.now();
   }
 
+  public static Point init(User user, LocalDateTime now) {
+    Point point = new Point();
+    point.user = user;
+    point.balance = 0;
+    point.totalEarned = 0;
+    point.totalUsed = 0;
+    point.createdAt = now;
+    point.updatedAt = now;
+    return point;
+  }
+
   // 포인트 적립
   public void addPoints(int amount) {
     this.balance += amount;

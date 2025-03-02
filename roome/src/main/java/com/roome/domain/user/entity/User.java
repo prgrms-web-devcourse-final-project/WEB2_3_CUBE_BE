@@ -15,7 +15,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
@@ -87,6 +86,28 @@ public class User extends BaseTimeEntity {
   @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   private Point point;
 
+  public static User create(
+          String name,
+          String nickname,
+          String email,
+          String profileImage,
+          Provider provider,
+          String providerId,
+          LocalDateTime now
+  ) {
+    User user = new User();
+    user.name = name;
+    user.nickname = nickname;
+    user.email = email;
+    user.status = Status.ONLINE;
+    user.profileImage = profileImage;
+    user.provider = provider;
+    user.providerId = providerId;
+    user.room = Room.init(user, now);
+    user.point = Point.init(user, now);
+    return user;
+  }
+  
   public void updateProfile(String nickname, String bio) {
     boolean updated = false;
     if (nickname != null && !nickname.equals(this.nickname)) {
@@ -143,7 +164,7 @@ public class User extends BaseTimeEntity {
 
   public boolean isAttendanceToday(LocalDateTime now) {
     LocalDateTime midnight = now.with(LocalTime.MIDNIGHT);
-    return midnight.isEqual(lastLogin) || midnight.isAfter(lastLogin);
+    return lastLogin != null && (lastLogin.isEqual(midnight) || lastLogin.isAfter(midnight));
   }
 
   public void accumulatePoints(int point) {
@@ -164,7 +185,7 @@ public class User extends BaseTimeEntity {
     this.lastGuestbookReward = date;
   }
 
-  public void updateLastLogin() {
-    this.lastLogin = LocalDateTime.now();
+  public void updateLastLogin(LocalDateTime now) {
+    this.lastLogin = now;
   }
 }

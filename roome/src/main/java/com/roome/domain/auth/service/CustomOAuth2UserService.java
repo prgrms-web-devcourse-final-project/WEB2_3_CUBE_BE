@@ -3,17 +3,14 @@ package com.roome.domain.auth.service;
 import com.roome.domain.auth.dto.oauth2.OAuth2Provider;
 import com.roome.domain.auth.dto.oauth2.OAuth2Response;
 import com.roome.domain.auth.security.OAuth2UserPrincipal;
-import com.roome.domain.point.entity.Point;
 import com.roome.domain.point.entity.PointHistory;
 import com.roome.domain.point.entity.PointReason;
 import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.room.service.RoomService;
 import com.roome.domain.user.entity.Provider;
-import com.roome.domain.user.entity.Status;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Random;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +31,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
   private final PointHistoryRepository pointHistoryRepository;
   private final RoomService roomService;
 
+  @Transactional
   @Override
   public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
     OAuth2User oAuth2User = super.loadUser(userRequest);
@@ -50,16 +48,18 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
           oAuth2User.getAttributes());
 
       // 기존 사용자 확인 또는 생성
-      User user = updateOrCreateUser(oAuth2Response);
+      LocalDateTime now = LocalDateTime.now();
+      User user = updateOrCreateUser(oAuth2Response, now);
 
-      // 마지막 로그인 시간 갱신
-      user.updateLastLogin();
       if (user.getId() != null) {
         userRepository.save(user);
       }
 
       // 하루 한 번 로그인 시 포인트 획득
-//      accumulateAttendancePoints(user);
+      accumulateAttendancePoints(user, now);
+
+      // 마지막 로그인 시간 갱신
+      user.updateLastLogin(now);
 
       return new OAuth2UserPrincipal(user, oAuth2Response);
     } catch (IllegalArgumentException e) {
@@ -109,19 +109,22 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     }
   }
 
-  private void accumulateAttendancePoints(User user) {
-    LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS);
-    if (!user.isAttendanceToday(now)) {
-      int point = new Random().nextInt(50) + 1;
-      user.accumulatePoints(point);
-
-      pointHistoryRepository.save(
-          PointHistory.builder().user(user).amount(point).reason(PointReason.DAILY_ATTENDANCE)
-              .build());
+  private void accumulateAttendancePoints(User user, LocalDateTime now) {
+    if (user.isAttendanceToday(now)) {
+      return;
     }
+    int point = new Random().nextInt(50) + 1;
+    user.accumulatePoints(point);
+    pointHistoryRepository.save(
+            PointHistory.builder()
+                    .user(user)
+                    .amount(point)
+                    .reason(PointReason.DAILY_ATTENDANCE)
+                    .build()
+    );
   }
 
-  private User updateOrCreateUser(OAuth2Response response) {
+  private User updateOrCreateUser(OAuth2Response response, LocalDateTime now) {
     Provider provider = Provider.valueOf(response.getProvider().name());
     String providerId = response.getProviderId();
 
@@ -129,25 +132,17 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     return userRepository.findByProviderAndProviderId(provider, providerId).orElseGet(() -> {
       // provider가 다르면 같은 이메일이어도 새로운 계정 생성
       log.info("새 사용자 생성: 이메일={}, 제공자={}", response.getEmail(), provider);
-      User newUser = userRepository.save(
-              User.builder()
-                      .name(response.getName())
-                      .nickname(response.getName())
-                      .email(response.getEmail())
-                      .profileImage(response.getProfileImageUrl())
-                      .provider(provider)
-                      .providerId(providerId)
-                      .status(Status.OFFLINE)
-                      .lastLogin(LocalDateTime.now())
-                      .build()
+      return userRepository.save(
+          User.create(
+                  response.getName(),
+                  response.getName(),
+                  response.getEmail(),
+                  response.getProfileImageUrl(),
+                  provider,
+                  providerId,
+                  now
+          )
       );
-
-      // 새로운 유저 생성 시 RoomService를 이용하여 방 생성
-      log.info("방 생성 시도 - userId={}", newUser.getId());
-      roomService.createRoom(newUser.getId());
-      log.info("방 생성 완료 - userId={}", newUser.getId());
-
-      return newUser;
     });
   }
 }
