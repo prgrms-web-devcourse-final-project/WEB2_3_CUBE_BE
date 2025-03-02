@@ -71,10 +71,6 @@ public class User extends BaseTimeEntity {
   @Column(nullable = true)
   private LocalDateTime lastGuestbookReward;
 
-  // TODO: 추후 Redis 사용
-  @Column(length = 1000)
-  private String refreshToken;
-
   @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   @PrimaryKeyJoinColumn
   private Room room;
@@ -147,10 +143,6 @@ public class User extends BaseTimeEntity {
 
   public void updateStatus(Status status) {
     this.status = status;
-  }
-
-  public void updateRefreshToken(String refreshToken) {
-    this.refreshToken = refreshToken;
   }
 
   public void updateProvider(Provider provider) {
