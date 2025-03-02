@@ -7,8 +7,6 @@ import com.roome.domain.notification.dto.NotificationType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class NotificationEventTest {
@@ -29,9 +27,9 @@ public class NotificationEventTest {
         Long receiverId = 2L;
         Long cdId = 3L;
         Long commentId = 4L;
-        LocalDateTime createdAt = LocalDateTime.now();
+
         // When
-        CdCommentCreatedEvent event = new CdCommentCreatedEvent(source, senderId, receiverId, cdId, commentId, createdAt);
+        CdCommentCreatedEvent event = new CdCommentCreatedEvent(source, senderId, receiverId, cdId, commentId);
 
         // Then
         assertThat(event.getSource()).isEqualTo(source);
@@ -54,7 +52,7 @@ public class NotificationEventTest {
         Long targetId = 3L;
 
         // When
-        GuestBookCreatedEvent event = new GuestBookCreatedEvent(source, senderId, receiverId, targetId, LocalDateTime.now());
+        GuestBookCreatedEvent event = new GuestBookCreatedEvent(source, senderId, receiverId, targetId);
 
         // Then
         assertThat(event.getSource()).isEqualTo(source);
@@ -73,16 +71,15 @@ public class NotificationEventTest {
         Long senderId = 1L;
         Long receiverId = 2L;
         Long targetId = 3L;
-        LocalDateTime createdAt = LocalDateTime.now();
+
         // When
-        HouseMateCreatedEvent event = new HouseMateCreatedEvent(source, senderId, receiverId, targetId, createdAt);
+        HouseMateCreatedEvent event = new HouseMateCreatedEvent(source, senderId, receiverId, targetId);
 
         // Then
         assertThat(event.getSource()).isEqualTo(source);
         assertThat(event.getSenderId()).isEqualTo(senderId);
         assertThat(event.getReceiverId()).isEqualTo(receiverId);
         assertThat(event.getTargetId()).isEqualTo(targetId);
-        assertThat(event.getCreatedAt()).isEqualTo(createdAt);
         assertThat(event.getType()).isEqualTo(NotificationType.HOUSE_MATE);
     }
 }
