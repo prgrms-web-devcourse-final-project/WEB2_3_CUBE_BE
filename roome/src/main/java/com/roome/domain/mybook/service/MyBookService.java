@@ -51,7 +51,7 @@ public class MyBookService {
                     return bookRepository.save(bookEntity);
                 });
 
-        myBookRepository.findByBookId(book.getId())
+        myBookRepository.findByRoomIdAndBookId(room.getId(), book.getId())
                 .ifPresent(exist -> { throw new MyBookDuplicateException(); });
 
         MyBook myBook = myBookRepository.save(MyBook.create(loginUser, room, book));

@@ -17,7 +17,7 @@ public interface MyBookRepository extends JpaRepository<MyBook, Long> {
                 .orElseThrow(MyBookNotFoundException::new);
     }
 
-    Optional<MyBook> findByBookId(Long bookId);
+    Optional<MyBook> findByRoomIdAndBookId(Long roomId, Long bookId);
 
     @Query(
             value = """
