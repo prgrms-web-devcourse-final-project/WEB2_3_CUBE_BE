@@ -99,7 +99,8 @@ public class MyCdService {
     long totalCount;
 
     if (isKeywordSearch) {
-      myCdsPage = Optional.ofNullable(myCdRepository.searchByUserIdAndKeyword(userId, keyword, pageable))
+      myCdsPage = Optional.ofNullable(
+              myCdRepository.searchByUserIdAndKeyword(userId, keyword, pageable))
           .orElseGet(() -> Page.empty(pageable));
       totalCount = myCdRepository.countByUserIdAndKeyword(userId, keyword);
     } else {
@@ -107,7 +108,8 @@ public class MyCdService {
         myCdsPage = Optional.ofNullable(myCdRepository.findByUserIdOrderByIdAsc(userId, pageable))
             .orElseGet(() -> Page.empty(pageable));
       } else {
-        myCdsPage = Optional.ofNullable(myCdRepository.findByUserIdAndIdGreaterThanOrderByIdAsc(userId, cursor, pageable))
+        myCdsPage = Optional.ofNullable(
+                myCdRepository.findByUserIdAndIdGreaterThanOrderByIdAsc(userId, cursor, pageable))
             .orElseGet(() -> Page.empty(pageable));
       }
       totalCount = myCdRepository.countByUserId(userId);
@@ -120,11 +122,10 @@ public class MyCdService {
     return MyCdListResponse.fromEntities(myCdsPage.getContent(), totalCount);
   }
 
+  public MyCdResponse getMyCd(Long userId, Long myCdId, Long targetUserId) {
+    Long finalUserId = (targetUserId != null) ? targetUserId : userId; // targetUserId 우선 적용
 
-  public MyCdResponse getMyCd(Long userId, Long myCdId) {
-    validateUser(userId);
-
-    MyCd myCd = myCdRepository.findByIdAndUserId(myCdId, userId)
+    MyCd myCd = myCdRepository.findByIdAndUserId(myCdId, finalUserId)
         .orElseThrow(MyCdNotFoundException::new);
 
     return MyCdResponse.fromEntity(myCd);
