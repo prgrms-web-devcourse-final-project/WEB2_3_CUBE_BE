@@ -37,7 +37,7 @@ public class MyBookReviewController {
     }
 
     @Operation(summary = "서평 수정", description = "서평을 수정할 수 있다.")
-    @PatchMapping("/api/mybooks-review/{myBookReviewId}")
+    @PutMapping("/api/mybooks-review/{myBookReviewId}")
     public ResponseEntity<MyBookReviewResponse> update(
             @AuthenticationPrincipal Long loginUserId,
             @PathVariable("myBookReviewId") Long myBookReviewId,

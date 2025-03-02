@@ -3,6 +3,7 @@ package com.roome.domain.furniture.controller;
 import com.roome.domain.furniture.service.FurnitureService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -16,10 +17,10 @@ public class FurnitureController {
 
     @PostMapping("/api/rooms/{roomId}/furniture/bookshelf")
     public ResponseEntity<Void> upgradeBookshelf(
+            @AuthenticationPrincipal Long loginUserId,
             @PathVariable("roomId") Long roomId,
             @RequestParam("level") int selectedLevel
     ) {
-        Long loginUserId = 1L;
         furnitureService.upgradeBookshelf(loginUserId, roomId, selectedLevel);
         return ResponseEntity.ok().build();
     }
