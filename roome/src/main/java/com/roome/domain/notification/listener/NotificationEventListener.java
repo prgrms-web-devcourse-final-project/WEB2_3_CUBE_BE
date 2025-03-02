@@ -26,7 +26,6 @@ public class NotificationEventListener {
     /// 공통 알림 이벤트 처리 메서드
     /// 이벤트에서 필요한 정보를 추출하여 알림 생성 요청
     @Async
-    @TransactionalEventListener(fallbackExecution = true)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleNotificationEvent(NotificationEvent event) {
         log.info("알림 이벤트 수신: 유형={}, 발신자={}, 수신자={}, 대상ID={}",
