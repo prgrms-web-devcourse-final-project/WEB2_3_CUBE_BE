@@ -14,6 +14,8 @@ import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
 import com.roome.domain.mycd.entity.MyCd;
 import com.roome.domain.mycd.repository.MyCdCountRepository;
 import com.roome.domain.mycd.repository.MyCdRepository;
+import com.roome.domain.point.repository.PointHistoryRepository;
+import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
@@ -43,6 +45,8 @@ public class UserService {
   private final GuestbookRepository guestbookRepository;
   private final MyCdCountRepository myCdCountRepository;
   private final MyBookCountRepository myBookCountRepository;
+  private final PointRepository pointRepository;
+  private final PointHistoryRepository pointHistoryRepository;
 
   @Transactional(isolation = Isolation.REPEATABLE_READ)
   public void deleteUser(Long userId) {
@@ -65,7 +69,10 @@ public class UserService {
       // 5. 사용자 방 및 가구 삭제
       deleteRoomAndFurniture(userId);
 
-      // 6. 사용자 삭제
+      // 6. 포인트 및 포인트 내역 삭제
+      deletePointData(userId);
+
+      // 7. 사용자 삭제
       userRepository.delete(user);
       log.info("[회원탈퇴] 사용자 삭제 완료: {}", userId);
 
@@ -97,6 +104,13 @@ public class UserService {
         if (!furnitures.isEmpty()) {
           furnitureRepository.deleteAll(furnitures);
           log.debug("[회원탈퇴] 가구 삭제 완료: {}개", furnitures.size());
+        }
+
+        // 방을 다시 조회하여 최신 상태 유지
+        room = roomRepository.findById(room.getId()).orElse(null);
+        if (room == null) {
+          log.warn("[회원탈퇴] 이미 삭제된 방 (roomId={})", room.getId());
+          return;
         }
 
         // 방 삭제
@@ -182,6 +196,24 @@ public class UserService {
     } catch (Exception e) {
       log.error("[회원탈퇴] 방명록 데이터 삭제 실패: userId={}, 오류={}", userId, e.getMessage());
       throw new RuntimeException("방명록 데이터 삭제 중 오류 발생: " + e.getMessage(), e);
+    }
+  }
+
+  private void deletePointData(Long userId) {
+    try {
+      // 포인트 히스토리 삭제
+      int deletedCount = pointHistoryRepository.deleteByUserId(userId);
+      log.debug("[회원탈퇴] 포인트 내역 삭제 완료: {}개 삭제됨", deletedCount);
+
+      // 포인트 삭제
+      pointRepository.findByUserId(userId).ifPresent(point -> {
+        pointRepository.delete(point);
+        log.debug("[회원탈퇴] 포인트 삭제 완료: pointId={}", point.getId());
+      });
+
+    } catch (Exception e) {
+      log.error("[회원탈퇴] 포인트 데이터 삭제 실패: userId={}, 오류={}", userId, e.getMessage());
+      throw new RuntimeException("포인트 데이터 삭제 중 오류 발생: " + e.getMessage(), e);
     }
   }
 }
