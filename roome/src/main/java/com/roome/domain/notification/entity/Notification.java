@@ -1,6 +1,7 @@
 package com.roome.domain.notification.entity;
 
 import com.roome.domain.notification.dto.NotificationType;
+
 import com.roome.global.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

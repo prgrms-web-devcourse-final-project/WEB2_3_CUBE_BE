@@ -66,8 +66,7 @@ public class CdCommentService {
             userId,         // 발신자 (댓글 작성자)
             cdOwnerId,      // 수신자 (CD 소유자)
             myCdId,         // CD ID
-            savedComment.getId(), // 코멘트 ID
-            savedComment.getCreatedAt()  // 생성 시각
+            savedComment.getId() // 코멘트 ID
         ));
       } catch (Exception e) {
         log.error("CD 코멘트 알림 이벤트 발행 중 오류 발생: {}", e.getMessage(), e);

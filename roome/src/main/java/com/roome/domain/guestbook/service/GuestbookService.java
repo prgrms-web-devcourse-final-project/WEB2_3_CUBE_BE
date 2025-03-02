@@ -91,8 +91,7 @@ public class GuestbookService {
                         this,
                         userId,          // 발신자 (방명록 작성자)
                         roomOwnerId,     // 수신자 (방 소유자)
-                        guestbook.getGuestbookId(), // 방명록 ID
-                        guestbook.getCreatedAt() // 알림 생성 시간
+                        guestbook.getGuestbookId() // 방명록 ID
                 ));
             } catch (Exception e) {
                 log.error("방명록 알림 이벤트 발행 중 오류 발생: {}", e.getMessage(), e);

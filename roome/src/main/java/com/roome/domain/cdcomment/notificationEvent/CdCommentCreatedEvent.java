@@ -4,15 +4,13 @@ import com.roome.domain.notification.dto.NotificationType;
 import com.roome.global.notificationEvent.NotificationEvent;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
-
 @Getter
 public class CdCommentCreatedEvent extends NotificationEvent {
     private final Long cdId;
     private final Long commentId;
 
-    public CdCommentCreatedEvent(Object source, Long senderId, Long receiverId, Long cdId, Long commentId, LocalDateTime createAt) {
-        super(source, senderId, receiverId, createAt);
+    public CdCommentCreatedEvent(Object source, Long senderId, Long receiverId, Long cdId, Long commentId) {
+        super(source, senderId, receiverId);
         this.cdId = cdId;
         this.commentId = commentId;
     }
