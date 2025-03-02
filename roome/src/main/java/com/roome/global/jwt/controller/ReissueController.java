@@ -104,8 +104,9 @@ public class ReissueController {
       return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
           .body(new MessageResponse("데이터베이스 접근 중 오류가 발생했습니다."));
     } catch (Exception e) {
-      log.error("토큰 재발급 중 예상치 못한 오류 발생: ", e);
-      return ResponseEntity.internalServerError().body(new MessageResponse("토큰 재발급 중 오류가 발생했습니다."));
+      String errorMsg = String.format("토큰 재발급 중 오류 발생: %s", e.getMessage());
+      log.error(errorMsg, e);
+      return ResponseEntity.internalServerError().body(new MessageResponse(errorMsg));
     }
   }
 }
