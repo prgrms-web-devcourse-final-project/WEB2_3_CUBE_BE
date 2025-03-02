@@ -9,6 +9,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -78,11 +79,18 @@ public class User extends BaseTimeEntity {
   @PrimaryKeyJoinColumn
   private Room room;
 
-  @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
   private Point point;
 
-  public static User create(String name, String nickname, String email, String profileImage,
-      Provider provider, String providerId, LocalDateTime now) {
+  public static User create(
+      String name,
+      String nickname,
+      String email,
+      String profileImage,
+      Provider provider,
+      String providerId,
+      LocalDateTime now
+  ) {
     User user = new User();
     user.name = name;
     user.nickname = nickname;
@@ -92,7 +100,10 @@ public class User extends BaseTimeEntity {
     user.provider = provider;
     user.providerId = providerId;
     user.room = Room.init(user, now);
-    user.point = Point.init(user, now);
+
+    Point point = Point.init(user, now);
+    user.point = point;
+
     return user;
   }
 
@@ -156,6 +167,10 @@ public class User extends BaseTimeEntity {
   }
 
   public void accumulatePoints(int point) {
+    if (this.point == null) {
+      // Point 객체가 없으면 새로 생성
+      this.point = Point.init(this, LocalDateTime.now());
+    }
     this.point.addPoints(point);
   }
 
