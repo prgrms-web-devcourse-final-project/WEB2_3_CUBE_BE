@@ -86,7 +86,6 @@ public class MockRoomController {
         List<String> topGenres = switch (furnitureType) {
             case BOOKSHELF -> getMockTop3BookGenres();
             case CD_RACK -> getMockTop3CdGenres();
-            default -> List.of(); // 기타 가구는 장르 없음
         };
 
         // 가구 리스트에서 해당 타입 찾기
