@@ -26,6 +26,12 @@ public interface MyCdRepository extends JpaRepository<MyCd, Long> {
 
   Optional<MyCd> findByUserIdAndCdId(Long userId, Long cdId);
 
+  long countByUserId(Long userId);
+
+  Optional<MyCd> findFirstByUserIdOrderByIdAsc(Long userId);
+
+  Optional<MyCd> findFirstByUserIdOrderByIdDesc(Long userId);
+
   // 키워드 기반 검색 (CD 제목 또는 가수명)
   @Query("SELECT mc FROM MyCd mc JOIN mc.cd c " + "WHERE mc.user.id = :userId "
       + "AND (LOWER(c.title) LIKE LOWER(CONCAT('%', :keyword, '%')) "
