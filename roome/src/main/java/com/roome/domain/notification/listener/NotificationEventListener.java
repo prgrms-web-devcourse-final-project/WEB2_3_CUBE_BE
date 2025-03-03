@@ -4,7 +4,6 @@ import com.roome.domain.cdcomment.notificationEvent.CdCommentCreatedEvent;
 import com.roome.domain.guestbook.notificationEvent.GuestBookCreatedEvent;
 import com.roome.domain.houseMate.notificationEvent.HouseMateCreatedEvent;
 import com.roome.domain.notification.dto.CreateNotificationRequest;
-import com.roome.domain.notification.dto.NotificationWebSocketMessageDto;
 import com.roome.domain.notification.service.NotificationService;
 import com.roome.domain.notification.service.NotificationWebSocketService;
 import com.roome.global.exception.BusinessException;
