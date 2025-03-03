@@ -1,6 +1,10 @@
 package com.roome.global.config;
 
+import com.roome.global.jwt.interceptor.JwtWebSocketInterceptor;
+import com.roome.global.jwt.service.JwtTokenProvider;
+import com.roome.global.service.RedisService;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
@@ -10,18 +14,37 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    private final JwtTokenProvider jwtTokenProvider;
+    private final RedisService redisService;
+
+    public WebSocketConfig(JwtTokenProvider jwtTokenProvider, RedisService redisService) {
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.redisService = redisService;
+    }
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // 메시지 브로커 설정: 클라이언트가 구독할 주제 접두사 설정
-        config.enableSimpleBroker("/notification");
-        // 클라이언트가 서버로 메시지를 보낼 때 사용할 접두사 설정
+        config.enableSimpleBroker("/topic", "/user");
+        config.setUserDestinationPrefix("/user");
         config.setApplicationDestinationPrefixes("/app");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // 웹소켓 연결 엔드포인트 설정
-        // (프론트엔드 서버 포트 5173 허용)
-        registry.addEndpoint("/ws").setAllowedOrigins("http://localhost:5173", "https://desqb38rc2v50.cloudfront.net").withSockJS(); // SockJS 지원 추가 (폴백 메커니즘)
+        // 웹소켓 엔드포인트 등록 및 CORS 설정
+        registry.addEndpoint("/ws")
+                .setAllowedOriginPatterns(
+                        "https://desqb38rc2v50.cloudfront.net",
+                        "http://localhost:5173",
+                        "http://localhost:3000",
+                        "http://localhost:63342"
+                ) // SecurityConfig와 동일한 CORS 설정 사용
+                .withSockJS();
+    }
+
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        // JWT 토큰 검증을 위한 인터셉터 등록
+        registration.interceptors(new JwtWebSocketInterceptor(jwtTokenProvider, redisService));
     }
 }

@@ -6,7 +6,9 @@ import com.roome.domain.houseMate.notificationEvent.HouseMateCreatedEvent;
 import com.roome.domain.notification.dto.CreateNotificationRequest;
 import com.roome.domain.notification.dto.NotificationType;
 import com.roome.domain.notification.service.NotificationService;
+import com.roome.domain.notification.service.NotificationWebSocketService;
 import com.roome.global.exception.BusinessException;
+import com.roome.global.exception.ErrorCode;
 import com.roome.global.notificationEvent.NotificationEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,11 +18,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,6 +29,9 @@ public class NotificationEventListenerTest {
 
     @Mock
     private NotificationService notificationService;
+
+    @Mock
+    private NotificationWebSocketService notificationWebSocketService;
 
     @InjectMocks
     private NotificationEventListener notificationEventListener;
@@ -43,12 +47,15 @@ public class NotificationEventListenerTest {
         when(mockEvent.getTargetId()).thenReturn(3L);
 
         when(notificationService.createNotification(any(CreateNotificationRequest.class))).thenReturn(1L);
+        doNothing().when(notificationWebSocketService).sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
 
         // When
         notificationEventListener.handleNotificationEvent(mockEvent);
 
         // Then
         verify(notificationService, times(1)).createNotification(any(CreateNotificationRequest.class));
+        verify(notificationWebSocketService, times(1)).sendNotificationToUser(
+                eq(2L), eq(1L), eq(NotificationType.MUSIC_COMMENT));
     }
 
     @Test
@@ -63,6 +70,7 @@ public class NotificationEventListenerTest {
         // When & Then
         assertThrows(BusinessException.class, () -> notificationEventListener.handleNotificationEvent(mockEvent));
         verify(notificationService, never()).createNotification(any(CreateNotificationRequest.class));
+        verify(notificationWebSocketService, never()).sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
     }
 
     @Test
@@ -79,6 +87,35 @@ public class NotificationEventListenerTest {
 
         // When & Then
         assertThrows(BusinessException.class, () -> notificationEventListener.handleNotificationEvent(mockEvent));
+        verify(notificationWebSocketService, never()).sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
+    }
+
+    @Test
+    @DisplayName("웹소켓 서비스에서 예외가 발생해도 전체 알림 처리는 성공해야 한다")
+    void handleNotificationEvent_WithWebSocketException_StillSucceeds() {
+        // Given
+        NotificationEvent mockEvent = mock(NotificationEvent.class);
+        when(mockEvent.getType()).thenReturn(NotificationType.MUSIC_COMMENT);
+        when(mockEvent.getSenderId()).thenReturn(1L);
+        when(mockEvent.getReceiverId()).thenReturn(2L);
+        when(mockEvent.getTargetId()).thenReturn(3L);
+
+        when(notificationService.createNotification(any(CreateNotificationRequest.class))).thenReturn(1L);
+
+        // BusinessException은 ErrorCode를 파라미터로 받으므로 이에 맞게 수정
+        doThrow(new BusinessException(ErrorCode.NOTIFICATION_DELIVERY_FAILED))
+                .when(notificationWebSocketService)
+                .sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
+
+        // When - 예외가 발생해도 캐치되어야 함
+        notificationEventListener.handleNotificationEvent(mockEvent);
+
+        // Then - 알림 서비스는 호출되었지만 예외가 전파되지 않음
+        verify(notificationService, times(1)).createNotification(any(CreateNotificationRequest.class));
+
+        // 추가 검증 - 웹소켓 서비스도 호출되었는지 확인
+        verify(notificationWebSocketService, times(1))
+                .sendNotificationToUser(eq(2L), eq(1L), eq(NotificationType.MUSIC_COMMENT));
     }
 
     @Test
@@ -87,15 +124,17 @@ public class NotificationEventListenerTest {
         // Given
         Object source = new Object();
         CdCommentCreatedEvent event = new CdCommentCreatedEvent(
-                source, 1L, 2L, 3L, 4L, LocalDateTime.now());
+                source, 1L, 2L, 3L, 4L);
 
         when(notificationService.createNotification(any())).thenReturn(1L);
+        doNothing().when(notificationWebSocketService).sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
 
         // When
         notificationEventListener.handleCdCommentCreated(event);
 
         // Then
         verify(notificationService, times(1)).createNotification(any());
+        verify(notificationWebSocketService, times(1)).sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
     }
 
     @Test
@@ -104,15 +143,17 @@ public class NotificationEventListenerTest {
         // Given
         Object source = new Object();
         GuestBookCreatedEvent event = new GuestBookCreatedEvent(
-                source, 1L, 2L, 3L, LocalDateTime.now());
+                source, 1L, 2L, 3L);
 
         when(notificationService.createNotification(any())).thenReturn(1L);
+        doNothing().when(notificationWebSocketService).sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
 
         // When
         notificationEventListener.handleGuestBookCreated(event);
 
         // Then
         verify(notificationService, times(1)).createNotification(any());
+        verify(notificationWebSocketService, times(1)).sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
     }
 
     @Test
@@ -121,15 +162,17 @@ public class NotificationEventListenerTest {
         // Given
         Object source = new Object();
         HouseMateCreatedEvent event = new HouseMateCreatedEvent(
-                source, 1L, 2L, 3L, LocalDateTime.now());
+                source, 1L, 2L, 3L);
 
         when(notificationService.createNotification(any())).thenReturn(1L);
+        doNothing().when(notificationWebSocketService).sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
 
         // When
         notificationEventListener.handleHouseMateCreated(event);
 
         // Then
         verify(notificationService, times(1)).createNotification(any());
+        verify(notificationWebSocketService, times(1)).sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
     }
 
     @Test
@@ -138,12 +181,13 @@ public class NotificationEventListenerTest {
         // Given
         Object source = new Object();
         CdCommentCreatedEvent event = new CdCommentCreatedEvent(
-                source, 1L, 2L, 3L, 4L, LocalDateTime.now());
+                source, 1L, 2L, 3L, 4L);
 
         when(notificationService.createNotification(any())).thenThrow(new RuntimeException("Service error"));
 
         // When & Then
         assertThrows(BusinessException.class, () -> notificationEventListener.handleCdCommentCreated(event));
+        verify(notificationWebSocketService, never()).sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
     }
 
     @Test
@@ -152,12 +196,13 @@ public class NotificationEventListenerTest {
         // Given
         Object source = new Object();
         GuestBookCreatedEvent event = new GuestBookCreatedEvent(
-                source, 1L, 2L, 3L,LocalDateTime.now());
+                source, 1L, 2L, 3L);
 
         when(notificationService.createNotification(any())).thenThrow(new RuntimeException("Service error"));
 
         // When & Then
         assertThrows(BusinessException.class, () -> notificationEventListener.handleGuestBookCreated(event));
+        verify(notificationWebSocketService, never()).sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
     }
 
     @Test
@@ -166,12 +211,13 @@ public class NotificationEventListenerTest {
         // Given
         Object source = new Object();
         HouseMateCreatedEvent event = new HouseMateCreatedEvent(
-                source, 1L, 2L, 3L, LocalDateTime.now());
+                source, 1L, 2L, 3L);
 
         when(notificationService.createNotification(any())).thenThrow(new RuntimeException("Service error"));
 
         // When & Then
         assertThrows(BusinessException.class, () -> notificationEventListener.handleHouseMateCreated(event));
+        verify(notificationWebSocketService, never()).sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
     }
 
     // 추가 테스트
@@ -182,9 +228,10 @@ public class NotificationEventListenerTest {
         Object source = new Object();
         Long guestbookId = 3L;
         GuestBookCreatedEvent event = new GuestBookCreatedEvent(
-                source, 1L, 2L, guestbookId, LocalDateTime.now());
+                source, 1L, 2L, guestbookId);
 
         when(notificationService.createNotification(any())).thenReturn(1L);
+        doNothing().when(notificationWebSocketService).sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
 
         // When
         notificationEventListener.handleGuestBookCreated(event);
@@ -196,5 +243,33 @@ public class NotificationEventListenerTest {
         CreateNotificationRequest capturedRequest = captor.getValue();
         assertEquals(guestbookId, capturedRequest.getTargetId());
         assertEquals(NotificationType.GUESTBOOK, capturedRequest.getType());
+
+        // 웹소켓 발송 검증
+        verify(notificationWebSocketService).sendNotificationToUser(
+                eq(2L), eq(1L), eq(NotificationType.GUESTBOOK));
+    }
+
+    @Test
+    @DisplayName("웹소켓 알림이 올바른 파라미터로 발송되는지 검증한다")
+    void verifyWebSocketNotificationParameters() {
+        // Given
+        NotificationEvent mockEvent = mock(NotificationEvent.class);
+        when(mockEvent.getType()).thenReturn(NotificationType.MUSIC_COMMENT);
+        when(mockEvent.getSenderId()).thenReturn(1L);
+        when(mockEvent.getReceiverId()).thenReturn(2L);
+        when(mockEvent.getTargetId()).thenReturn(3L);
+
+        Long generatedNotificationId = 999L;
+        when(notificationService.createNotification(any())).thenReturn(generatedNotificationId);
+
+        // When
+        notificationEventListener.handleNotificationEvent(mockEvent);
+
+        // Then
+        verify(notificationWebSocketService).sendNotificationToUser(
+                eq(2L),                          // receiverId
+                eq(generatedNotificationId),     // notificationId
+                eq(NotificationType.MUSIC_COMMENT)  // type
+        );
     }
 }

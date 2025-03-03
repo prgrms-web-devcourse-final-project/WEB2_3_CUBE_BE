@@ -114,6 +114,8 @@ class NotificationControllerTest {
                 .andExpect(jsonPath("$.notifications").isArray())
                 .andExpect(jsonPath("$.notifications[0].type").value("GUESTBOOK"))
                 .andExpect(jsonPath("$.notifications[0].senderId").value(senderUser.getId()))
+                .andExpect(jsonPath("$.notifications[0].createdAt").exists())  // 생성 시간이 존재하는지 확인
+                .andExpect(jsonPath("$.notifications[0].createdAt").isNotEmpty())  // 생성 시간이 비어있지 않은지 확인
                 .andDo(print());
     }
 
