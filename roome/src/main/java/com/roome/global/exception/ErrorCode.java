@@ -79,6 +79,7 @@ public enum ErrorCode {
   MYCD_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 추가된 CD입니다."),
   MYCD_LIST_EMPTY(HttpStatus.NOT_FOUND, "CD 목록이 비어 있습니다."),
   CD_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 CD를 찾을 수 없습니다."),
+  MYCD_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "해당 MyCd를 삭제할 권한이 없습니다."),
   DUPLICATE_CD(HttpStatus.CONFLICT, "이미 추가된 CD입니다."),
   CD_COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 댓글을 찾을 수 없습니다."),
   CD_COMMENT_LIST_EMPTY(HttpStatus.NOT_FOUND, "댓글 목록이 비어 있습니다."),
