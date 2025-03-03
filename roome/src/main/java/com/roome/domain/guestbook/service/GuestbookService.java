@@ -5,6 +5,8 @@ import com.roome.domain.guestbook.entity.Guestbook;
 import com.roome.domain.guestbook.entity.RelationType;
 import com.roome.domain.guestbook.notificationEvent.GuestBookCreatedEvent;
 import com.roome.domain.guestbook.repository.GuestbookRepository;
+import com.roome.domain.houseMate.repository.HousemateRepository;
+import com.roome.domain.houseMate.service.HousemateService;
 import com.roome.domain.point.service.PointService;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.repository.RoomRepository;
@@ -32,6 +34,7 @@ public class GuestbookService {
     private final GuestbookRepository guestbookRepository;
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
+    private final HousemateRepository housemateRepository;
     private final PointService pointService;
     private final ApplicationEventPublisher eventPublisher; // 이벤트 발행자
 
@@ -43,8 +46,14 @@ public class GuestbookService {
                 room,
                 PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt")));
 
+        Long roomOwnerId = room.getUser().getId();
+
         List<GuestbookResponseDto> guestbooks = guestbookPage.stream()
-                .map(GuestbookResponseDto::from)
+                .map(guestbook -> {
+                    // 매번 하우스메이트 여부를 체크하여 반영
+                    boolean isHousemate = housemateRepository.existsByUserIdAndAddedId(guestbook.getUser().getId(), roomOwnerId);
+                    return GuestbookResponseDto.from(guestbook, isHousemate);
+                })
                 .collect(Collectors.toList());
 
         return GuestbookListResponseDto.builder()
@@ -66,13 +75,17 @@ public class GuestbookService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
+        Long roomOwnerId = room.getUser().getId();
+
+        boolean isHousemate = housemateRepository.existsByUserIdAndAddedId(userId, roomOwnerId);
+
         Guestbook guestbook = Guestbook.builder()
                 .room(room)
                 .user(user)
                 .nickname(user.getNickname())
                 .profileImage(user.getProfileImage())
                 .message(requestDto.getMessage())
-                .relation(RelationType.지나가던_나그네)
+                .relation(isHousemate ? RelationType.하우스메이트 : RelationType.지나가던_나그네) // 하우스메이트 여부 반영
                 .createdAt(LocalDateTime.now())
                 .build();
 
@@ -81,7 +94,6 @@ public class GuestbookService {
         // 방명록 보상 포인트 적립
         pointService.addGuestbookReward(userId);
 
-        Long roomOwnerId = room.getUser().getId();
         if (!userId.equals(roomOwnerId)) {
             log.info("방명록 알림 이벤트 발행: 발신자={}, 수신자={}, 방명록={}",
                     userId, roomOwnerId, guestbook.getGuestbookId());
