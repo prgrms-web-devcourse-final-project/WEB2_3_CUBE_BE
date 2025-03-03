@@ -12,11 +12,12 @@ import com.roome.domain.furniture.repository.FurnitureRepository;
 import com.roome.domain.mybook.entity.MyBookCount;
 import com.roome.domain.mybook.entity.repository.MyBookCountRepository;
 import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
+import com.roome.domain.mycd.entity.MyCdCount;
 import com.roome.domain.mycd.repository.MyCdCountRepository;
+import com.roome.domain.rank.service.UserActivityService;
 import com.roome.domain.room.dto.RoomResponseDto;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.entity.RoomTheme;
-import com.roome.domain.mycd.entity.MyCdCount;
 import com.roome.domain.room.entity.RoomThemeUnlock;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.room.repository.RoomThemeUnlockRepository;
@@ -46,6 +47,7 @@ public class RoomService {
     private final MyBookCountRepository myBookCountRepository;
     private final MyBookReviewRepository myBookReviewRepository;
     private final CdCommentRepository cdCommentRepository;
+    private final UserActivityService userActivityService;
     private final GenreRepository genreRepository;
     private final CdGenreTypeRepository cdGenreTypeRepository;
     private final RoomThemeUnlockRepository roomThemeUnlockRepository;
@@ -311,4 +313,42 @@ public class RoomService {
         }
     }
 
+  // 다른 유저의 방 방문 - 랭킹 점수 부여
+  @Transactional
+  public RoomResponseDto visitRoom(Long visitorId, Long roomId) {
+    Room room = roomRepository.findById(roomId)
+        .orElseThrow(() -> {
+          log.error("방 방문 실패: 존재하지 않는 방 (roomId={})", roomId);
+          return new BusinessException(ErrorCode.ROOM_NOT_FOUND);
+        });
+
+    Long hostId = room.getUser().getId();
+
+    // 방문 활동 기록
+    userActivityService.recordVisit(visitorId, hostId);
+
+    log.info("방 방문 처리 완료: 방문자(userId={})가 방(roomId={}, 소유자={})을 방문함",
+        visitorId, roomId, hostId);
+
+    // 방 정보 반환
+    return buildRoomResponse(room);
+  }
+
+  // 다른 유저 방 조회 - 랭킹 점수 부여
+  @Transactional
+  public RoomResponseDto getOtherUserRoom(Long visitorId, Long hostId) {
+    Room room = roomRepository.findByUserId(hostId)
+        .orElseThrow(() -> {
+          log.error("방 조회 실패: 해당 사용자의 방이 존재하지 않음 (userId={})", hostId);
+          return new BusinessException(ErrorCode.ROOM_NOT_FOUND);
+        });
+
+    // 방문 활동 기록
+    userActivityService.recordVisit(visitorId, hostId);
+
+    log.info("다른 사용자 방 조회 완료: 방문자(userId={})가 소유자(userId={})의 방(roomId={})을 방문함",
+        visitorId, hostId, room.getId());
+
+    return buildRoomResponse(room);
+  }
 }
