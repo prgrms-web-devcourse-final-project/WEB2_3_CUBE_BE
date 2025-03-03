@@ -17,7 +17,9 @@ import com.roome.domain.room.dto.RoomResponseDto;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.entity.RoomTheme;
 import com.roome.domain.mycd.entity.MyCdCount;
+import com.roome.domain.room.entity.RoomThemeUnlock;
 import com.roome.domain.room.repository.RoomRepository;
+import com.roome.domain.room.repository.RoomThemeUnlockRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
@@ -46,6 +48,7 @@ public class RoomService {
     private final CdCommentRepository cdCommentRepository;
     private final GenreRepository genreRepository;
     private final CdGenreTypeRepository cdGenreTypeRepository;
+    private final RoomThemeUnlockRepository roomThemeUnlockRepository;
 
     @Transactional
     public RoomResponseDto createRoom(Long userId){
@@ -192,6 +195,19 @@ public class RoomService {
         }
 
         RoomTheme theme = RoomTheme.fromString(newTheme);
+
+        // 기본 테마(basic)는 무료
+        if (!theme.equals(RoomTheme.BASIC)) {
+            boolean isUnlocked = roomThemeUnlockRepository.existsByUserAndTheme(room.getUser(), theme);
+
+            if (!isUnlocked) {
+                room.getUser().getPoint().subtractPoints(400);
+                roomThemeUnlockRepository.save(RoomThemeUnlock.create(room.getUser(), theme));
+
+                log.info("테마 잠금 해제 완료: 사용자(userId={}), 테마({})", userId, newTheme);
+            }
+        }
+
         room.updateTheme(theme);
         log.info("방 테마 변경 완료: 방(roomId={}) → 새 테마({})", roomId, newTheme);
 
