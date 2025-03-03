@@ -1,5 +1,9 @@
 package com.roome.domain.room.service;
 
+import com.roome.domain.book.entity.repository.BookRepository;
+import com.roome.domain.book.entity.repository.GenreRepository;
+import com.roome.domain.cd.repository.CdGenreTypeRepository;
+import com.roome.domain.cd.repository.CdRepository;
 import com.roome.domain.cdcomment.repository.CdCommentRepository;
 import com.roome.domain.furniture.dto.FurnitureResponseDto;
 import com.roome.domain.furniture.entity.Furniture;
@@ -25,6 +29,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -38,6 +44,8 @@ public class RoomService {
     private final MyBookCountRepository myBookCountRepository;
     private final MyBookReviewRepository myBookReviewRepository;
     private final CdCommentRepository cdCommentRepository;
+    private final GenreRepository genreRepository;
+    private final CdGenreTypeRepository cdGenreTypeRepository;
 
     @Transactional
     public RoomResponseDto createRoom(Long userId){
@@ -102,8 +110,11 @@ public class RoomService {
         Long writtenReviews = fetchWrittenReviewsCount(room.getUser().getId());
         Long writtenMusicLogs = fetchWrittenMusicLogsCount(room.getUser().getId());
 
+        List<String> topBookGenres = getTop3BookGenres(roomId);
+        List<String> topCdGenres = getTop3CdGenres(roomId);
+
         log.info("방 조회 성공: 방(roomId={}) 조회 완료", roomId);
-        return RoomResponseDto.from(room, savedMusic, savedBooks, writtenReviews, writtenMusicLogs);
+        return RoomResponseDto.from(room, savedMusic, savedBooks, writtenReviews, writtenMusicLogs, topBookGenres, topCdGenres);
     }
 
     @Transactional(readOnly = true)
@@ -114,9 +125,42 @@ public class RoomService {
                     return new BusinessException(ErrorCode.ROOM_NOT_FOUND);
                 });
 
+        Long savedMusic = fetchSavedMusicCount(room);
+        Long savedBooks = fetchSavedBooksCount(room.getId());
+        Long writtenReviews = fetchWrittenReviewsCount(userId);
+        Long writtenMusicLogs = fetchWrittenMusicLogsCount(userId);
+
+        List<String> topBookGenres = getTop3BookGenres(room.getId());
+        List<String> topCdGenres = getTop3CdGenres(room.getId());
+
         log.info("방 조회 성공: 사용자의 방(roomId={})을 조회 완료 (userId={})", room.getId(), userId);
-        return buildRoomResponse(room);
+
+        return RoomResponseDto.from(room, savedMusic, savedBooks, writtenReviews, writtenMusicLogs, topBookGenres, topCdGenres);
     }
+
+    private List<String> getTop3BookGenres(Long roomId) {
+        List<String> genres = genreRepository.findGenresByRoomId(roomId);
+        return genres.stream()
+                .collect(Collectors.groupingBy(genre -> genre, Collectors.counting())) // 장르별 개수 집계
+                .entrySet().stream()
+                .sorted((a, b) -> Long.compare(b.getValue(), a.getValue())) // 개수 내림차순 정렬
+                .limit(3) // 상위 3개 선택
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
+    private List<String> getTop3CdGenres(Long roomId) {
+        List<String> genres = cdGenreTypeRepository.findGenresByRoomId(roomId);
+        return genres.stream()
+                .collect(Collectors.groupingBy(genre -> genre, Collectors.counting())) // 장르별 개수 집계
+                .entrySet().stream()
+                .sorted((a, b) -> Long.compare(b.getValue(), a.getValue())) // 개수 내림차순 정렬
+                .limit(3) // 상위 3개 선택
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
+
 
     // 에러 처리 중
     @Transactional

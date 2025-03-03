@@ -22,6 +22,8 @@ public class RoomResponseDto {
     private List<FurnitureResponseDto> furnitures;
     private StorageLimitsDto storageLimits;
     private UserStorageDto userStorage;
+    private List<String> topBookGenres;
+    private List<String> topCdGenres;
 
     public static RoomResponseDto from(Room room, Long savedMusic, Long savedBooks, Long writtenReviews, Long writtenMusicLogs) {
         return RoomResponseDto.builder()
@@ -35,6 +37,23 @@ public class RoomResponseDto {
                         : Collections.emptyList())
                 .storageLimits(StorageLimitsDto.from(room))
                 .userStorage(UserStorageDto.from(savedMusic, savedBooks, writtenReviews, writtenMusicLogs))
+                .build();
+    }
+
+    public static RoomResponseDto from(Room room, Long savedMusic, Long savedBooks,
+                                       Long writtenReviews, Long writtenMusicLogs,
+                                       List<String> topBookGenres, List<String> topCdGenres) {
+        return RoomResponseDto.builder()
+                .roomId(room.getId())
+                .userId(room.getUser().getId())
+                .theme(room.getTheme().name())
+                .furnitures(room.getFurnitures() != null
+                        ? room.getFurnitures().stream().map(FurnitureResponseDto::from).collect(Collectors.toList())
+                        : Collections.emptyList())
+                .storageLimits(StorageLimitsDto.from(room))
+                .userStorage(UserStorageDto.from(savedMusic, savedBooks, writtenReviews, writtenMusicLogs))
+                .topBookGenres(topBookGenres)
+                .topCdGenres(topCdGenres)
                 .build();
     }
 }
