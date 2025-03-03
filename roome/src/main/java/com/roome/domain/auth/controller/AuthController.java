@@ -122,6 +122,7 @@ public class AuthController {
       @ApiResponse(responseCode = "401", description = "인증 실패 또는 유효하지 않은 토큰"),
       @ApiResponse(responseCode = "500", description = "서버 내부 오류")})
   @DeleteMapping("/withdraw")
+  @Transactional // 트랜잭션 경계 명확화
   public ResponseEntity<MessageResponse> withdraw(
       @RequestHeader("Authorization") String authHeader) {
 
@@ -148,7 +149,7 @@ public class AuthController {
       if (!jwtTokenProvider.validateAccessToken(accessToken)) {
         log.warn("[회원탈퇴] 유효하지 않은 액세스 토큰: {}", maskToken(accessToken));
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            .body(new MessageResponse("유효하지 않은 액세스 토큰입니다."));
+            .body(new MessageResponse("유효한 액세스 토큰이 필요합니다."));
       }
 
       // 유저 ID 추출

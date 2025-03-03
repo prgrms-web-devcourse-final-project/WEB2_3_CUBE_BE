@@ -1,0 +1,512 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="ko">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--    <title>웹소켓 알림 테스트</title>-->
+<!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>-->
+<!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>-->
+<!--    <style>-->
+<!--        body {-->
+<!--            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;-->
+<!--            max-width: 800px;-->
+<!--            margin: 0 auto;-->
+<!--            padding: 20px;-->
+<!--            background-color: #f5f5f7;-->
+<!--            color: #333;-->
+<!--        }-->
+<!--        .card {-->
+<!--            background-color: white;-->
+<!--            border-radius: 12px;-->
+<!--            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);-->
+<!--            padding: 20px;-->
+<!--            margin-bottom: 20px;-->
+<!--        }-->
+<!--        h1, h2 {-->
+<!--            margin-top: 0;-->
+<!--            color: #333;-->
+<!--        }-->
+<!--        .form-group {-->
+<!--            margin-bottom: 16px;-->
+<!--        }-->
+<!--        label {-->
+<!--            display: block;-->
+<!--            margin-bottom: 6px;-->
+<!--            font-weight: 600;-->
+<!--            font-size: 14px;-->
+<!--        }-->
+<!--        input, select {-->
+<!--            width: 100%;-->
+<!--            padding: 10px 12px;-->
+<!--            border: 1px solid #ddd;-->
+<!--            border-radius: 6px;-->
+<!--            font-size: 14px;-->
+<!--            box-sizing: border-box;-->
+<!--        }-->
+<!--        button {-->
+<!--            background-color: #4A7CFA;-->
+<!--            color: white;-->
+<!--            border: none;-->
+<!--            border-radius: 6px;-->
+<!--            padding: 10px 16px;-->
+<!--            font-size: 14px;-->
+<!--            font-weight: 500;-->
+<!--            cursor: pointer;-->
+<!--            transition: background-color 0.2s;-->
+<!--        }-->
+<!--        button:hover {-->
+<!--            background-color: #3a6ae0;-->
+<!--        }-->
+<!--        button:disabled {-->
+<!--            background-color: #b0bec5;-->
+<!--            cursor: not-allowed;-->
+<!--        }-->
+<!--        .button-group {-->
+<!--            display: flex;-->
+<!--            gap: 10px;-->
+<!--        }-->
+<!--        .connected {-->
+<!--            color: #4CAF50;-->
+<!--            font-weight: bold;-->
+<!--        }-->
+<!--        .disconnected {-->
+<!--            color: #F44336;-->
+<!--            font-weight: bold;-->
+<!--        }-->
+<!--        .notification-area {-->
+<!--            margin-top: 20px;-->
+<!--            max-height: 400px;-->
+<!--            overflow-y: auto;-->
+<!--            border-radius: 6px;-->
+<!--            background-color: #f9f9f9;-->
+<!--        }-->
+<!--        .notification {-->
+<!--            padding: 12px 16px;-->
+<!--            margin-bottom: 8px;-->
+<!--            border-radius: 6px;-->
+<!--            background-color: white;-->
+<!--            border-left: 4px solid #4A7CFA;-->
+<!--            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);-->
+<!--        }-->
+<!--        .notification-header {-->
+<!--            display: flex;-->
+<!--            justify-content: space-between;-->
+<!--            margin-bottom: 6px;-->
+<!--        }-->
+<!--        .notification-type {-->
+<!--            font-weight: 600;-->
+<!--        }-->
+<!--        .notification-time {-->
+<!--            font-size: 12px;-->
+<!--            color: #777;-->
+<!--        }-->
+<!--        .notification-content {-->
+<!--            font-size: 14px;-->
+<!--            line-height: 1.5;-->
+<!--        }-->
+<!--        .copy-btn {-->
+<!--            background-color: #e0e0e0;-->
+<!--            color: #333;-->
+<!--            border: none;-->
+<!--            border-radius: 4px;-->
+<!--            padding: 4px 8px;-->
+<!--            font-size: 12px;-->
+<!--            cursor: pointer;-->
+<!--        }-->
+<!--        .copy-btn:hover {-->
+<!--            background-color: #d0d0d0;-->
+<!--        }-->
+<!--        .error {-->
+<!--            color: #F44336;-->
+<!--            font-size: 14px;-->
+<!--            margin-top: 4px;-->
+<!--        }-->
+<!--        .empty-message {-->
+<!--            text-align: center;-->
+<!--            padding: 20px;-->
+<!--            color: #777;-->
+<!--            font-style: italic;-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+<!--    <div class="card">-->
+<!--        <h1>웹소켓 알림 테스트</h1>-->
+<!--        <p>이 페이지는 웹소켓을 통한 알림 기능을 테스트하기 위한 도구입니다.</p>-->
+<!--    </div>-->
+<!--    -->
+<!--    <div class="card">-->
+<!--        <h2>웹소켓 연결</h2>-->
+<!--        <div class="form-group">-->
+<!--            <label for="serverUrl">서버 URL</label>-->
+<!--            <input type="text" id="serverUrl" value="http://localhost:8080" />-->
+<!--        </div>-->
+<!--        -->
+<!--        <div class="form-group">-->
+<!--            <label for="token">JWT 액세스 토큰</label>-->
+<!--            <input type="text" id="token" placeholder="Bearer 토큰을 입력하세요" />-->
+<!--        </div>-->
+<!--        -->
+<!--        <div class="form-group">-->
+<!--            <label for="userId">사용자 ID (구독용)</label>-->
+<!--            <input type="number" id="userId" placeholder="알림을 수신할 사용자 ID" />-->
+<!--        </div>-->
+<!--        -->
+<!--        <div class="connection-status">-->
+<!--            상태: <span id="status" class="disconnected">연결되지 않음</span>-->
+<!--        </div>-->
+<!--        -->
+<!--        <div class="button-group" style="margin-top: 16px;">-->
+<!--            <button id="connectBtn">연결</button>-->
+<!--            <button id="disconnectBtn" disabled>연결 해제</button>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--    -->
+<!--    <div class="card">-->
+<!--        <h2>알림 테스트</h2>-->
+<!--        <div class="form-group">-->
+<!--            <label for="receiverId">수신자 ID</label>-->
+<!--            <input type="number" id="receiverId" placeholder="알림을 받을 사용자 ID" />-->
+<!--        </div>-->
+<!--        -->
+<!--        <div class="form-group">-->
+<!--            <label for="notificationId">알림 ID</label>-->
+<!--            <input type="number" id="notificationId" placeholder="테스트용 알림 ID" value="99999" />-->
+<!--        </div>-->
+<!--        -->
+<!--        <div class="form-group">-->
+<!--            <label for="notificationType">알림 유형</label>-->
+<!--            <select id="notificationType">-->
+<!--                <option value="COMMENT">COMMENT - 댓글</option>-->
+<!--                <option value="LIKE">LIKE - 좋아요</option>-->
+<!--                <option value="FOLLOW">FOLLOW - 팔로우</option>-->
+<!--                <option value="GUESTBOOK">GUESTBOOK - 방명록</option>-->
+<!--                <option value="HOUSEMATE">HOUSEMATE - 하우스메이트</option>-->
+<!--            </select>-->
+<!--        </div>-->
+<!--        -->
+<!--        <button id="sendNotificationBtn" disabled>알림 테스트 전송</button>-->
+<!--        <div id="sendError" class="error" style="display: none;"></div>-->
+<!--    </div>-->
+<!--    -->
+<!--    <div class="card">-->
+<!--        <h2>수신된 알림</h2>-->
+<!--        <div id="notificationArea" class="notification-area">-->
+<!--            <div class="empty-message">알림이 없습니다. 연결 후 알림을 기다려주세요.</div>-->
+<!--        </div>-->
+<!--        <div class="button-group" style="margin-top: 16px;">-->
+<!--            <button id="clearBtn">알림 지우기</button>-->
+<!--            <button id="copyAllBtn">모든 알림 복사</button>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--    -->
+<!--    <script>-->
+<!--        let stompClient = null;-->
+<!--        let notifications = [];-->
+<!--        -->
+<!--        // DOM 요소-->
+<!--        const serverUrlInput = document.getElementById('serverUrl');-->
+<!--        const tokenInput = document.getElementById('token');-->
+<!--        const userIdInput = document.getElementById('userId');-->
+<!--        const receiverIdInput = document.getElementById('receiverId');-->
+<!--        const notificationIdInput = document.getElementById('notificationId');-->
+<!--        const notificationTypeSelect = document.getElementById('notificationType');-->
+<!--        const statusSpan = document.getElementById('status');-->
+<!--        const connectBtn = document.getElementById('connectBtn');-->
+<!--        const disconnectBtn = document.getElementById('disconnectBtn');-->
+<!--        const sendNotificationBtn = document.getElementById('sendNotificationBtn');-->
+<!--        const clearBtn = document.getElementById('clearBtn');-->
+<!--        const copyAllBtn = document.getElementById('copyAllBtn');-->
+<!--        const notificationArea = document.getElementById('notificationArea');-->
+<!--        const sendErrorDiv = document.getElementById('sendError');-->
+<!--        -->
+<!--        // 버튼 이벤트 연결-->
+<!--        connectBtn.addEventListener('click', connect);-->
+<!--        disconnectBtn.addEventListener('click', disconnect);-->
+<!--        sendNotificationBtn.addEventListener('click', sendNotification);-->
+<!--        clearBtn.addEventListener('click', clearNotifications);-->
+<!--        copyAllBtn.addEventListener('click', copyAllNotifications);-->
+<!--        -->
+<!--        // 사용자 ID 입력 시 자동으로 수신자 ID도 같은 값으로 설정-->
+<!--        userIdInput.addEventListener('input', function() {-->
+<!--            receiverIdInput.value = this.value;-->
+<!--        });-->
+<!--        -->
+<!--        // 웹소켓 연결 함수-->
+<!--        function connect() {-->
+<!--            const serverUrl = serverUrlInput.value.trim();-->
+<!--            const token = tokenInput.value.trim();-->
+<!--            const userId = userIdInput.value.trim();-->
+<!--            -->
+<!--            if (!serverUrl) {-->
+<!--                alert('서버 URL을 입력해주세요.');-->
+<!--                return;-->
+<!--            }-->
+<!--            -->
+<!--            if (!token) {-->
+<!--                alert('JWT 토큰을 입력해주세요.');-->
+<!--                return;-->
+<!--            }-->
+<!--            -->
+<!--            if (!userId) {-->
+<!--                alert('사용자 ID를 입력해주세요.');-->
+<!--                return;-->
+<!--            }-->
+<!--            -->
+<!--            try {-->
+<!--                // 웹소켓 연결-->
+<!--                const socket = new SockJS(`${serverUrl}/ws`);-->
+<!--                stompClient = Stomp.over(socket);-->
+<!--                -->
+<!--                // STOMP 헤더에 토큰 추가-->
+<!--                const headers = {-->
+<!--                    'Authorization': token.startsWith('Bearer ') ? token : `Bearer ${token}`-->
+<!--                };-->
+<!--                -->
+<!--                // 디버그 로그 비활성화-->
+<!--                stompClient.debug = null;-->
+<!--                -->
+<!--                // 연결 시도-->
+<!--                statusSpan.textContent = '연결 중...';-->
+<!--                -->
+<!--                stompClient.connect(headers, -->
+<!--                    // 연결 성공 콜백-->
+<!--                    function(frame) {-->
+<!--                        console.log('Connected: ' + frame);-->
+<!--                        statusSpan.textContent = '연결됨';-->
+<!--                        statusSpan.className = 'connected';-->
+<!--                        -->
+<!--                        // 버튼 상태 변경-->
+<!--                        connectBtn.disabled = true;-->
+<!--                        disconnectBtn.disabled = false;-->
+<!--                        sendNotificationBtn.disabled = false;-->
+<!--                        -->
+<!--                        // 사용자별 알림 주제 구독-->
+<!--                        const topic = `/topic/notification/${userId}`;-->
+<!--                        console.log(`Subscribing to ${topic}`);-->
+<!--                        -->
+<!--                        stompClient.subscribe(topic, function(message) {-->
+<!--                            // 메시지 수신 처리-->
+<!--                            console.log('Received notification:', message);-->
+<!--                            const notification = JSON.parse(message.body);-->
+<!--                            addNotification(notification);-->
+<!--                        });-->
+<!--                        -->
+<!--                        addSystemNotification(`웹소켓 연결 성공! 토픽 구독: ${topic}`);-->
+<!--                    },-->
+<!--                    // 연결 실패 콜백-->
+<!--                    function(error) {-->
+<!--                        console.error('Connection error:', error);-->
+<!--                        statusSpan.textContent = '연결 실패';-->
+<!--                        statusSpan.className = 'disconnected';-->
+<!--                        -->
+<!--                        // 오류 메시지 표시-->
+<!--                        let errorMessage = '웹소켓 연결 실패: ';-->
+<!--                        if (error.headers && error.headers.message) {-->
+<!--                            errorMessage += error.headers.message;-->
+<!--                        } else {-->
+<!--                            errorMessage += error.toString();-->
+<!--                        }-->
+<!--                        -->
+<!--                        addSystemNotification(errorMessage, true);-->
+<!--                        -->
+<!--                        // 클라이언트 초기화-->
+<!--                        stompClient = null;-->
+<!--                    }-->
+<!--                );-->
+<!--            } catch (e) {-->
+<!--                console.error('웹소켓 초기화 오류:', e);-->
+<!--                statusSpan.textContent = '초기화 실패';-->
+<!--                statusSpan.className = 'disconnected';-->
+<!--                addSystemNotification('웹소켓 초기화 오류: ' + e.message, true);-->
+<!--            }-->
+<!--        }-->
+<!--        -->
+<!--        // 웹소켓 연결 해제-->
+<!--        function disconnect() {-->
+<!--            if (stompClient) {-->
+<!--                stompClient.disconnect(function() {-->
+<!--                    console.log('Disconnected');-->
+<!--                    statusSpan.textContent = '연결 해제됨';-->
+<!--                    statusSpan.className = 'disconnected';-->
+<!--                    -->
+<!--                    // 버튼 상태 변경-->
+<!--                    connectBtn.disabled = false;-->
+<!--                    disconnectBtn.disabled = true;-->
+<!--                    sendNotificationBtn.disabled = true;-->
+<!--                    -->
+<!--                    addSystemNotification('웹소켓 연결이 해제되었습니다.');-->
+<!--                });-->
+<!--                stompClient = null;-->
+<!--            }-->
+<!--        }-->
+<!--        -->
+<!--        // 테스트 알림 전송-->
+<!--        function sendNotification() {-->
+<!--            const serverUrl = serverUrlInput.value.trim();-->
+<!--            const token = tokenInput.value.trim();-->
+<!--            const receiverId = receiverIdInput.value.trim();-->
+<!--            const notificationId = notificationIdInput.value.trim();-->
+<!--            const notificationType = notificationTypeSelect.value;-->
+<!--            -->
+<!--            if (!receiverId) {-->
+<!--                alert('수신자 ID를 입력해주세요.');-->
+<!--                return;-->
+<!--            }-->
+<!--            -->
+<!--            // 요청 데이터 생성-->
+<!--            const requestData = {-->
+<!--                receiverId: parseInt(receiverId),-->
+<!--                notificationId: parseInt(notificationId),-->
+<!--                type: notificationType-->
+<!--            };-->
+<!--            -->
+<!--            // 오류 메시지 초기화-->
+<!--            sendErrorDiv.style.display = 'none';-->
+<!--            -->
+<!--            // REST API 요청-->
+<!--            fetch(`${serverUrl}/api/notification/websocket/test/send`, {-->
+<!--                method: 'POST',-->
+<!--                headers: {-->
+<!--                    'Content-Type': 'application/json',-->
+<!--                    'Authorization': token.startsWith('Bearer ') ? token : `Bearer ${token}`-->
+<!--                },-->
+<!--                body: JSON.stringify(requestData)-->
+<!--            })-->
+<!--            .then(response => {-->
+<!--                if (!response.ok) {-->
+<!--                    return response.text().then(text => {-->
+<!--                        throw new Error(`상태 코드: ${response.status}, 응답: ${text}`);-->
+<!--                    });-->
+<!--                }-->
+<!--                return response.text();-->
+<!--            })-->
+<!--            .then(data => {-->
+<!--                console.log('API 응답:', data);-->
+<!--                addSystemNotification(`알림 전송 요청 성공: ${notificationType} 타입의 알림이 사용자 ${receiverId}에게 전송되었습니다.`);-->
+<!--                -->
+<!--                // 알림 ID 자동 증가-->
+<!--                notificationIdInput.value = parseInt(notificationId) + 1;-->
+<!--            })-->
+<!--            .catch(error => {-->
+<!--                console.error('알림 전송 오류:', error);-->
+<!--                sendErrorDiv.textContent = `오류: ${error.message}`;-->
+<!--                sendErrorDiv.style.display = 'block';-->
+<!--                addSystemNotification(`알림 전송 실패: ${error.message}`, true);-->
+<!--            });-->
+<!--        }-->
+<!--        -->
+<!--        // 알림 영역에 알림 추가-->
+<!--        function addNotification(notification) {-->
+<!--            // 빈 메시지 제거-->
+<!--            clearEmptyMessage();-->
+<!--            -->
+<!--            // 알림 객체 저장-->
+<!--            notifications.push(notification);-->
+<!--            -->
+<!--            // 알림 요소 생성-->
+<!--            const notificationElement = document.createElement('div');-->
+<!--            notificationElement.className = 'notification';-->
+<!--            -->
+<!--            // 현재 시간 포맷-->
+<!--            const now = new Date();-->
+<!--            const localTime = notification.timestamp -->
+<!--                ? new Date(notification.timestamp).toLocaleString() -->
+<!--                : now.toLocaleString();-->
+<!--            -->
+<!--            // 알림 타입에 따른 이모지 설정-->
+<!--            let emoji = '📢';-->
+<!--            switch(notification.type) {-->
+<!--                case 'COMMENT': emoji = '💬'; break;-->
+<!--                case 'LIKE': emoji = '❤️'; break;-->
+<!--                case 'FOLLOW': emoji = '👥'; break;-->
+<!--                case 'GUESTBOOK': emoji = '📝'; break;-->
+<!--                case 'HOUSEMATE': emoji = '🏠'; break;-->
+<!--            }-->
+<!--            -->
+<!--            // 알림 내용 생성-->
+<!--            notificationElement.innerHTML = `-->
+<!--                <div class="notification-header">-->
+<!--                    <span class="notification-type">${emoji} ${notification.type || '시스템'}</span>-->
+<!--                    <span class="notification-time">${localTime}</span>-->
+<!--                </div>-->
+<!--                <div class="notification-content">-->
+<!--                    <p>알림 ID: ${notification.notificationId || '-'}</p>-->
+<!--                    <p>수신자 ID: ${notification.receiverId || '-'}</p>-->
+<!--                </div>-->
+<!--            `;-->
+<!--            -->
+<!--            // 알림 영역에 추가-->
+<!--            notificationArea.insertBefore(notificationElement, notificationArea.firstChild);-->
+<!--        }-->
+<!--        -->
+<!--        // 시스템 알림 추가-->
+<!--        function addSystemNotification(message, isError = false) {-->
+<!--            // 빈 메시지 제거-->
+<!--            clearEmptyMessage();-->
+<!--            -->
+<!--            // 알림 요소 생성-->
+<!--            const notificationElement = document.createElement('div');-->
+<!--            notificationElement.className = 'notification';-->
+<!--            if (isError) {-->
+<!--                notificationElement.style.borderLeftColor = '#F44336';-->
+<!--            } else {-->
+<!--                notificationElement.style.borderLeftColor = '#4CAF50';-->
+<!--            }-->
+<!--            -->
+<!--            // 현재 시간 포맷-->
+<!--            const now = new Date();-->
+<!--            const timeString = now.toLocaleString();-->
+<!--            -->
+<!--            // 알림 내용 생성-->
+<!--            notificationElement.innerHTML = `-->
+<!--                <div class="notification-header">-->
+<!--                    <span class="notification-type">${isError ? '⚠️ 오류' : 'ℹ️ 시스템'}</span>-->
+<!--                    <span class="notification-time">${timeString}</span>-->
+<!--                </div>-->
+<!--                <div class="notification-content">-->
+<!--                    <p>${message}</p>-->
+<!--                </div>-->
+<!--            `;-->
+<!--            -->
+<!--            // 알림 영역에 추가-->
+<!--            notificationArea.insertBefore(notificationElement, notificationArea.firstChild);-->
+<!--        }-->
+<!--        -->
+<!--        // 알림 영역 비우기-->
+<!--        function clearNotifications() {-->
+<!--            notificationArea.innerHTML = '<div class="empty-message">알림이 없습니다. 연결 후 알림을 기다려주세요.</div>';-->
+<!--            notifications = [];-->
+<!--        }-->
+<!--        -->
+<!--        // 빈 메시지 제거-->
+<!--        function clearEmptyMessage() {-->
+<!--            const emptyMessage = notificationArea.querySelector('.empty-message');-->
+<!--            if (emptyMessage) {-->
+<!--                emptyMessage.remove();-->
+<!--            }-->
+<!--        }-->
+<!--        -->
+<!--        // 모든 알림 복사-->
+<!--        function copyAllNotifications() {-->
+<!--            if (notifications.length === 0) {-->
+<!--                alert('복사할 알림이 없습니다.');-->
+<!--                return;-->
+<!--            }-->
+<!--            -->
+<!--            const notificationTexts = notifications.map(notification => {-->
+<!--                return `타입: ${notification.type}, 알림ID: ${notification.notificationId}, 수신자ID: ${notification.receiverId}, 시간: ${notification.timestamp}`;-->
+<!--            }).join('\n');-->
+<!--            -->
+<!--            navigator.clipboard.writeText(notificationTexts)-->
+<!--                .then(() => {-->
+<!--                    alert('모든 알림이 클립보드에 복사되었습니다.');-->
+<!--                })-->
+<!--                .catch(err => {-->
+<!--                    console.error('클립보드 복사 실패:', err);-->
+<!--                    alert('클립보드 복사 실패: ' + err.message);-->
+<!--                });-->
+<!--        }-->
+<!--    </script>-->
+<!--</body>-->
+<!--</html>-->

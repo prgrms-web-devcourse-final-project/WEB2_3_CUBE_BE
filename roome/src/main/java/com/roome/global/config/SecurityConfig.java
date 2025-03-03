@@ -73,7 +73,8 @@ public class SecurityConfig {
                 "/v3/api-docs/**",
                 "/swagger-ui/**",
                 "/swagger-ui.html",
-                "/mock/**"
+                "/mock/**",
+                    "/ws/**"
             ).permitAll()
             .anyRequest().authenticated()
         )
@@ -101,7 +102,8 @@ public class SecurityConfig {
     configuration.setAllowedOriginPatterns(Arrays.asList(
         "https://desqb38rc2v50.cloudfront.net",
         "http://localhost:5173",
-        "http://localhost:3000"
+        "http://localhost:3000",
+        "http://localhost:63342"
     ));
     configuration.setAllowedMethods(
         Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
