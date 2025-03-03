@@ -28,7 +28,20 @@ public class UserActivityService {
 
   // 사용자 활동 기록 및 점수 부여
   @Transactional
-  public boolean recordUserActivity(Long userId, ActivityType activityType, Long relatedEntityId) {
+  public boolean recordUserActivity(Long userId, ActivityType activityType, Long relatedEntityId,
+      Integer contentLength) {
+
+    // 콘텐츠 길이 체크
+    if (contentLength != null) {
+      if (activityType == ActivityType.BOOK_REVIEW && contentLength < 30) {
+        log.info("서평 길이 제한 미달: 유저={}, 길이={}", userId, contentLength);
+        return false;
+      } else if (activityType == ActivityType.GUESTBOOK && contentLength < 15) {
+        log.info("방명록 길이 제한 미달: 유저={}, 길이={}", userId, contentLength);
+        return false;
+      }
+    }
+
     // 제한 조건 체크
     if (!checkDailyLimit(userId, activityType)) {
       log.info("일일 한도 초과: 유저={}, 활동={}", userId, activityType);
@@ -36,8 +49,8 @@ public class UserActivityService {
     }
 
     // 사용자 정보 조회
-    User user = userRepository.findById(userId).orElseThrow(() ->
-        new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
 
     // 활동 기록 및 점수 부여
     UserActivity activity = new UserActivity();
@@ -58,7 +71,30 @@ public class UserActivityService {
     return true;
   }
 
+  // 콘텐츠 길이가 필요 없는 활동
+  @Transactional
+  public boolean recordUserActivity(Long userId, ActivityType activityType, Long relatedEntityId) {
+    return recordUserActivity(userId, activityType, relatedEntityId, null);
+  }
+
+  // 사용자 팔로우 활동 기록
+  @Transactional
+  public boolean recordFollowActivity(Long followerId, Long followingId) {
+    // 본인 팔로우 제외
+    if (followerId.equals(followingId)) {
+      log.info("본인 팔로우 제외: followerId={}, followingId={}", followerId, followingId);
+      return false;
+    }
+
+    // 팔로잉 받은 사람에게 점수 부여 (+5)
+    recordUserActivity(followingId, ActivityType.FOLLOWER_INCREASE, followerId);
+
+    log.info("팔로우 기록 완료: 팔로워={}, 팔로잉={}", followerId, followingId);
+    return true;
+  }
+
   // 방문 기록 및 점수 부여
+  @Transactional
   public boolean recordVisit(Long visitorId, Long hostId) {
     // 본인 방문 제외
     if (visitorId.equals(hostId)) {
@@ -78,7 +114,7 @@ public class UserActivityService {
     // 방문 기록 (24시간 동안 유효)
     redisTemplate.opsForValue().set(visitKey, 1, 24, TimeUnit.HOURS);
 
-    // 방문 점수 기록
+    // 방문 점수 기록 -> 방문자에게 점수 부여
     Room room = roomRepository.findByUserId(hostId)
         .orElseThrow(() -> new IllegalArgumentException("방을 찾을 수 없습니다: userId=" + hostId));
 
