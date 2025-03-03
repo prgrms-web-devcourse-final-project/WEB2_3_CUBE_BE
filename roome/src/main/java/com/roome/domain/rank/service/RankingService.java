@@ -51,7 +51,7 @@ public class RankingService {
 
       UserRankingDto dto = UserRankingDto.builder().rank(rank).userId(user.getId())
           .nickname(user.getNickname()).profileImage(user.getProfileImage())
-          .score(score != null ? score.intValue() : 0).build();
+          .score(score != null ? score.intValue() : 0).isTopRank(rank <= 3).build();
 
       rankingList.add(dto);
     }
