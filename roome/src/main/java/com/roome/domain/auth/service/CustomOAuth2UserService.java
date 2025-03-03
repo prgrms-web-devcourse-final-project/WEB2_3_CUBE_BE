@@ -116,12 +116,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     int point = new Random().nextInt(50) + 1;
     user.accumulatePoints(point);
     pointHistoryRepository.save(
-            PointHistory.builder()
-                    .user(user)
-                    .amount(point)
-                    .reason(PointReason.DAILY_ATTENDANCE)
-                    .build()
-    );
+        PointHistory.builder().user(user).amount(point).reason(PointReason.DAILY_ATTENDANCE)
+            .build());
   }
 
   private User updateOrCreateUser(OAuth2Response response, LocalDateTime now) {
@@ -132,17 +128,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     return userRepository.findByProviderAndProviderId(provider, providerId).orElseGet(() -> {
       // provider가 다르면 같은 이메일이어도 새로운 계정 생성
       log.info("새 사용자 생성: 이메일={}, 제공자={}", response.getEmail(), provider);
-      return userRepository.save(
-          User.create(
-                  response.getName(),
-                  response.getName(),
-                  response.getEmail(),
-                  response.getProfileImageUrl(),
-                  provider,
-                  providerId,
-                  now
-          )
-      );
+      User newUser = User.create(response.getName(), response.getName(), response.getEmail(),
+          response.getProfileImageUrl(), provider, providerId, now);
+
+      // 저장 후 flush() 실행 - 즉시 반영
+      User savedUser = userRepository.save(newUser);
+      userRepository.flush();
+
+      return savedUser;
     });
   }
 }

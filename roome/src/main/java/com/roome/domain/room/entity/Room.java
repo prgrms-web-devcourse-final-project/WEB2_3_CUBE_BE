@@ -5,8 +5,20 @@ import com.roome.domain.furniture.entity.FurnitureType;
 import com.roome.domain.furniture.exception.BookshelfFullException;
 import com.roome.domain.room.exception.RoomAuthorizationException;
 import com.roome.domain.user.entity.User;
-import jakarta.persistence.*;
-
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,29 +59,26 @@ public class Room {
   private List<Furniture> furnitures = new ArrayList<>();
 
   @Version
-  private Integer version;
-  
+  @Column(nullable = false)
+  private Integer version = 0;
+
   public static Room init(User user, LocalDateTime now) {
     Room room = new Room();
     room.user = user;
     room.theme = RoomTheme.BASIC;
     room.createdAt = now;
-    room.furnitures.addAll(Furniture.createDefaultFurnitures(room, now));
+//    room.furnitures.addAll(Furniture.createDefaultFurnitures(room, now));
     return room;
   }
 
   public int getMaxMusic() {
-    return furnitures.stream()
-        .filter(f -> f.getFurnitureType() == FurnitureType.CD_RACK)
-        .mapToInt(Furniture::getMaxCapacity)
-        .sum();
+    return furnitures.stream().filter(f -> f.getFurnitureType() == FurnitureType.CD_RACK)
+        .mapToInt(Furniture::getMaxCapacity).sum();
   }
 
   public int getMaxBooks() {
-    return furnitures.stream()
-        .filter(f -> f.getFurnitureType() == FurnitureType.BOOKSHELF)
-        .mapToInt(Furniture::getMaxCapacity)
-        .sum();
+    return furnitures.stream().filter(f -> f.getFurnitureType() == FurnitureType.BOOKSHELF)
+        .mapToInt(Furniture::getMaxCapacity).sum();
   }
 
   @PrePersist
