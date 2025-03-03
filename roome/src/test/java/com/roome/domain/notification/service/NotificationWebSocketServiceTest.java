@@ -34,14 +34,16 @@ class NotificationWebSocketServiceTest {
         Long notificationId = 456L;
         NotificationType type = NotificationType.MUSIC_COMMENT;
 
-        doNothing().when(messagingTemplate).convertAndSend(anyString(), any(NotificationWebSocketMessageDto.class));
+        doNothing().when(messagingTemplate).convertAndSendToUser(
+                anyString(), anyString(), any(NotificationWebSocketMessageDto.class));
 
         // When
         notificationWebSocketService.sendNotificationToUser(receiverId, notificationId, type);
 
         // Then
-        verify(messagingTemplate, times(1)).convertAndSend(
-                eq("/topic/notification/" + receiverId),
+        verify(messagingTemplate, times(1)).convertAndSendToUser(
+                eq(receiverId.toString()),
+                eq("/notification"),
                 any(NotificationWebSocketMessageDto.class)
         );
     }
@@ -55,7 +57,7 @@ class NotificationWebSocketServiceTest {
         NotificationType type = NotificationType.MUSIC_COMMENT;
 
         doThrow(new MessageDeliveryException("메시지 전송 실패")).when(messagingTemplate)
-                .convertAndSend(anyString(), any(NotificationWebSocketMessageDto.class));
+                .convertAndSendToUser(anyString(), anyString(), any(NotificationWebSocketMessageDto.class));
 
         // When & Then
         BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -63,8 +65,9 @@ class NotificationWebSocketServiceTest {
         });
 
         assertEquals(ErrorCode.NOTIFICATION_DELIVERY_FAILED, exception.getErrorCode());
-        verify(messagingTemplate, times(1)).convertAndSend(
-                eq("/topic/notification/" + receiverId),
+        verify(messagingTemplate, times(1)).convertAndSendToUser(
+                eq(receiverId.toString()),
+                eq("/notification"),
                 any(NotificationWebSocketMessageDto.class)
         );
     }
@@ -77,8 +80,8 @@ class NotificationWebSocketServiceTest {
         Long notificationId = 456L;
         NotificationType type = NotificationType.MUSIC_COMMENT;
 
-        doThrow(new IllegalStateException("브로커 초기화 실패")).when(messagingTemplate)
-                .convertAndSend(anyString(), any(NotificationWebSocketMessageDto.class));
+        doThrow(new IllegalStateException("브로커 상태 오류")).when(messagingTemplate)
+                .convertAndSendToUser(anyString(), anyString(), any(NotificationWebSocketMessageDto.class));
 
         // When & Then
         BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -86,8 +89,9 @@ class NotificationWebSocketServiceTest {
         });
 
         assertEquals(ErrorCode.NOTIFICATION_BROKER_ERROR, exception.getErrorCode());
-        verify(messagingTemplate, times(1)).convertAndSend(
-                eq("/topic/notification/" + receiverId),
+        verify(messagingTemplate, times(1)).convertAndSendToUser(
+                eq(receiverId.toString()),
+                eq("/notification"),
                 any(NotificationWebSocketMessageDto.class)
         );
     }
@@ -100,8 +104,8 @@ class NotificationWebSocketServiceTest {
         Long notificationId = 456L;
         NotificationType type = NotificationType.MUSIC_COMMENT;
 
-        doThrow(new RuntimeException("예기치 않은 오류")).when(messagingTemplate)
-                .convertAndSend(anyString(), any(NotificationWebSocketMessageDto.class));
+        doThrow(new RuntimeException("기타 예외 발생")).when(messagingTemplate)
+                .convertAndSendToUser(anyString(), anyString(), any(NotificationWebSocketMessageDto.class));
 
         // When & Then
         BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -109,8 +113,9 @@ class NotificationWebSocketServiceTest {
         });
 
         assertEquals(ErrorCode.NOTIFICATION_SENDING_ERROR, exception.getErrorCode());
-        verify(messagingTemplate, times(1)).convertAndSend(
-                eq("/topic/notification/" + receiverId),
+        verify(messagingTemplate, times(1)).convertAndSendToUser(
+                eq(receiverId.toString()),
+                eq("/notification"),
                 any(NotificationWebSocketMessageDto.class)
         );
     }
@@ -131,7 +136,8 @@ class NotificationWebSocketServiceTest {
         assertEquals(ErrorCode.NOTIFICATION_INVALID_RECEIVER, exception.getErrorCode());
 
         // messagingTemplate이 호출되지 않아야 함
-        verify(messagingTemplate, never()).convertAndSend(anyString(), any(NotificationWebSocketMessageDto.class));
+        verify(messagingTemplate, never()).convertAndSendToUser(
+                anyString(), anyString(), any(NotificationWebSocketMessageDto.class));
     }
 
     @Test
@@ -150,7 +156,8 @@ class NotificationWebSocketServiceTest {
         assertEquals(ErrorCode.NOTIFICATION_INVALID_ID, exception.getErrorCode());
 
         // messagingTemplate이 호출되지 않아야 함
-        verify(messagingTemplate, never()).convertAndSend(anyString(), any(NotificationWebSocketMessageDto.class));
+        verify(messagingTemplate, never()).convertAndSendToUser(
+                anyString(), anyString(), any(NotificationWebSocketMessageDto.class));
     }
 
     @Test
@@ -169,7 +176,8 @@ class NotificationWebSocketServiceTest {
         assertEquals(ErrorCode.NOTIFICATION_INVALID_TYPE, exception.getErrorCode());
 
         // messagingTemplate이 호출되지 않아야 함
-        verify(messagingTemplate, never()).convertAndSend(anyString(), any(NotificationWebSocketMessageDto.class));
+        verify(messagingTemplate, never()).convertAndSendToUser(
+                anyString(), anyString(), any(NotificationWebSocketMessageDto.class));
     }
 
     @Test
@@ -186,8 +194,9 @@ class NotificationWebSocketServiceTest {
         });
 
         // 올바른 목적지로 메시지가 전송되었는지 확인
-        verify(messagingTemplate, times(1)).convertAndSend(
-                eq("/topic/notification/" + receiverId),
+        verify(messagingTemplate, times(1)).convertAndSendToUser(
+                eq(receiverId.toString()),
+                eq("/notification"),
                 any(NotificationWebSocketMessageDto.class)
         );
     }
