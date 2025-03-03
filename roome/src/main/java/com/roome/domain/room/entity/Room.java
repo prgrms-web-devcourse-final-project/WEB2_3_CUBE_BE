@@ -65,7 +65,7 @@ public class Room {
     room.user = user;
     room.theme = RoomTheme.BASIC;
     room.createdAt = now;
-//    room.furnitures.addAll(Furniture.createDefaultFurnitures(room, now));
+    room.furnitures.addAll(Furniture.createDefaultFurnitures(room, now));
     return room;
   }
 
