@@ -13,6 +13,7 @@ import com.roome.domain.mybook.exception.MyBookDuplicateException;
 import com.roome.domain.mybook.service.request.MyBookCreateRequest;
 import com.roome.domain.mybook.service.response.MyBookResponse;
 import com.roome.domain.mybook.service.response.MyBooksResponse;
+import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
@@ -31,6 +32,7 @@ import static com.roome.global.util.StringUtil.convertStringToList;
 public class MyBookService {
 
     private final MyBookRepository myBookRepository;
+    private final MyBookReviewRepository myBookReviewRepository;
     private final MyBookCountRepository myBookCountRepository;
     private final BookRepository bookRepository;
     private final RoomRepository roomRepository;
@@ -82,6 +84,7 @@ public class MyBookService {
         room.validateOwner(loginUserId);
 
         List<String> ids = convertStringToList(myBookIds);
+        myBookReviewRepository.deleteAllByMyBookIds(ids);
         myBookRepository.deleteAllIn(ids);
         myBookCountRepository.decrease(roomOwnerId, ids.size());
     }
