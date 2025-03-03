@@ -24,6 +24,15 @@ import java.util.Map;
 @Tag(name = "Mock - Room API", description = "방 조회/테마 업데이트/가구 활성화 및 비활성화")
 public class MockRoomController {
 
+    private List<String> getMockTop3BookGenres() {
+        return List.of("Fantasy", "Mystery", "Science Fiction");
+    }
+
+    private List<String> getMockTop3CdGenres() {
+        return List.of("Rock", "Pop", "Jazz");
+    }
+
+
     @Operation(summary = "Mock - 방 조회", description = "주어진 방 ID에 해당하는 방 정보 조회")
     @GetMapping("/{roomId}")
     public ResponseEntity<RoomResponseDto> getRoom(
@@ -74,10 +83,16 @@ public class MockRoomController {
             return ResponseEntity.badRequest().body(null);
         }
 
+        List<String> topGenres = switch (furnitureType) {
+            case BOOKSHELF -> getMockTop3BookGenres();
+            case CD_RACK -> getMockTop3CdGenres();
+            default -> List.of(); // 기타 가구는 장르 없음
+        };
+
         // 가구 리스트에서 해당 타입 찾기
         List<FurnitureResponseDto> furnitureList = List.of(
-                new FurnitureResponseDto("BOOKSHELF", true, 3, FurnitureCapacity.getCapacity(FurnitureType.BOOKSHELF, 3)),
-                new FurnitureResponseDto("CD_RACK", false, 1, FurnitureCapacity.getCapacity(FurnitureType.CD_RACK, 1))
+                new FurnitureResponseDto("BOOKSHELF", true, 3, FurnitureCapacity.getCapacity(FurnitureType.BOOKSHELF, 3), getMockTop3BookGenres()),
+                new FurnitureResponseDto("CD_RACK", false, 1, FurnitureCapacity.getCapacity(FurnitureType.CD_RACK, 1), getMockTop3CdGenres())
         );
 
         FurnitureResponseDto targetFurniture = furnitureList.stream()
@@ -94,7 +109,8 @@ public class MockRoomController {
                 targetFurniture.getFurnitureType(),
                 !targetFurniture.getIsVisible(),
                 targetFurniture.getLevel(),
-                targetFurniture.getMaxCapacity()
+                targetFurniture.getMaxCapacity(),
+                topGenres
         );
 
         ToggleFurnitureResponseDto responseDto = new ToggleFurnitureResponseDto(roomId, updatedFurniture);
@@ -108,8 +124,8 @@ public class MockRoomController {
                 .theme(theme)
                 .createdAt(LocalDateTime.now())
                 .furnitures(List.of(
-                        new FurnitureResponseDto("BOOKSHELF", true, 3, FurnitureCapacity.getCapacity(FurnitureType.BOOKSHELF, 3)),
-                        new FurnitureResponseDto("CD_RACK", false, 1, FurnitureCapacity.getCapacity(FurnitureType.CD_RACK, 1))
+                        new FurnitureResponseDto("BOOKSHELF", true, 3, FurnitureCapacity.getCapacity(FurnitureType.BOOKSHELF, 3), getMockTop3BookGenres()),
+                        new FurnitureResponseDto("CD_RACK", false, 1, FurnitureCapacity.getCapacity(FurnitureType.CD_RACK, 1), getMockTop3CdGenres())
                 ))
                 .storageLimits(new StorageLimitsDto(100, 50))
                 .userStorage(new UserStorageDto(25L, 10L, 5L, 7L))

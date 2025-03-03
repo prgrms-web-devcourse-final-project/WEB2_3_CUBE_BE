@@ -231,8 +231,13 @@ public class RoomService {
         boolean newVisibility = !furniture.getIsVisible();
         furniture.setVisible(newVisibility);
 
-        log.info("가구 상태 변경 완료: 방(roomId={}), 가구({}), 새 상태={}", roomId, furnitureType, newVisibility);
-        return FurnitureResponseDto.from(furniture);
+        List<String> topGenres = switch (furnitureType) {
+            case BOOKSHELF -> getTop3BookGenres(roomId);
+            case CD_RACK -> getTop3CdGenres(roomId);
+        };
+
+        log.info("가구 상태 변경 완료: 방(roomId={}), 가구({}), 새 상태={}, Top3 장르={}", roomId, furnitureType, newVisibility, topGenres);
+        return FurnitureResponseDto.from(furniture, topGenres);
     }
 
 
