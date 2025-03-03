@@ -11,8 +11,10 @@ import com.roome.domain.mycd.dto.MyCdResponse;
 import com.roome.domain.mycd.entity.MyCd;
 import com.roome.domain.mycd.entity.MyCdCount;
 import com.roome.domain.mycd.exception.MyCdAlreadyExistsException;
+import com.roome.domain.mycd.exception.MyCdDatabaseException;
 import com.roome.domain.mycd.exception.MyCdListEmptyException;
 import com.roome.domain.mycd.exception.MyCdNotFoundException;
+import com.roome.domain.mycd.exception.MyCdPaginationException;
 import com.roome.domain.mycd.exception.MyCdUnauthorizedException;
 import com.roome.domain.mycd.repository.MyCdCountRepository;
 import com.roome.domain.mycd.repository.MyCdRepository;
@@ -71,7 +73,9 @@ public class MyCdService {
 
     // 중복 추가 체크 최적화
     myCdRepository.findByUserIdAndCdId(userId, cd.getId())
-        .ifPresent(existingCd -> { throw new MyCdAlreadyExistsException(); });
+        .ifPresent(existingCd -> {
+          throw new MyCdAlreadyExistsException();
+        });
 
     MyCd myCd = myCdRepository.save(MyCd.create(user, room, cd));
 
@@ -90,26 +94,44 @@ public class MyCdService {
 
     Page<MyCd> myCdsPage;
 
-    if (isKeywordSearch) {
-      myCdsPage = myCdRepository.searchByUserIdAndKeyword(userId, keyword, pageable);
-    } else {
-      myCdsPage = (cursor == null || cursor == 0)
-          ? myCdRepository.findByUserIdOrderByIdAsc(userId, pageable) // 첫 페이지
-          : myCdRepository.findByUserIdAndIdGreaterThanOrderByIdAsc(userId, cursor, pageable);
+    try {
+      if (isKeywordSearch) {
+        myCdsPage = myCdRepository.searchByUserIdAndKeyword(userId, keyword, pageable);
+      } else {
+        myCdsPage = (cursor == null || cursor == 0)
+            ? myCdRepository.findByUserIdOrderByIdAsc(userId, pageable) // 첫 페이지
+            : myCdRepository.findByUserIdAndIdGreaterThanOrderByIdAsc(userId, cursor, pageable);
+      }
+    } catch (Exception e) {
+      throw new MyCdDatabaseException("CD 목록을 불러오는 중 오류가 발생했습니다.");
     }
 
     if (myCdsPage.isEmpty()) {
       throw new MyCdListEmptyException();
     }
 
-    // 첫 번째 myCdId와 마지막 myCdId 가져오기
+    // 유저가 등록한 전체 CD 개수 조회
+    long totalCount = myCdRepository.countByUserId(userId);
+
+    // 유저가 등록한 전체 MyCd 중에서 가장 작은 ID와 가장 큰 ID 조회
+    Long firstMyCdId = myCdRepository.findFirstByUserIdOrderByIdAsc(userId)
+        .map(MyCd::getId)
+        .orElseThrow(() -> new MyCdDatabaseException("사용자의 첫 번째 CD를 찾을 수 없습니다."));
+
+    Long lastMyCdId = myCdRepository.findFirstByUserIdOrderByIdDesc(userId)
+        .map(MyCd::getId)
+        .orElseThrow(() -> new MyCdDatabaseException("사용자의 마지막 CD를 찾을 수 없습니다."));
+
+    // 커서 기반 페이지네이션의 cursor 값 검증
+    if (cursor != null && cursor > lastMyCdId) {
+      throw new MyCdPaginationException("잘못된 커서 값입니다. (마지막 등록된 CD보다 큼)");
+    }
+
+    // 현재 페이지의 데이터 가져오기
     List<MyCd> myCds = myCdsPage.getContent();
-    Long firstMyCdId = myCds.get(0).getId();
-    Long lastMyCdId = myCds.get(myCds.size() - 1).getId();
+    return MyCdListResponse.fromEntities(myCds, totalCount, firstMyCdId, lastMyCdId);
 
-    return MyCdListResponse.fromEntities(myCds, myCdsPage.getTotalElements(), firstMyCdId, lastMyCdId);
   }
-
 
   public MyCdResponse getMyCd(Long targetUserId, Long myCdId) {
     MyCd myCd = myCdRepository.findByIdAndUserId(myCdId, targetUserId)
