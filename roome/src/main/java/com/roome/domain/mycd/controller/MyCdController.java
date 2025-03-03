@@ -58,11 +58,11 @@ public class MyCdController {
   @GetMapping("/{myCdId}")
   public ResponseEntity<MyCdResponse> getMyCd(
       @AuthenticatedUser Long userId,
-      @RequestParam(value = "targetUserId", required = false) Long targetUserId, // 조회 대상 사용자 ID
+      @RequestParam(value = "targetUserId") Long targetUserId, // targetUserId를 필수로 받도록 변경
       @Parameter(description = "조회할 MyCd ID", example = "1")
       @PathVariable Long myCdId
   ) {
-    return ResponseEntity.ok(myCdService.getMyCd(userId, myCdId, targetUserId));
+    return ResponseEntity.ok(myCdService.getMyCd(targetUserId, myCdId));
   }
 
   @Operation(summary = "CD 삭제", description = "사용자의 MyCd 목록에서 하나 이상의 CD를 삭제합니다.")

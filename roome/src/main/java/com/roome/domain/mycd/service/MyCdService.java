@@ -122,10 +122,8 @@ public class MyCdService {
     return MyCdListResponse.fromEntities(myCdsPage.getContent(), totalCount);
   }
 
-  public MyCdResponse getMyCd(Long userId, Long myCdId, Long targetUserId) {
-    Long finalUserId = (targetUserId != null) ? targetUserId : userId; // targetUserId 우선 적용
-
-    MyCd myCd = myCdRepository.findByIdAndUserId(myCdId, finalUserId)
+  public MyCdResponse getMyCd(Long targetUserId, Long myCdId) {
+    MyCd myCd = myCdRepository.findByIdAndUserId(myCdId, targetUserId)
         .orElseThrow(MyCdNotFoundException::new);
 
     return MyCdResponse.fromEntity(myCd);
