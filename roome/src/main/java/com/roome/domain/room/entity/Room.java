@@ -5,7 +5,6 @@ import com.roome.domain.furniture.entity.FurnitureType;
 import com.roome.domain.furniture.exception.BookshelfFullException;
 import com.roome.domain.room.exception.RoomAuthorizationException;
 import com.roome.domain.user.entity.User;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -13,7 +12,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
@@ -31,6 +29,7 @@ import lombok.Setter;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -41,7 +40,6 @@ public class Room {
   private Long id; // userId와 동일한 값
 
   @OneToOne(fetch = FetchType.LAZY)
-  @MapsId          // roomId = userId
   @JoinColumn(name = "user_id", nullable = false, unique = true)
   private User user;
 
@@ -54,7 +52,7 @@ public class Room {
   private LocalDateTime createdAt;
 
   @Setter
-  @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "room")
   @Builder.Default
   private List<Furniture> furnitures = new ArrayList<>();
 
@@ -67,7 +65,7 @@ public class Room {
     room.user = user;
     room.theme = RoomTheme.BASIC;
     room.createdAt = now;
-//    room.furnitures.addAll(Furniture.createDefaultFurnitures(room, now));
+    room.furnitures.addAll(Furniture.createDefaultFurnitures(room, now));
     return room;
   }
 
