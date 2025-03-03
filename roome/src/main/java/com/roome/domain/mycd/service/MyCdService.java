@@ -83,37 +83,33 @@ public class MyCdService {
   }
 
   public MyCdListResponse getMyCdList(Long userId, String keyword, Long cursor, int size) {
-    log.info("조회할 사용자 ID: {}", userId); // 조회 대상 사용자 로그 확인
+    log.info("조회할 사용자 ID: {}", userId);
 
     boolean isKeywordSearch = keyword != null && !keyword.trim().isEmpty();
     Pageable pageable = PageRequest.of(0, size, Sort.by(Sort.Direction.ASC, "id"));
 
     Page<MyCd> myCdsPage;
-    long totalCount;
 
     if (isKeywordSearch) {
-      myCdsPage = Optional.ofNullable(
-              myCdRepository.searchByUserIdAndKeyword(userId, keyword, pageable))
-          .orElseGet(() -> Page.empty(pageable));
-      totalCount = myCdRepository.countByUserIdAndKeyword(userId, keyword);
+      myCdsPage = myCdRepository.searchByUserIdAndKeyword(userId, keyword, pageable);
     } else {
-      if (cursor == null || cursor == 0) {
-        myCdsPage = Optional.ofNullable(myCdRepository.findByUserIdOrderByIdAsc(userId, pageable))
-            .orElseGet(() -> Page.empty(pageable));
-      } else {
-        myCdsPage = Optional.ofNullable(
-                myCdRepository.findByUserIdAndIdGreaterThanOrderByIdAsc(userId, cursor, pageable))
-            .orElseGet(() -> Page.empty(pageable));
-      }
-      totalCount = myCdRepository.countByUserId(userId);
+      myCdsPage = (cursor == null || cursor == 0)
+          ? myCdRepository.findByUserIdOrderByIdAsc(userId, pageable) // 첫 페이지
+          : myCdRepository.findByUserIdAndIdGreaterThanOrderByIdAsc(userId, cursor, pageable);
     }
 
     if (myCdsPage.isEmpty()) {
       throw new MyCdListEmptyException();
     }
 
-    return MyCdListResponse.fromEntities(myCdsPage.getContent(), totalCount);
+    // 첫 번째 myCdId와 마지막 myCdId 가져오기
+    List<MyCd> myCds = myCdsPage.getContent();
+    Long firstMyCdId = myCds.get(0).getId();
+    Long lastMyCdId = myCds.get(myCds.size() - 1).getId();
+
+    return MyCdListResponse.fromEntities(myCds, myCdsPage.getTotalElements(), firstMyCdId, lastMyCdId);
   }
+
 
   public MyCdResponse getMyCd(Long targetUserId, Long myCdId) {
     MyCd myCd = myCdRepository.findByIdAndUserId(myCdId, targetUserId)
