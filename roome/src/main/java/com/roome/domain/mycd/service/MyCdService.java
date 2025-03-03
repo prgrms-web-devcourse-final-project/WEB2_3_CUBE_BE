@@ -69,9 +69,9 @@ public class MyCdService {
           return cdRepository.save(newCd);
         });
 
-    if (myCdRepository.existsByUserIdAndCdId(userId, cd.getId())) {
-      throw new MyCdAlreadyExistsException();
-    }
+    // 중복 추가 체크 최적화
+    myCdRepository.findByUserIdAndCdId(userId, cd.getId())
+        .ifPresent(existingCd -> { throw new MyCdAlreadyExistsException(); });
 
     MyCd myCd = myCdRepository.save(MyCd.create(user, room, cd));
 
