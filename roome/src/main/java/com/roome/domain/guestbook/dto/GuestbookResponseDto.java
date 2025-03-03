@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -16,7 +17,7 @@ public class GuestbookResponseDto {
     private String nickname;
     private String profileImage;
     private String message;
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
     private String relation;
 
     public static GuestbookResponseDto from(Guestbook guestbook) {
@@ -26,7 +27,7 @@ public class GuestbookResponseDto {
                 .nickname(guestbook.getUser().getNickname())
                 .profileImage(guestbook.getUser().getProfileImage())
                 .message(guestbook.getMessage())
-                .createdAt(guestbook.getCreatedAt())
+                .createdAt(guestbook.getCreatedAt().toLocalDate())
                 .relation(guestbook.getRelation().name())
                 .build();
     }
