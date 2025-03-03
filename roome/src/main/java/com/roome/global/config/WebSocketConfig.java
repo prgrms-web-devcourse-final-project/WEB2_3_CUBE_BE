@@ -24,8 +24,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/topic"); // 구독 접두사
-        config.setApplicationDestinationPrefixes("/app"); // 메시지 전송 접두사
+        config.enableSimpleBroker("/topic", "/user");
+        config.setUserDestinationPrefix("/user");
+        config.setApplicationDestinationPrefixes("/app");
     }
 
     @Override
@@ -36,7 +37,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         "https://desqb38rc2v50.cloudfront.net",
                         "http://localhost:5173",
                         "http://localhost:3000",
-                        "*"
+                        "http://localhost:63342"
                 ) // SecurityConfig와 동일한 CORS 설정 사용
                 .withSockJS();
     }

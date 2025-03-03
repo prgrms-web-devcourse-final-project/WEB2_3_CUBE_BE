@@ -26,14 +26,17 @@ public class NotificationWebSocketService {
         // 파라미터 유효성 검사
         validateParameters(receiverId, notificationId, type);
 
-        String destination = "/topic/notification/" + receiverId;
         NotificationWebSocketMessageDto messageDto = NotificationWebSocketMessageDto.of(notificationId, type, receiverId);
 
         log.info("알림 메시지 전송 시도: 수신자={}, 알림ID={}, 유형={}, 시간={}",
                 receiverId, notificationId, type, messageDto.getTimestamp());
 
         try {
-            messagingTemplate.convertAndSend(destination, messageDto);
+            messagingTemplate.convertAndSendToUser(
+                    receiverId.toString(),  // 사용자 ID
+                    "/notification",        // 목적지
+                    messageDto              // 메시지
+            );
             log.info("알림 메시지 전송 성공: 수신자={}, 알림ID={}", receiverId, notificationId);
         } catch (MessageDeliveryException e) {
             log.error("웹소켓 메시지 전송 실패: 수신자={}, 알림ID={}, 오류={}",
