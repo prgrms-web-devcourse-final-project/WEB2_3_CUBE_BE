@@ -109,6 +109,17 @@ public enum ErrorCode {
   INVALID_IMAGE_URL(HttpStatus.BAD_REQUEST, "잘못된 이미지 URL입니다."),
   S3_DELETE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 삭제 중 오류가 발생했습니다."),
 
+  // WebSocket 관련 예외
+  WEBSOCKET_TOKEN_MISSING(HttpStatus.UNAUTHORIZED, "웹소켓 연결에 필요한 인증 토큰이 없습니다."),
+  WEBSOCKET_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "웹소켓 연결에 사용된 토큰이 유효하지 않습니다."),
+  WEBSOCKET_TOKEN_BLACKLISTED(HttpStatus.UNAUTHORIZED, "웹소켓 연결에 사용된 토큰이 블랙리스트에 등록되어 있습니다."),
+  NOTIFICATION_DELIVERY_FAILED(HttpStatus.SERVICE_UNAVAILABLE, "알림 메시지 전송에 실패했습니다. 수신자가 연결되어 있지 않거나 대상을 찾을 수 없습니다."),
+  NOTIFICATION_BROKER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "알림 메시지 브로커 오류가 발생했습니다."),
+  NOTIFICATION_SENDING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "알림 메시지 전송 중 오류가 발생했습니다."),
+  //알림 파라미터 관련 예외
+  NOTIFICATION_INVALID_RECEIVER(HttpStatus.BAD_REQUEST, "알림 수신자 ID가 유효하지 않습니다."),
+  NOTIFICATION_INVALID_TYPE(HttpStatus.BAD_REQUEST, "알림 타입이 유효하지 않습니다."),
+  NOTIFICATION_INVALID_ID(HttpStatus.BAD_REQUEST, "알림 ID가 유효하지 않습니다."),
   // 서버 에러
   INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 에러가 발생했습니다.");
 
