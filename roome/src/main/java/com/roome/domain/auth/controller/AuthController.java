@@ -122,7 +122,6 @@ public class AuthController {
       @ApiResponse(responseCode = "401", description = "인증 실패 또는 유효하지 않은 토큰"),
       @ApiResponse(responseCode = "500", description = "서버 내부 오류")})
   @DeleteMapping("/withdraw")
-  @Transactional // 트랜잭션 경계 명확화
   public ResponseEntity<MessageResponse> withdraw(
       @RequestHeader("Authorization") String authHeader) {
 
@@ -169,16 +168,24 @@ public class AuthController {
           .body(new MessageResponse("인증 처리 중 오류가 발생했습니다."));
     }
 
-    // 2. Redis 작업 - 우선 시도 (DB 작업 전)
-    boolean redisSuccess = false;
+    // 2. Redis 작업 - 토큰 관련 처리
     try {
-      redisSuccess = executeRedisCleanup(userId.toString(), accessToken);
+      // Refresh Token 삭제
+      redisService.deleteRefreshToken(userId.toString());
+      log.debug("[회원탈퇴] 리프레시 토큰 삭제 성공: userId={}", userId);
+
+      // Access Token 블랙리스트 추가
+      long remainingTime = jwtTokenProvider.getTokenTimeToLive(accessToken);
+      if (remainingTime > 0) {
+        redisService.addToBlacklist(accessToken, remainingTime);
+        log.debug("[회원탈퇴] 액세스 토큰 블랙리스트 추가 성공: userId={}, 남은시간={}ms", userId, remainingTime);
+      }
     } catch (Exception e) {
-      // Redis 실패는 기록만 하고 계속 진행 (보상 트랜잭션에서 다시 시도)
-      log.warn("[회원탈퇴] Redis 작업 실패 (재시도 예정): userId={}, 사유={}", userId, e.getMessage());
+      // Redis 작업 실패는 기록하고 계속 진행
+      log.warn("[회원탈퇴] Redis 작업 실패 (계속 진행): userId={}, 사유={}", userId, e.getMessage());
     }
 
-    // 3. DB 작업 (사용자 데이터 삭제)
+    // 3. DB 작업 (사용자 데이터 삭제) - 트랜잭션 경계를 서비스 메서드 내로 이동
     try {
       userService.deleteUser(userId);
       log.info("[회원탈퇴] DB 작업 성공: userId={}", userId);
@@ -192,60 +199,7 @@ public class AuthController {
           .body(new MessageResponse("회원 탈퇴 처리 중 오류가 발생했습니다: " + e.getMessage()));
     }
 
-    // 4. Redis 작업이 실패했으면 보상 트랜잭션에서 다시 시도
-    if (!redisSuccess) {
-      try {
-        boolean retrySuccess = retryRedisCleanup(userId.toString(), accessToken);
-        log.info("[회원탈퇴] Redis 재시도 결과: userId={}, 성공={}", userId, retrySuccess);
-      } catch (Exception e) {
-        // Redis 재시도 실패는 로그만 남기고 성공 응답 (DB 작업은 이미 성공)
-        log.warn("[회원탈퇴] Redis 재시도 실패 (DB 작업은 성공): userId={}, 사유={}", userId, e.getMessage());
-      }
-    }
-
     return ResponseEntity.ok(new MessageResponse("회원 탈퇴가 완료되었습니다."));
-  }
-
-  // Redis 작업 실행 메소드 (반환값: 성공 여부)
-  private boolean executeRedisCleanup(String userId, String accessToken) {
-    boolean refreshTokenDeleted = false;
-    boolean accessTokenBlacklisted = false;
-
-    try {
-      // Refresh Token 삭제
-      redisService.deleteRefreshToken(userId);
-      refreshTokenDeleted = true;
-      log.debug("[회원탈퇴] 리프레시 토큰 삭제 성공: userId={}", userId);
-
-      // Access Token 블랙리스트 추가
-      long remainingTime = jwtTokenProvider.getTokenTimeToLive(accessToken);
-      if (remainingTime > 0) {
-        redisService.addToBlacklist(accessToken, remainingTime);
-        accessTokenBlacklisted = true;
-        log.debug("[회원탈퇴] 액세스 토큰 블랙리스트 추가 성공: userId={}, 남은시간={}ms", userId, remainingTime);
-      } else {
-        accessTokenBlacklisted = true; // 이미 만료된 토큰은 블랙리스트에 추가할 필요 없음
-        log.debug("[회원탈퇴] 액세스 토큰 이미 만료됨: userId={}", userId);
-      }
-
-      return refreshTokenDeleted && accessTokenBlacklisted;
-    } catch (Exception e) {
-      log.warn(
-          "[회원탈퇴] Redis 작업 실패 상세: userId={}, refreshTokenDeleted={}, accessTokenBlacklisted={}, 사유={}",
-          userId, refreshTokenDeleted, accessTokenBlacklisted, e.getMessage());
-      throw e; // 상위 메서드에서 처리
-    }
-  }
-
-  // 보상 트랜잭션 - Redis 작업 재시도
-  @Transactional(noRollbackFor = Exception.class) // 예외가 발생해도 롤백하지 않음
-  public boolean retryRedisCleanup(String userId, String accessToken) {
-    try {
-      return executeRedisCleanup(userId, accessToken);
-    } catch (Exception e) {
-      log.warn("[회원탈퇴] Redis 보상 트랜잭션 실패: userId={}, 사유={}", userId, e.getMessage());
-      return false;
-    }
   }
 
   // 토큰 마스킹 (로그 보안)
