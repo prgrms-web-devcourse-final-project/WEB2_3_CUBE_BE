@@ -47,6 +47,8 @@ public class RoomResponseDto {
                 .roomId(room.getId())
                 .userId(room.getUser().getId())
                 .theme(room.getTheme().name())
+                .nickname(room.getUser().getNickname())
+                .createdAt(room.getCreatedAt())
                 .furnitures(room.getFurnitures() != null
                         ? room.getFurnitures().stream().map(FurnitureResponseDto::from).collect(Collectors.toList())
                         : Collections.emptyList())
