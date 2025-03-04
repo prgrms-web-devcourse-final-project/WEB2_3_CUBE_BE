@@ -6,14 +6,15 @@ import com.roome.domain.point.dto.PointHistoryResponse;
 import com.roome.domain.point.entity.Point;
 import com.roome.domain.point.entity.PointHistory;
 import com.roome.domain.point.entity.PointReason;
+import com.roome.domain.point.exception.PointNotFoundException;
 import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.jwt.exception.UserNotFoundException;
 import com.roome.domain.point.exception.DuplicatePointEarnException;
-import com.roome.domain.point.exception.InsufficientPointsException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -52,34 +53,31 @@ public class PointService {
       PointReason.CD_UNLOCK_LV3, 1500
   );
 
-  public void earnPoints(Long userId, PointReason reason) {
+  public void earnPoints(User user, PointReason reason) {
     int amount = POINT_EARN_MAP.getOrDefault(reason, 0);
-    User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
-    if (pointHistoryRepository.existsByUserIdAndReasonAndCreatedAt(userId, reason,
-        LocalDate.now())) {
+    LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+    LocalDateTime tomorrowStart = todayStart.plusDays(1);
+
+    if (pointHistoryRepository.existsByUserIdAndReasonAndCreatedAtBetween(
+        user.getId(), reason, todayStart, tomorrowStart)) {
       throw new DuplicatePointEarnException();
     }
 
+
     Point point = pointRepository.findByUser(user)
-        .orElseGet(() -> pointRepository.save(new Point(user, 0, 0, 0)));
+        .orElseThrow(PointNotFoundException::new);
 
     point.addPoints(amount);
-    pointRepository.save(point);
     savePointHistory(user, amount, reason);
   }
 
-  public void usePoints(Long userId, PointReason reason) {
+  public void usePoints(User user, PointReason reason) {
     int amount = POINT_USAGE_MAP.getOrDefault(reason, 0);
-    User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-    Point point = pointRepository.findByUser(user).orElseThrow(InsufficientPointsException::new);
-
-    if (point.getBalance() < amount) {
-      throw new InsufficientPointsException();
-    }
+    Point point = pointRepository.findByUser(user)
+        .orElseThrow(PointNotFoundException::new);
 
     point.subtractPoints(amount);
-    pointRepository.save(point);
     savePointHistory(user, -amount, reason);
   }
 
