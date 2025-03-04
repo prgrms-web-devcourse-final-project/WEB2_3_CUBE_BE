@@ -78,8 +78,6 @@ public class GuestbookService {
 
         guestbookRepository.save(guestbook);
 
-        // 방명록 보상 포인트 적립
-        pointService.addGuestbookReward(userId);
 
         Long roomOwnerId = room.getUser().getId();
         if (!userId.equals(roomOwnerId)) {

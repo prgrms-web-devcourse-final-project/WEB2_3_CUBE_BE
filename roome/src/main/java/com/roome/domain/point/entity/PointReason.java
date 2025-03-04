@@ -13,7 +13,13 @@ public enum PointReason {
     BOOK_UNLOCK_LV2,   // 도서 제한 해제 (21~30권, 500P)
     BOOK_UNLOCK_LV3,   // 도서 제한 해제 (31권 이상, 1500P)
     CD_UNLOCK_LV2,     // CD 제한 해제 (21~30개, 500P)
-    CD_UNLOCK_LV3;     // CD 제한 해제 (31개 이상, 1500P)
+    CD_UNLOCK_LV3,     // CD 제한 해제 (31개 이상, 1500P)
+
+    // 포인트 결제
+    POINT_PURCHASE_100,
+    POINT_PURCHASE_550,
+    POINT_PURCHASE_1200,
+    POINT_PURCHASE_4000;
 
     public static PointReason getBookShelfUpgradeLevelReason(int level) {
         if (level == 1) {
