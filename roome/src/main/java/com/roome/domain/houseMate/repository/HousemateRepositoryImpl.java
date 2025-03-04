@@ -4,6 +4,7 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.roome.domain.houseMate.dto.HousemateInfo;
+import com.roome.domain.houseMate.entity.QAddedHousemate;
 import com.roome.domain.user.entity.QUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
@@ -60,6 +61,26 @@ public class HousemateRepositoryImpl implements HousemateRepositoryCustom {
                       )
                 .orderBy(addedHousemate.id.asc())
                 .limit(limit + 1)
+                .fetch();
+    }
+
+    @Override
+    public List<Long> findFollowerIdsByAddedId(Long addedId) {
+        QAddedHousemate addedHousemate = QAddedHousemate.addedHousemate;
+        return queryFactory.select(addedHousemate.userId)
+                .from(addedHousemate)
+                .where(addedHousemate.addedId.eq(addedId))
+                .fetch();
+    }
+
+    @Override
+    public List<Long> findFollowingIdsByUserId(Long userId) {
+        QAddedHousemate addedHousemate = QAddedHousemate.addedHousemate;
+
+        return queryFactory
+                .select(addedHousemate.addedId)
+                .from(addedHousemate)
+                .where(addedHousemate.userId.eq(userId))
                 .fetch();
     }
 

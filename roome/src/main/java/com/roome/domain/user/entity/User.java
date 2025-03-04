@@ -122,6 +122,10 @@ public class User extends BaseTimeEntity {
     }
   }
 
+  public void updateStatus(Status status) {
+    this.status = status;
+  }
+
   public boolean isAttendanceToday(LocalDateTime now) {
     LocalDateTime midnight = now.with(LocalTime.MIDNIGHT);
     return lastLogin != null && (lastLogin.isEqual(midnight) || lastLogin.isAfter(midnight));
