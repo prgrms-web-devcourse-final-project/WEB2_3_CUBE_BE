@@ -110,7 +110,6 @@ public class GuestbookService {
 
     // 방명록 보상 포인트 적립 (본인 방명록 제외)
     if (!isSelfRoom) {
-      pointService.addGuestbookReward(userId);
 
       // 방명록 작성 활동 기록 - 길이 체크
       userActivityService.recordUserActivity(userId, ActivityType.GUESTBOOK, roomId,
