@@ -1,9 +1,7 @@
 package com.roome.domain.furniture.entity;
 
 import com.roome.domain.furniture.exception.BookshelfMaxLevelException;
-import com.roome.domain.furniture.exception.BookshelfUpgradeDenyException;
 import com.roome.domain.room.entity.Room;
-import com.roome.domain.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -36,6 +34,8 @@ import org.hibernate.annotations.OnDeleteAction;
 @Table(name = "furniture")
 public class Furniture {
 
+  private static int BOOKSHELF_MAX_LEVEL = 3;
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -60,16 +60,6 @@ public class Furniture {
 
   @Column(name = "updated_at")
   private LocalDateTime updatedAt;
-
-  public static Furniture createDefault(Room room, FurnitureType type) {
-    return Furniture.builder()
-        .room(room)
-        .furnitureType(type)
-        .level(1) // 기본 레벨 1
-        .isVisible(false)
-        .build();
-  }
-
 
   @PrePersist
   protected void onCreate() {
@@ -102,23 +92,14 @@ public class Furniture {
     return FurnitureCapacity.getCapacity(furnitureType, level);
   }
 
-  public int getUpgradePrice() {
-    return FurnitureUpgradePrice.getPrice(furnitureType, level);
-  }
-
   public void setVisible(Boolean isVisible) {
     this.isVisible = isVisible;
   }
 
-  public void upgradeLevel(int selectedLevel) {
-    if (level == 3) {
+  public void upgradeLevel() {
+    if (BOOKSHELF_MAX_LEVEL == level) {
       throw new BookshelfMaxLevelException();
     }
-    if (selectedLevel - level != 1) {
-      throw new BookshelfUpgradeDenyException();
-    }
-    User user = room.getUser();
-    user.payPoints(FurnitureUpgradePrice.getPrice(furnitureType, level));
     level++;
   }
 }

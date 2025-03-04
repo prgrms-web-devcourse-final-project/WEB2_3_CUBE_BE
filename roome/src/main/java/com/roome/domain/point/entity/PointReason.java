@@ -21,7 +21,7 @@ public enum PointReason {
     POINT_PURCHASE_1200,
     POINT_PURCHASE_4000;
 
-    public static PointReason getBookShelfUpgradeLevelReason(int level) {
+    public static PointReason getBookShelfUpgradeReason(int level) {
         if (level == 1) {
             return BOOK_UNLOCK_LV2;
         }
