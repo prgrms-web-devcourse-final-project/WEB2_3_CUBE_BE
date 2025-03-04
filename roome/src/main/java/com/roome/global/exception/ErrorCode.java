@@ -51,7 +51,7 @@ public enum ErrorCode {
   FURNITURE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 방에서 요청한 가구를 찾을 수 없습니다."),
   BOOKSHELF_FULL(HttpStatus.BAD_REQUEST, "책장에 더 이상 책을 추가할 수 없습니다. 책장을 업그레이드 해주세요."),
   BOOKSHELF_MAX_LEVEL(HttpStatus.BAD_REQUEST, "책장 레벨을 더 이상 올릴 수 없습니다. 책장 레벨이 최대입니다."),
-  BOOKSHELF_UPGRADE_DENIED(HttpStatus.BAD_REQUEST, "책장 레벨을 업그레이드할 수 없습니다. 이전 레벨을 먼저 업그레이드 해야합니다."),
+  BOOKSHELF_NOT_FOUND(HttpStatus.NOT_FOUND, "책장을 찾을 수 없습니다."),
 
   // 방명록 관련 예외
   GUESTBOOK_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 방명록을 찾을 수 없습니다."),
@@ -106,9 +106,9 @@ public enum ErrorCode {
   DUPLICATE_POINT_EARN(HttpStatus.BAD_REQUEST, "해당 포인트는 하루 1회만 적립 가능합니다."),
   POINT_HISTORY_EMPTY(HttpStatus.BAD_REQUEST,"포인트 내역이 존재하지 않습니다."),
   INVALID_POINT_OPERATION(HttpStatus.BAD_REQUEST, "잘못된 포인트 조회 요청입니다."),
+  POINT_NOT_FOUND(HttpStatus.NOT_FOUND, "포인트 정보를 찾을 수 없습니다."),
 
   // 이미지 업로드 관련 예외
-  POINT_NOT_FOUND(HttpStatus.NOT_FOUND, "포인트 정보를 찾을 수 없습니다."),
   IMAGE_NOT_FOUND(HttpStatus.BAD_REQUEST, "이미지 파일이 없거나 비어 있습니다."),
   INVALID_IMAGE_FORMAT(HttpStatus.BAD_REQUEST, "지원되지 않는 이미지 형식입니다."),
   IMAGE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "이미지 크기가 제한을 초과했습니다."),
