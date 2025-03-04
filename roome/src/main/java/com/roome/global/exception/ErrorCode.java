@@ -63,6 +63,9 @@ public enum ErrorCode {
   PAYMENT_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "결제 검증에 실패했습니다."),
   PAYMENT_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "결제 처리 중 오류가 발생했습니다."),
   PAYMENT_ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 결제에 대한 접근 권한이 없습니다."),
+  PAYMENT_NOT_CANCELABLE(HttpStatus.BAD_REQUEST, "이 결제는 취소할 수 없습니다."),
+  PAYMENT_CANCEL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "결제 취소 중 오류가 발생했습니다."),
+
 
   // 서평 관련 예외
   MY_BOOK_REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "서평을 찾을 수 없습니다."),
@@ -102,6 +105,7 @@ public enum ErrorCode {
   INSUFFICIENT_POINTS(HttpStatus.BAD_REQUEST, "포인트가 부족합니다."),
 
   // 이미지 업로드 관련 예외
+  POINT_NOT_FOUND(HttpStatus.NOT_FOUND, "포인트 정보를 찾을 수 없습니다."),
   IMAGE_NOT_FOUND(HttpStatus.BAD_REQUEST, "이미지 파일이 없거나 비어 있습니다."),
   INVALID_IMAGE_FORMAT(HttpStatus.BAD_REQUEST, "지원되지 않는 이미지 형식입니다."),
   IMAGE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "이미지 크기가 제한을 초과했습니다."),

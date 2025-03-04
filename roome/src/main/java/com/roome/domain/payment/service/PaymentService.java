@@ -126,4 +126,49 @@ public class PaymentService {
 
         log.warn("결제 실패: orderId={}", orderId);
     }
+
+    // 결제 취소 (환불)
+    @Transactional
+    public PaymentResponseDto cancelPayment(Long userId, String orderId, String cancelReason, Integer cancelAmount) {
+        Payment payment = paymentRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        if (!payment.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
+        }
+
+        // 결제 상태가 SUCCESS가 아닐 경우, 취소 불가능
+        if (!payment.getStatus().equals(PaymentStatus.SUCCESS)) {
+            throw new BusinessException(ErrorCode.PAYMENT_NOT_CANCELABLE);
+        }
+
+        // Toss API에 결제 취소 요청
+        boolean isCanceled = tossPaymentClient.cancelPayment(payment.getPaymentKey(), cancelReason, cancelAmount);
+        if (!isCanceled) {
+            throw new BusinessException(ErrorCode.PAYMENT_CANCEL_FAILED);
+        }
+
+        // 결제 상태 업데이트
+        payment.updateStatus(PaymentStatus.CANCELED);
+        paymentRepository.save(payment);
+
+        // 사용자 포인트 차감
+        Point userPoint = pointRepository.findByUser(payment.getUser())
+                .orElseThrow(() -> new BusinessException(ErrorCode.POINT_NOT_FOUND));
+
+        int refundAmount = (cancelAmount != null) ? cancelAmount : payment.getPurchasedPoints();
+        userPoint.subtractPoints(refundAmount);
+        pointRepository.save(userPoint);
+
+        log.info("결제 취소 완료: orderId={}, userId={}, refundAmount={}", orderId, userId, refundAmount);
+
+        return PaymentResponseDto.builder()
+                .orderId(payment.getOrderId())
+                .paymentKey(payment.getPaymentKey())
+                .amount(payment.getAmount())
+                .purchasedPoints(payment.getPurchasedPoints())
+                .status(PaymentStatus.CANCELED)
+                .build();
+    }
+
 }

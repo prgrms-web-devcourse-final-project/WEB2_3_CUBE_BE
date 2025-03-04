@@ -14,6 +14,8 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -63,6 +65,40 @@ public class TossPaymentClient {
 
         return false;
     }
+
+    // Toss 결제 취소 요청
+    public boolean cancelPayment(String paymentKey, String cancelReason, Integer cancelAmount) {
+        String requestUrl = TOSS_API_URL + "/" + paymentKey + "/cancel";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBasicAuth(encodeSecretKey());
+
+        // 요청 바디 생성
+        Map<String, Object> body = new HashMap<>();
+        body.put("cancelReason", cancelReason);
+        if (cancelAmount != null) {
+            body.put("cancelAmount", cancelAmount);
+        }
+
+        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    requestUrl, HttpMethod.POST, requestEntity, String.class
+            );
+
+            if (response.getStatusCode() == HttpStatus.OK) {
+                log.info("결제 취소 성공: paymentKey={}, cancelAmount={}", paymentKey, cancelAmount);
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("결제 취소 실패: paymentKey={}, error={}", paymentKey, e.getMessage());
+        }
+
+        return false;
+    }
+
 
     // Secret Key를 Base64 인코딩하여 반환
     private String encodeSecretKey() {
