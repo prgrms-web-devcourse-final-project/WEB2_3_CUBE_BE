@@ -24,9 +24,9 @@ public class MockGuestbookController {
     ) {
         List<GuestbookResponseDto> mockGuestbooks = List.of(
                 new GuestbookResponseDto(1L, 123L, "VisitorA", "https://example.com/profileA.jpg",
-                        "방 정말 예쁘네요!", LocalDate.parse("2025-02-20"), "하우스메이트"),
+                        "방 정말 예쁘네요!", LocalDateTime.parse("2025-02-20T12:00:00"), "하우스메이트"),
                 new GuestbookResponseDto(2L, 124L, "VisitorB", "https://example.com/profileB.jpg",
-                        "분위기가 너무 좋아요!", LocalDate.parse("2025-02-20"), "지나가던 나그네")
+                        "분위기가 너무 좋아요!", LocalDateTime.parse("2025-02-20T12:00:00"), "지나가던 나그네")
 
         );
 
@@ -43,7 +43,7 @@ public class MockGuestbookController {
     ) {
         GuestbookResponseDto mockResponse = new GuestbookResponseDto(
                 3L, 125L, "VisitorC", "https://example.com/profileC.jpg",
-                requestDto.getMessage(), LocalDate.parse("2025-02-20"), "지나가던 나그네"
+                requestDto.getMessage(), LocalDateTime.parse("2025-02-20T12:00:00"), "지나가던 나그네"
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(mockResponse);
