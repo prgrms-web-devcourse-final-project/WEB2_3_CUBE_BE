@@ -36,14 +36,15 @@ public class MyBookController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "등록 도서 목록 조회", description = "등록 도서의 목록을 무한 스크롤 방식으로 조회할 수 있다.")
+    @Operation(summary = "등록 도서 목록 조회", description = "등록 도서의 목록을 무한 스크롤 방식으로 조회할 수 있다. 제목, 출판사, 저자에 대해 검색할 수 있다.")
     @GetMapping("/api/mybooks")
     public ResponseEntity<MyBooksResponse> readAll(
             @RequestParam("userId") Long userId,
             @RequestParam("pageSize") Long pageSize,
-            @RequestParam(value = "lastMyBookId", required = false) Long lastMyBookId
+            @RequestParam(value = "lastMyBookId", required = false) Long lastMyBookId,
+            @RequestParam(value = "keyword", required = false) String keyword
     ) {
-        MyBooksResponse response = myBookService.readAll(userId, pageSize, lastMyBookId);
+        MyBooksResponse response = myBookService.readAll(userId, pageSize, lastMyBookId, keyword);
         return ResponseEntity.ok(response);
     }
 
