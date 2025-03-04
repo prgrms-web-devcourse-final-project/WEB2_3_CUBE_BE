@@ -101,6 +101,8 @@ public enum ErrorCode {
   // Point 관련 예외
   INSUFFICIENT_POINTS(HttpStatus.BAD_REQUEST, "포인트가 부족합니다."),
   DUPLICATE_POINT_EARN(HttpStatus.BAD_REQUEST, "해당 포인트는 하루 1회만 적립 가능합니다."),
+  POINT_HISTORY_EMPTY(HttpStatus.BAD_REQUEST,"포인트 내역이 존재하지 않습니다."),
+  INVALID_POINT_OPERATION(HttpStatus.BAD_REQUEST, "잘못된 포인트 조회 요청입니다."),
 
   // 이미지 업로드 관련 예외
   IMAGE_NOT_FOUND(HttpStatus.BAD_REQUEST, "이미지 파일이 없거나 비어 있습니다."),
