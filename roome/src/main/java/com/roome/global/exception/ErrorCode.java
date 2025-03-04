@@ -78,6 +78,9 @@ public enum ErrorCode {
   MY_BOOK_DUPLICATE(HttpStatus.BAD_REQUEST, "책장에 등록된 도서입니다."),
 
   // CD 관련 예외
+  CD_RACK_CAPACITY_EXCEEDED(HttpStatus.BAD_REQUEST, "CD 랙의 저장 용량을 초과하였습니다."),
+  CD_RACK_MAX_LEVEL(HttpStatus.BAD_REQUEST, "CD 랙이 최대 레벨입니다."),
+  CD_RACK_NOT_FOUND(HttpStatus.NOT_FOUND, "CD 랙을 찾을 수 없습니다."),
   MYCD_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 MyCd를 찾을 수 없습니다."),
   MYCD_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 추가된 CD입니다."),
   MYCD_LIST_EMPTY(HttpStatus.NOT_FOUND, "CD 목록이 비어 있습니다."),
