@@ -53,4 +53,19 @@ public class PaymentController {
         paymentService.failPayment(orderId);
         return ResponseEntity.noContent().build();
     }
+
+    // 결제 취소 (환불) API
+    @PostMapping("/cancel/{orderId}")
+    public ResponseEntity<PaymentResponseDto> cancelPayment(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable String orderId,
+            @RequestParam(required = false, defaultValue = "전액 취소") String cancelReason,
+            @RequestParam(required = false) Integer cancelAmount) {
+
+        log.info("결제 취소 요청: userId={}, orderId={}, cancelAmount={}", userId, orderId, cancelAmount);
+
+        PaymentResponseDto response = paymentService.cancelPayment(userId, orderId, cancelReason, cancelAmount);
+        return ResponseEntity.ok(response);
+    }
+
 }
