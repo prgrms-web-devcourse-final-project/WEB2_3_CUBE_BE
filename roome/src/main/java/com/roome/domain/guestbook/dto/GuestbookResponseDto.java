@@ -17,7 +17,7 @@ public class GuestbookResponseDto {
     private String nickname;
     private String profileImage;
     private String message;
-    private LocalDate createdAt;
+    private LocalDateTime createdAt;
     private String relation;
 
     public static GuestbookResponseDto from(Guestbook guestbook) {
@@ -27,7 +27,7 @@ public class GuestbookResponseDto {
                 .nickname(guestbook.getUser().getNickname())
                 .profileImage(guestbook.getUser().getProfileImage())
                 .message(guestbook.getMessage())
-                .createdAt(guestbook.getCreatedAt().toLocalDate())
+                .createdAt(guestbook.getCreatedAt())
                 .relation(guestbook.getRelation().name())
                 .build();
     }
@@ -39,7 +39,7 @@ public class GuestbookResponseDto {
                 .nickname(guestbook.getUser().getNickname())
                 .profileImage(guestbook.getUser().getProfileImage())
                 .message(guestbook.getMessage())
-                .createdAt(guestbook.getCreatedAt().toLocalDate()) // YYYY-MM-DD만 반환
+                .createdAt(guestbook.getCreatedAt())
                 .relation(isHousemate ? "하우스메이트" : guestbook.getRelation().name()) // 하우스메이트 여부 반영
                 .build();
     }
