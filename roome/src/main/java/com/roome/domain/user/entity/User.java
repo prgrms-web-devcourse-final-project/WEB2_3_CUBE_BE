@@ -1,7 +1,6 @@
 package com.roome.domain.user.entity;
 
 import com.roome.domain.point.entity.Point;
-import com.roome.domain.rank.entity.UserActivity;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.exception.RoomAuthorizationException;
 import com.roome.global.entity.BaseTimeEntity;
@@ -13,14 +12,11 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -71,39 +67,32 @@ public class User extends BaseTimeEntity {
   @Column(nullable = true)
   private LocalDateTime lastLogin;
 
+  @Column(nullable = true)
+  private LocalDateTime lastGuestbookReward;
+
   // TODO: 추후 Redis 사용
   @Column(length = 1000)
   private String refreshToken;
 
-  @OneToOne(mappedBy = "user")
+  @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   @PrimaryKeyJoinColumn
   private Room room;
 
   @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   private Point point;
 
-  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<UserActivity> userActivities = new ArrayList<>();
-
-  public static User createWithoutRelations(String name, String nickname, String email,
-      String profileImage, Provider provider, String providerId, Status status) {
+  public static User create(String name, String nickname, String email, String profileImage,
+      Provider provider, String providerId, LocalDateTime now) {
     User user = new User();
     user.name = name;
     user.nickname = nickname;
     user.email = email;
-    user.status = status;
+    user.status = Status.ONLINE;
     user.profileImage = profileImage;
     user.provider = provider;
     user.providerId = providerId;
-    return user;
-  }
-
-  public static User create(String name, String nickname, String email, String profileImage,
-      Provider provider, String providerId, LocalDateTime now) {
-    User user = createWithoutRelations(name, nickname, email, profileImage, provider, providerId,
-        Status.ONLINE);
-    user.lastLogin = now;
-    // Room과 Point는 외부에서 생성하고 설정
+    user.room = Room.init(user, now);
+    user.point = Point.init(user, now);
     return user;
   }
 
@@ -120,6 +109,10 @@ public class User extends BaseTimeEntity {
     if (updated) {
       this.lastLogin = LocalDateTime.now();
     }
+  }
+
+  public void updateStatus(Status status) {
+    this.status = status;
   }
 
   public boolean isAttendanceToday(LocalDateTime now) {
@@ -139,6 +132,10 @@ public class User extends BaseTimeEntity {
     if (room == null || !room.getId().equals(roomId)) {
       throw new RoomAuthorizationException();
     }
+  }
+
+  public void updateLastGuestbookReward(LocalDateTime date) {
+    this.lastGuestbookReward = date;
   }
 
   public void updateLastLogin(LocalDateTime now) {
