@@ -4,9 +4,12 @@ import com.roome.domain.auth.dto.response.LoginResponse;
 import com.roome.domain.auth.dto.response.MessageResponse;
 import com.roome.domain.room.dto.RoomResponseDto;
 import com.roome.domain.room.service.RoomService;
+import com.roome.domain.user.entity.Status;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.domain.user.service.UserService;
+import com.roome.domain.user.service.UserStatusService;
+import com.roome.global.auth.AuthenticatedUser;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.jwt.exception.InvalidJwtTokenException;
 import com.roome.global.jwt.exception.InvalidUserIdFormatException;
@@ -48,6 +51,7 @@ public class AuthController {
   private final UserRepository userRepository;
   private final RedisService redisService;
   private final RoomService roomService;
+  private final UserStatusService userStatusService;
 
   @Operation(summary = "사용자 정보 조회", description = "Access Token으로 사용자 정보를 조회합니다.", security = @SecurityRequirement(name = "bearerAuth"))
   @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "사용자 정보 조회 성공"),
@@ -86,6 +90,7 @@ public class AuthController {
   @PostMapping("/logout")
   public ResponseEntity<?> logout(
       @RequestHeader(value = "Authorization", required = false) String authHeader,
+      @AuthenticatedUser Long authenticatedUserId,
       HttpServletResponse response) {
     try {
       if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -108,7 +113,9 @@ public class AuthController {
             .build();
         response.addHeader("Set-Cookie", cookie.toString());
       }
-
+      // 사용자 상태 변경
+      userStatusService.updateUserStatus(authenticatedUserId, Status.OFFLINE);
+      log.info("사용자 상태 변경: userId={}, status={}", authenticatedUserId, Status.OFFLINE);
       return ResponseEntity.ok(Map.of("message", "로그아웃 되었습니다."));
     } catch (Exception e) {
       log.error("로그아웃 중 오류 발생: ", e);
