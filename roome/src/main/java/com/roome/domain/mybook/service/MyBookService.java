@@ -1,5 +1,7 @@
 package com.roome.domain.mybook.service;
 
+import static com.roome.global.util.StringUtil.convertStringToList;
+
 import com.roome.domain.book.entity.Book;
 import com.roome.domain.book.entity.BookGenre;
 import com.roome.domain.book.entity.Genre;
@@ -14,17 +16,16 @@ import com.roome.domain.mybook.service.request.MyBookCreateRequest;
 import com.roome.domain.mybook.service.response.MyBookResponse;
 import com.roome.domain.mybook.service.response.MyBooksResponse;
 import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
+import com.roome.domain.rank.entity.ActivityType;
+import com.roome.domain.rank.service.UserActivityService;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-
-import static com.roome.global.util.StringUtil.convertStringToList;
 
 @Service
 @Transactional(readOnly = true)
@@ -38,6 +39,7 @@ public class MyBookService {
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
     private final GenreRepository genreRepository;
+    private final UserActivityService userActivityService;
 
     @Transactional
     public MyBookResponse create(Long loginUserId, Long roomOwnerId, MyBookCreateRequest request) {
@@ -62,8 +64,12 @@ public class MyBookService {
             myBookCountRepository.save(MyBookCount.init(room, loginUser));
         }
 
-        return MyBookResponse.from(myBook);
-    }
+    // 도서 등록 활동 기록 추가
+    userActivityService.recordUserActivity(loginUserId, ActivityType.BOOK_REGISTRATION,
+        book.getId());
+
+    return MyBookResponse.from(myBook);
+  }
 
     public MyBookResponse read(Long myBookId) {
         return MyBookResponse.from(

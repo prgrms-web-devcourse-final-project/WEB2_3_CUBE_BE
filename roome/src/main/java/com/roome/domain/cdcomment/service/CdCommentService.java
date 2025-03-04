@@ -12,6 +12,8 @@ import com.roome.domain.cdcomment.repository.CdCommentRepository;
 import com.roome.domain.mycd.entity.MyCd;
 import com.roome.domain.mycd.exception.MyCdNotFoundException;
 import com.roome.domain.mycd.repository.MyCdRepository;
+import com.roome.domain.rank.entity.ActivityType;
+import com.roome.domain.rank.service.UserActivityService;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.ForbiddenException;
@@ -37,6 +39,7 @@ public class CdCommentService {
   private final MyCdRepository myCdRepository;
   private final UserRepository userRepository;
   private final ApplicationEventPublisher eventPublisher;// 이벤트 발행자
+  private final UserActivityService userActivityService;
 
   public CdCommentResponse addComment(Long userId, Long myCdId, CdCommentCreateRequest request) {
     MyCd myCd = myCdRepository.findById(myCdId)
@@ -72,6 +75,9 @@ public class CdCommentService {
         log.error("CD 코멘트 알림 이벤트 발행 중 오류 발생: {}", e.getMessage(), e);
         // 알림 발행 실패가 비즈니스 로직에 영향을 주지 않도록 예외를 잡아서 처리
       }
+
+      // 음악 댓글 작성 활동 기록 추가
+      userActivityService.recordUserActivity(userId, ActivityType.MUSIC_COMMENT, myCdId);
     }
 
     return new CdCommentResponse(
