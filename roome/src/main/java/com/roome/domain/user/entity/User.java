@@ -71,9 +71,6 @@ public class User extends BaseTimeEntity {
   @Column(nullable = true)
   private LocalDateTime lastLogin;
 
-  @Column(nullable = true)
-  private LocalDateTime lastGuestbookReward;
-
   // TODO: 추후 Redis 사용
   @Column(length = 1000)
   private String refreshToken;
@@ -142,10 +139,6 @@ public class User extends BaseTimeEntity {
     if (room == null || !room.getId().equals(roomId)) {
       throw new RoomAuthorizationException();
     }
-  }
-
-  public void updateLastGuestbookReward(LocalDateTime date) {
-    this.lastGuestbookReward = date;
   }
 
   public void updateLastLogin(LocalDateTime now) {
