@@ -83,7 +83,7 @@ public class RoomController {
       @RequestParam("visitorId") Long visitorId,
       @PathVariable Long roomId
   ) {
-    RoomResponseDto roomResponseDto = roomService.visitRoom(visitorId, roomId);
+    RoomResponseDto roomResponseDto = roomService.visitRoomByRoomId(visitorId, roomId);
     return ResponseEntity.ok(roomResponseDto);
   }
 
@@ -93,7 +93,7 @@ public class RoomController {
       @RequestParam("visitorId") Long visitorId,
       @RequestParam("hostId") Long hostId
   ) {
-    RoomResponseDto roomResponseDto = roomService.getOtherUserRoom(visitorId, hostId);
+    RoomResponseDto roomResponseDto = roomService.visitRoomByHostId(visitorId, hostId);
     return ResponseEntity.ok(roomResponseDto);
   }
 }
