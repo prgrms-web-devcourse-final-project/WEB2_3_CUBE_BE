@@ -165,6 +165,12 @@ public class UserActivityService {
         redisTemplate.opsForValue().set(timeKey, 1, 24, TimeUnit.HOURS);
         return true;
 
+      case BOOK_REGISTRATION:
+        return count < 1; // 하루 최대 1번
+
+      case MUSIC_REGISTRATION:
+        return count < 1; // 하루 최대 1번
+
       case BOOK_REVIEW:
         return count < 3; // 하루 최대 3번
 
