@@ -22,6 +22,7 @@ import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
+import com.roome.global.service.RedisService;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +48,7 @@ public class UserService {
   private final MyBookCountRepository myBookCountRepository;
   private final PointRepository pointRepository;
   private final PointHistoryRepository pointHistoryRepository;
+  private final RedisService redisService;
 
   @Transactional(rollbackFor = Exception.class, noRollbackFor = BusinessException.class)
   public void deleteUser(Long userId) {
@@ -97,9 +99,25 @@ public class UserService {
       log.debug("[회원탈퇴] 방 삭제 완료: roomId={}", room.getId());
     }
 
-    // 6. 사용자 삭제
+    // 6. Redis에서 랭킹 데이터 삭제
+    deleteRedisRankingData(userId);
+
+    // 7. 사용자 삭제
     userRepository.delete(user);
     log.info("[회원탈퇴] 사용자 삭제 완료: {}", userId);
+  }
+
+  // Redis에서 랭킹 관련 데이터 삭제
+  private void deleteRedisRankingData(Long userId) {
+    try {
+      // Redis에서 사용자 랭킹 점수 삭제
+      boolean removed = redisService.deleteUserRankingData(userId.toString());
+      log.debug("[회원탈퇴] Redis 랭킹 데이터 삭제 완료: userId={}, 성공={}", userId, removed);
+    } catch (Exception e) {
+      // Redis 작업 실패는 기록만 하고 계속 진행
+      log.warn("[회원탈퇴] Redis 랭킹 데이터 삭제 실패 (계속 진행): userId={}, 사유={}",
+          userId, e.getMessage());
+    }
   }
 
   private void deleteHousemateRelations(Long userId) {

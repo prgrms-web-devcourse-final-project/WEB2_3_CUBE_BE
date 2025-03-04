@@ -27,35 +27,60 @@ public class RankingService {
     Set<ZSetOperations.TypedTuple<Object>> rankSet = redisTemplate.opsForZSet()
         .reverseRangeWithScores(RANKING_KEY, 0, 9);
 
-    List<UserRankingDto> rankingList = new ArrayList<>();
+    // 유효한 사용자 정보
+    List<UserRankingDto> validRankings = new ArrayList<>();
 
     if (rankSet == null || rankSet.isEmpty()) {
-      return rankingList;
+      return validRankings;
     }
 
-    int rank = 0;
+    // 유효한 사용자 정보만 수집
     for (ZSetOperations.TypedTuple<Object> tuple : rankSet) {
-      String userId = (String) tuple.getValue();
+      String userIdStr = (String) tuple.getValue();
       Double score = tuple.getScore();
-      rank++;
 
-      if (userId == null) {
+      if (userIdStr == null || score == null) {
         continue;
       }
 
-      // 사용자 정보 조회
-      User user = userRepository.findById(Long.valueOf(userId)).orElse(null);
-      if (user == null) {
-        continue;
+      try {
+        // 사용자 정보 조회
+        Long userId = Long.valueOf(userIdStr);
+        User user = userRepository.findById(userId).orElse(null);
+
+        if (user == null) {
+          // 탈퇴한 사용자인 경우 Redis에서 해당 데이터 삭제
+          Long removed = redisTemplate.opsForZSet().remove(RANKING_KEY, userIdStr);
+          log.info("랭킹에서 탈퇴 사용자 데이터 자동 삭제: userId={}, 삭제됨={}", userIdStr, removed > 0);
+          continue;
+        }
+
+        // 유효한 사용자 정보 수집
+        UserRankingDto dto = UserRankingDto.builder().userId(user.getId())
+            .nickname(user.getNickname()).profileImage(user.getProfileImage())
+            .score(score.intValue()).build();
+
+        validRankings.add(dto);
+      } catch (NumberFormatException e) {
+        log.warn("랭킹 데이터 처리 중 오류: 유효하지 않은 userId={}", userIdStr);
       }
-
-      UserRankingDto dto = UserRankingDto.builder().rank(rank).userId(user.getId())
-          .nickname(user.getNickname()).profileImage(user.getProfileImage())
-          .score(score != null ? score.intValue() : 0).build();
-
-      rankingList.add(dto);
     }
 
-    return rankingList;
+    // 최종 랭킹 리스트
+    List<UserRankingDto> result = new ArrayList<>();
+
+    for (int i = 0; i < validRankings.size(); i++) {
+      UserRankingDto original = validRankings.get(i);
+      int rank = i + 1;
+
+      UserRankingDto dto = UserRankingDto.builder().rank(rank).userId(original.getUserId())
+          .nickname(original.getNickname()).profileImage(original.getProfileImage())
+          .score(original.getScore()).isTopRank(rank <= 3)  // 1~3위는 상위 랭커
+          .build();
+
+      result.add(dto);
+    }
+
+    return result;
   }
 }

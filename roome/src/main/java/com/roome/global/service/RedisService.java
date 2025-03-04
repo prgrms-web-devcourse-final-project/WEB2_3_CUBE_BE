@@ -17,6 +17,7 @@ public class RedisService {
   private final StringRedisTemplate redisTemplate;
   private static final String REFRESH_TOKEN_PREFIX = "RT:";
   private static final String BLACKLIST_PREFIX = "BL:";
+  private static final String RANKING_KEY = "user:ranking";
 
   // Refresh Token 저장
   @Retryable(value = {
@@ -90,6 +91,27 @@ public class RedisService {
     } catch (Exception e) {
       log.error("블랙리스트 토큰 확인 실패 - Key: {}, Error: {}", key, e.getMessage(), e);
       throw new RuntimeException("블랙리스트 토큰 확인 중 오류 발생", e);
+    }
+  }
+
+  // 사용자 랭킹 데이터 삭제
+  @Retryable(value = {
+      RedisConnectionFailureException.class}, maxAttempts = 2, backoff = @Backoff(delay = 500))
+  public boolean deleteUserRankingData(String userId) {
+    try {
+      // 랭킹 Sorted Set에서 사용자 제거
+      Long removed = redisTemplate.opsForZSet().remove(RANKING_KEY, userId);
+      boolean result = removed != null && removed > 0;
+
+      // 사용자 총점 데이터 삭제
+      String totalScoreKey = "user:total:" + userId;
+      redisTemplate.delete(totalScoreKey);
+
+      log.debug("사용자 랭킹 데이터 삭제 결과 - UserId: {}, 성공여부: {}", userId, result);
+      return result;
+    } catch (Exception e) {
+      log.error("사용자 랭킹 데이터 삭제 실패 - UserId: {}, Error: {}", userId, e.getMessage(), e);
+      return false;
     }
   }
 }
