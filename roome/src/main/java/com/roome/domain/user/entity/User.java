@@ -131,14 +131,6 @@ public class User extends BaseTimeEntity {
     return lastLogin != null && (lastLogin.isEqual(midnight) || lastLogin.isAfter(midnight));
   }
 
-  public void accumulatePoints(int point) {
-    this.point.addPoints(point);
-  }
-
-  public void payPoints(int point) {
-    this.point.subtractPoints(point);
-  }
-
   public void validateRoomOwner(Long roomId) {
     if (room == null || !room.getId().equals(roomId)) {
       throw new RoomAuthorizationException();

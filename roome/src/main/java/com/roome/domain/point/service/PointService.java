@@ -12,8 +12,6 @@ import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.jwt.exception.UserNotFoundException;
-import com.roome.domain.point.exception.DuplicatePointEarnException;
-import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -56,9 +54,10 @@ public class PointService {
     int amount = POINT_EARN_MAP.getOrDefault(reason, 0);
 
     // 검증 로직 수정해야할 것 같습니다.
+    /*
     if (pointHistoryRepository.existsByUserIdAndReasonAndCreatedAt(user.getId(), reason, LocalDate.now())) {
       throw new DuplicatePointEarnException();
-    }
+    }*/
 
     Point point = pointRepository.findByUser(user)
         .orElseThrow(PointNotFoundException::new);

@@ -6,23 +6,21 @@ import com.roome.domain.auth.security.OAuth2UserPrincipal;
 import com.roome.domain.furniture.entity.Furniture;
 import com.roome.domain.furniture.repository.FurnitureRepository;
 import com.roome.domain.point.entity.Point;
-import com.roome.domain.point.entity.PointHistory;
 import com.roome.domain.point.entity.PointReason;
 import com.roome.domain.point.repository.PointHistoryRepository;
+import com.roome.domain.point.service.PointService;
 import com.roome.domain.rank.entity.ActivityType;
 import com.roome.domain.rank.service.UserActivityService;
 import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.entity.RoomTheme;
 import com.roome.domain.room.repository.RoomRepository;
-import com.roome.domain.room.service.RoomService;
 import com.roome.domain.user.entity.Provider;
 import com.roome.domain.user.entity.Status;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Random;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -43,8 +41,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
   private final FurnitureRepository furnitureRepository;
   private final PointRepository pointRepository;
   private final PointHistoryRepository pointHistoryRepository;
-  private final RoomService roomService;
   private final UserActivityService userActivityService;
+  private final PointService pointService;
 
   @Transactional
   @Override
@@ -121,15 +119,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
   }
 
   private void accumulateAttendancePoints(User user, LocalDateTime now) {
-    // 포인트 지급 (하루에 한 번)
-    if (!user.isAttendanceToday(now)) {
-      // 오늘 처음 로그인한 경우에만 포인트 지급
-      int point = new Random().nextInt(50) + 1;
-      user.accumulatePoints(point);
-      pointHistoryRepository.save(
-          PointHistory.builder().user(user).amount(point).reason(PointReason.DAILY_ATTENDANCE)
-              .build());
-    }
+      // 포인트 지급 (하루에 한 번)
+      if (user.isAttendanceToday(now)) {
+          return;
+      }
+      pointService.earnPoints(user, PointReason.DAILY_ATTENDANCE);
 
     // 랭킹 출석 체크 (오전/오후)
     recordAttendanceForRanking(user.getId());
@@ -159,7 +153,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             providerId,
             Status.ONLINE
         );
-        newUser.setLastLogin(now);
 
         // 2. User 저장
         User savedUser = userRepository.saveAndFlush(newUser);
