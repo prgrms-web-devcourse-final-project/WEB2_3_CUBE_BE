@@ -5,7 +5,7 @@ import com.roome.global.exception.ErrorCode;
 
 public class PointNotFoundException extends BusinessException {
 
-    public PointNotFoundException() {
-        super(ErrorCode.POINT_NOT_FOUND);
-    }
+  public PointNotFoundException() {
+    super(ErrorCode.POINT_NOT_FOUND);
+  }
 }
