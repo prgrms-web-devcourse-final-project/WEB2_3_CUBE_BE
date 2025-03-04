@@ -6,7 +6,6 @@ import com.roome.domain.guestbook.entity.RelationType;
 import com.roome.domain.guestbook.notificationEvent.GuestBookCreatedEvent;
 import com.roome.domain.guestbook.repository.GuestbookRepository;
 import com.roome.domain.houseMate.repository.HousemateRepository;
-import com.roome.domain.houseMate.service.HousemateService;
 import com.roome.domain.point.service.PointService;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.repository.RoomRepository;
@@ -25,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -48,10 +48,20 @@ public class GuestbookService {
 
         Long roomOwnerId = room.getUser().getId();
 
+        List<Long> userIds = guestbookPage.getContent().stream()
+                .map(guestbook -> guestbook.getUser().getId())
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, Boolean> housemateStatusMap = userIds.stream()
+                .collect(Collectors.toMap(
+                        userId -> userId,
+                        userId -> housemateRepository.existsByUserIdAndAddedId(userId, roomOwnerId)
+                ));
+
         List<GuestbookResponseDto> guestbooks = guestbookPage.stream()
                 .map(guestbook -> {
-                    // 매번 하우스메이트 여부를 체크하여 반영
-                    boolean isHousemate = housemateRepository.existsByUserIdAndAddedId(guestbook.getUser().getId(), roomOwnerId);
+                    boolean isHousemate = housemateStatusMap.getOrDefault(guestbook.getUser().getId(), false);
                     return GuestbookResponseDto.from(guestbook, isHousemate);
                 })
                 .collect(Collectors.toList());
@@ -68,7 +78,7 @@ public class GuestbookService {
     }
 
     @Transactional
-    public GuestbookResponseDto addGuestbook(Long roomId, Long userId, GuestbookRequestDto requestDto) {
+    public void addGuestbook(Long roomId, Long userId, GuestbookRequestDto requestDto) {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
@@ -111,7 +121,7 @@ public class GuestbookService {
             }
         }
 
-        return GuestbookResponseDto.from(guestbook);
+        GuestbookResponseDto.from(guestbook);
     }
 
     @Transactional
