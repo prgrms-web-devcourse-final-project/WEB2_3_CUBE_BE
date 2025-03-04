@@ -111,43 +111,8 @@ public class User extends BaseTimeEntity {
     }
   }
 
-  public void updateProfile(String nickname, String profileImage, String bio) {
-    boolean updated = false;
-
-    if (nickname != null && !nickname.equals(this.nickname)) {
-      this.nickname = nickname;
-      updated = true;
-    }
-
-    if (profileImage != null && !profileImage.equals(this.profileImage)) {
-      this.profileImage = profileImage;
-      updated = true;
-    }
-
-    if (bio != null && !bio.equals(this.bio)) {
-      this.bio = bio;
-      updated = true;
-    }
-
-    if (updated) {
-      this.lastLogin = LocalDateTime.now();
-    }
-  }
-
   public void updateStatus(Status status) {
     this.status = status;
-  }
-
-  public void updateRefreshToken(String refreshToken) {
-    this.refreshToken = refreshToken;
-  }
-
-  public void updateProvider(Provider provider) {
-    this.provider = provider;
-  }
-
-  public void updateProviderId(String providerId) {
-    this.providerId = providerId;
   }
 
   public boolean isAttendanceToday(LocalDateTime now) {
