@@ -34,8 +34,6 @@ public class RedisService {
   }
 
   // Refresh Token 조회
-  @Retryable(value = {
-      RedisConnectionFailureException.class}, maxAttempts = 2, backoff = @Backoff(delay = 500))
   public String getRefreshToken(String userId) {
     String key = REFRESH_TOKEN_PREFIX + userId;
     try {
@@ -80,8 +78,6 @@ public class RedisService {
   }
 
   // 토큰이 블랙리스트에 있는지 확인
-  @Retryable(value = {
-      RedisConnectionFailureException.class}, maxAttempts = 2, backoff = @Backoff(delay = 300))
   public boolean isBlacklisted(String accessToken) {
     String key = BLACKLIST_PREFIX + accessToken;
     try {
