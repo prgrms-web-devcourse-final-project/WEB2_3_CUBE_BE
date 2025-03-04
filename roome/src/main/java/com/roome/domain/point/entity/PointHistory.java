@@ -47,6 +47,14 @@ public class PointHistory {
     this.user = user;
     this.amount = amount;
     this.reason = reason;
-    this.createdAt = LocalDateTime.now();
+    this.createdAt = LocalDateTime.now(); // 기본적으로 현재 시간 적용
+  }
+
+  // 테스트에서 사용하기 위한 생성자 추가
+  public PointHistory(User user, int amount, PointReason reason, LocalDateTime createdAt) {
+    this.user = user;
+    this.amount = amount;
+    this.reason = reason;
+    this.createdAt = createdAt;
   }
 }
