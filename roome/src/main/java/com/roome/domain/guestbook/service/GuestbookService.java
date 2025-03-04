@@ -7,6 +7,8 @@ import com.roome.domain.guestbook.notificationEvent.GuestBookCreatedEvent;
 import com.roome.domain.guestbook.repository.GuestbookRepository;
 import com.roome.domain.houseMate.repository.HousemateRepository;
 import com.roome.domain.point.service.PointService;
+import com.roome.domain.rank.entity.ActivityType;
+import com.roome.domain.rank.service.UserActivityService;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
@@ -14,6 +16,9 @@ import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import jakarta.transaction.Transactional;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -37,6 +42,7 @@ public class GuestbookService {
     private final HousemateRepository housemateRepository;
     private final PointService pointService;
     private final ApplicationEventPublisher eventPublisher; // 이벤트 발행자
+    private final UserActivityService userActivityService;
 
     public GuestbookListResponseDto getGuestbook(Long roomId, int page, int size) {
         Room room = roomRepository.findById(roomId)
@@ -103,6 +109,10 @@ public class GuestbookService {
 
         // 방명록 보상 포인트 적립
         pointService.addGuestbookReward(userId);
+
+        // 방명록 작성 활동 기록 - 길이 체크
+        userActivityService.recordUserActivity(userId, ActivityType.GUESTBOOK, roomId,
+            requestDto.getMessage().length());
 
         if (!userId.equals(roomOwnerId)) {
             log.info("방명록 알림 이벤트 발행: 발신자={}, 수신자={}, 방명록={}",

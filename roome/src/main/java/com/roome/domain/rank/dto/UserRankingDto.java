@@ -16,4 +16,5 @@ public class UserRankingDto {
   private String nickname;
   private String profileImage;
   private int score;
+  private boolean isTopRank; // 1~3위 여부
 }

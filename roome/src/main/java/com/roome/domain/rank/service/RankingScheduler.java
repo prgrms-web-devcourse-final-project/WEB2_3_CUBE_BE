@@ -30,6 +30,8 @@ public class RankingScheduler {
   private final UserRepository userRepository;
   private final PointRepository pointRepository;
 
+  private static final String RANKING_KEY = "user:ranking";
+
   // 최근 7일간의 활동 점수를 집계하여 Redis에 저장
   @Scheduled(fixedRate = 3600000) // 1시간마다 실행
   @Transactional(readOnly = true)
@@ -37,7 +39,7 @@ public class RankingScheduler {
     log.info("랭킹 갱신 작업 시작: {}", LocalDateTime.now());
 
     // 기존 랭킹 데이터 삭제
-    redisTemplate.delete("user:ranking");
+    redisTemplate.delete(RANKING_KEY);
 
     // 최근 7일간 활동 데이터 집계
     LocalDateTime startDate = LocalDateTime.now().minusDays(7);
@@ -53,7 +55,7 @@ public class RankingScheduler {
 
     // Redis에 랭킹 데이터 저장
     for (Map.Entry<Long, Integer> entry : userScores.entrySet()) {
-      redisTemplate.opsForZSet().add("user:ranking", entry.getKey().toString(), entry.getValue());
+      redisTemplate.opsForZSet().add(RANKING_KEY, entry.getKey().toString(), entry.getValue());
     }
 
     log.info("랭킹 갱신 완료: 사용자 {}명의 점수 업데이트", userScores.size());
@@ -68,7 +70,7 @@ public class RankingScheduler {
 
     // 상위 랭킹 조회
     Set<ZSetOperations.TypedTuple<Object>> topRankers =
-        redisTemplate.opsForZSet().reverseRangeWithScores("user:ranking", 0, 2);
+        redisTemplate.opsForZSet().reverseRangeWithScores(RANKING_KEY, 0, 2);
 
     if (topRankers == null || topRankers.isEmpty()) {
       log.info("랭킹 데이터가 없습니다.");
@@ -132,8 +134,12 @@ public class RankingScheduler {
       userActivityRepository.deleteAllByCreatedAtBefore(oneWeekAgo);
 
       // 기존 랭킹 데이터 리셋
-      redisTemplate.delete("user:ranking");
+      redisTemplate.delete(RANKING_KEY);
       log.info("주간 랭킹 보상 지급 완료 및 랭킹 리셋");
+
+      // 새로운 랭킹 갱신
+      updateRanking();
+
     } catch (IllegalArgumentException e) {
       // 잘못된 인자 예외
       log.error("주간 랭킹 보상 지급 중 데이터 오류: {}", e.getMessage(), e);

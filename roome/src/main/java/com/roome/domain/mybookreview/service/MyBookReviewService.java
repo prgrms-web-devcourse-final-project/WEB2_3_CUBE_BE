@@ -9,6 +9,8 @@ import com.roome.domain.mybookreview.exception.MyBookReviewNotFoundException;
 import com.roome.domain.mybookreview.service.request.MyBookReviewCreateRequest;
 import com.roome.domain.mybookreview.service.request.MyBookReviewUpdateRequest;
 import com.roome.domain.mybookreview.service.response.MyBookReviewResponse;
+import com.roome.domain.rank.entity.ActivityType;
+import com.roome.domain.rank.service.UserActivityService;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,48 +22,60 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MyBookReviewService {
 
-    private final MyBookReviewRepository myBookReviewRepository;
-    private final MyBookRepository myBookRepository;
-    private final UserRepository userRepository;
+  private final MyBookReviewRepository myBookReviewRepository;
+  private final MyBookRepository myBookRepository;
+  private final UserRepository userRepository;
+  private final UserActivityService userActivityService;
 
-    @Transactional
-    public MyBookReviewResponse create(Long loginUserId, Long myBookId, MyBookReviewCreateRequest request) {
-        User user = userRepository.getById(loginUserId);
-        MyBook myBook = myBookRepository.getById(myBookId);
-        myBook.validateOwner(loginUserId);
+  @Transactional
+  public MyBookReviewResponse create(Long loginUserId, Long myBookId,
+      MyBookReviewCreateRequest request) {
+    User user = userRepository.getById(loginUserId);
+    MyBook myBook = myBookRepository.getById(myBookId);
+    myBook.validateOwner(loginUserId);
 
-        myBookReviewRepository.findByMyBookId(myBook.getId())
-                .ifPresent(exist -> {
-                    throw new MyBookReviewDuplicateException();
-                });
+    myBookReviewRepository.findByMyBookId(myBook.getId())
+        .ifPresent(exist -> {
+          throw new MyBookReviewDuplicateException();
+        });
 
-        MyBookReview myBookReview = myBookReviewRepository.save(request.toEntity(myBook, user));
-        return MyBookReviewResponse.from(myBookReview);
-    }
+    MyBookReview myBookReview = myBookReviewRepository.save(request.toEntity(myBook, user));
 
-    public MyBookReviewResponse read(Long myBookId) {
-        return MyBookReviewResponse.from(
-                myBookReviewRepository.findByMyBookId(myBookId)
-                        .orElseThrow(MyBookReviewNotFoundException::new)
-        );
-    }
+    // 서평 작성 활동 기록 추가 - 길이 체크
+    userActivityService.recordUserActivity(
+        loginUserId,
+        ActivityType.BOOK_REVIEW,
+        myBookId,
+        request.freeFormText().length()  // 30자 이상 체크
+    );
 
-    @Transactional
-    public MyBookReviewResponse update(Long loginUserId, Long myBookId, MyBookReviewUpdateRequest request) {
-        MyBookReview review = myBookReviewRepository.findByMyBookId(myBookId)
-                .orElseThrow(MyBookReviewNotFoundException::new);
-        review.validateOwner(loginUserId);
+    return MyBookReviewResponse.from(myBookReview);
+  }
 
-        review.update(request.toEntity());
-        return MyBookReviewResponse.from(review);
-    }
+  public MyBookReviewResponse read(Long myBookId) {
+    return MyBookReviewResponse.from(
+        myBookReviewRepository.findByMyBookId(myBookId)
+            .orElseThrow(MyBookReviewNotFoundException::new)
+    );
+  }
 
-    @Transactional
-    public void delete(Long loginUserId, Long myBookId) {
-        MyBookReview review = myBookReviewRepository.findByMyBookId(myBookId)
-                .orElseThrow(MyBookReviewNotFoundException::new);
-        review.validateOwner(loginUserId);
+  @Transactional
+  public MyBookReviewResponse update(Long loginUserId, Long myBookId,
+      MyBookReviewUpdateRequest request) {
+    MyBookReview review = myBookReviewRepository.findByMyBookId(myBookId)
+        .orElseThrow(MyBookReviewNotFoundException::new);
+    review.validateOwner(loginUserId);
 
-        myBookReviewRepository.delete(review);
-    }
+    review.update(request.toEntity());
+    return MyBookReviewResponse.from(review);
+  }
+
+  @Transactional
+  public void delete(Long loginUserId, Long myBookId) {
+    MyBookReview review = myBookReviewRepository.findByMyBookId(myBookId)
+        .orElseThrow(MyBookReviewNotFoundException::new);
+    review.validateOwner(loginUserId);
+
+    myBookReviewRepository.delete(review);
+  }
 }

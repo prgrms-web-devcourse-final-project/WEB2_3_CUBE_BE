@@ -9,6 +9,8 @@ import com.roome.domain.point.entity.Point;
 import com.roome.domain.point.entity.PointHistory;
 import com.roome.domain.point.entity.PointReason;
 import com.roome.domain.point.repository.PointHistoryRepository;
+import com.roome.domain.rank.entity.ActivityType;
+import com.roome.domain.rank.service.UserActivityService;
 import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.entity.RoomTheme;
@@ -42,6 +44,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
   private final PointRepository pointRepository;
   private final PointHistoryRepository pointHistoryRepository;
   private final RoomService roomService;
+  private final UserActivityService userActivityService;
 
   @Transactional
   @Override
@@ -118,14 +121,23 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
   }
 
   private void accumulateAttendancePoints(User user, LocalDateTime now) {
-    if (user.isAttendanceToday(now)) {
-      return;
+    // 포인트 지급 (하루에 한 번)
+    if (!user.isAttendanceToday(now)) {
+      // 오늘 처음 로그인한 경우에만 포인트 지급
+      int point = new Random().nextInt(50) + 1;
+      user.accumulatePoints(point);
+      pointHistoryRepository.save(
+          PointHistory.builder().user(user).amount(point).reason(PointReason.DAILY_ATTENDANCE)
+              .build());
     }
-    int point = new Random().nextInt(50) + 1;
-    user.accumulatePoints(point);
-    pointHistoryRepository.save(
-        PointHistory.builder().user(user).amount(point).reason(PointReason.DAILY_ATTENDANCE)
-            .build());
+
+    // 랭킹 출석 체크 (오전/오후)
+    recordAttendanceForRanking(user.getId());
+  }
+
+  // 랭킹 시스템을 위한 출석 체크
+  private void recordAttendanceForRanking(Long userId) {
+    userActivityService.recordUserActivity(userId, ActivityType.ATTENDANCE, null);
   }
 
   private User updateOrCreateUser(OAuth2Response response, LocalDateTime now) {

@@ -18,6 +18,8 @@ import com.roome.domain.mycd.exception.MyCdPaginationException;
 import com.roome.domain.mycd.exception.MyCdUnauthorizedException;
 import com.roome.domain.mycd.repository.MyCdCountRepository;
 import com.roome.domain.mycd.repository.MyCdRepository;
+import com.roome.domain.rank.entity.ActivityType;
+import com.roome.domain.rank.service.UserActivityService;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.exception.RoomNoFoundException;
 import com.roome.domain.room.repository.RoomRepository;
@@ -25,7 +27,7 @@ import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.jwt.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
-import java.util.Optional;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -33,8 +35,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Slf4j
 @Service
@@ -48,6 +48,7 @@ public class MyCdService {
   private final RoomRepository roomRepository;
   private final UserRepository userRepository;
   private final CdGenreTypeRepository cdGenreTypeRepository;
+  private final UserActivityService userActivityService;
 
   public MyCdResponse addCdToMyList(Long userId, MyCdCreateRequest request) {
     User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
@@ -82,6 +83,9 @@ public class MyCdService {
     MyCdCount myCdCount = myCdCountRepository.findByRoom(room)
         .orElseGet(() -> myCdCountRepository.save(MyCdCount.init(room)));
     myCdCount.increment();
+
+    // 음악 등록 활동 기록 추가
+    userActivityService.recordUserActivity(userId, ActivityType.MUSIC_REGISTRATION, cd.getId());
 
     return MyCdResponse.fromEntity(myCd);
   }
