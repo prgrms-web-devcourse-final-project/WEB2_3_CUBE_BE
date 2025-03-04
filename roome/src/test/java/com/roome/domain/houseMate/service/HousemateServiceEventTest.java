@@ -3,6 +3,7 @@ package com.roome.domain.houseMate.service;
 import com.roome.domain.houseMate.entity.AddedHousemate;
 import com.roome.domain.houseMate.notificationEvent.HouseMateCreatedEvent;
 import com.roome.domain.houseMate.repository.HousemateRepository;
+import com.roome.domain.rank.service.UserActivityService;
 import com.roome.domain.user.entity.Provider;
 import com.roome.domain.user.entity.Status;
 import com.roome.domain.user.entity.User;
@@ -34,6 +35,9 @@ public class HousemateServiceEventTest {
 
     @InjectMocks
     private HousemateService housemateService;
+
+    @Mock
+    private UserActivityService userActivityService;
 
     @Test
     @DisplayName("하우스메이트 추가 시 알림 이벤트가 발행되어야 한다")
