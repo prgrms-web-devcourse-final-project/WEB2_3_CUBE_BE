@@ -71,7 +71,6 @@ public class HousemateService {
 //      log.error("팔로워 활동 기록 중 오류 발생: {}", e.getMessage(), e);
 //      // 활동 기록 실패가 기존 비즈니스 로직에 영향을 주지 않도록 예외를 잡아서 처리
 //    }
-=======
 
     // 하우스메이트 추가 알림 발행
     log.info("하우스메이트 알림 이벤트 발행: 발신자={}, 수신자={}, 대상 ID={}", userId, targetId, targetId);
