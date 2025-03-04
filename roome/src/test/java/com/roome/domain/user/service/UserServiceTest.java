@@ -125,7 +125,9 @@ class UserServiceTest {
     verify(cdCommentRepository, times(1)).deleteAll(comments);
     verify(myCdRepository, times(1)).deleteAll(myCds);
     verify(guestbookRepository, times(1)).deleteAll(guestbooks);
-    verify(furnitureRepository, times(1)).deleteAll(furnitures);
+    for (Furniture furniture : furnitures) {
+      verify(furnitureRepository, times(1)).delete(furniture);
+    }
     verify(roomRepository, times(1)).delete(testRoom);
     verify(userRepository, times(1)).delete(testUser);
   }
