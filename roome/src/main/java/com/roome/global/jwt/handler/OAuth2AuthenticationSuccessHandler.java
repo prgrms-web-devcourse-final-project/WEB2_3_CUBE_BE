@@ -13,6 +13,7 @@ import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.service.RedisService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,8 +22,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
-
-import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
@@ -45,11 +44,18 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         User user = oAuth2UserPrincipal.getUser();
 
         log.info("OAuth2 로그인 성공: userId={}, email={}", user.getId(), user.getEmail());
-        // 로그인 성공 후 사용자 스태터스 변경
-        userStatusService.updateUserStatus(user.getId(), Status.ONLINE);
-        log.info("사용자 상태 변경: userId={}, status={}", user.getId(), Status.ONLINE);
 
-        // JWT 토큰 생성
+        // 사용자 상태 업데이트는 별도의 try-catch 블록으로 분리
+        try {
+            userStatusService.updateUserStatus(user.getId(), Status.ONLINE);
+            log.info("사용자 상태 변경: userId={}, status={}", user.getId(), Status.ONLINE);
+        } catch (Exception e) {
+            // 상태 업데이트 실패는 로깅만 하고 계속 진행
+            log.warn("사용자 상태 업데이트 실패 (무시됨): userId={}, error={}",
+                    user.getId(), e.getMessage());
+        }
+
+        // 기본 인증 로직은 그대로 유지 (상태 관리와 분리)
         JwtToken jwtToken = jwtTokenProvider.createToken(user.getId().toString());
 
         // Redis에 리프레시 토큰 저장
