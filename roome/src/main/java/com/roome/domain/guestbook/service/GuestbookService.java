@@ -5,7 +5,10 @@ import com.roome.domain.guestbook.entity.Guestbook;
 import com.roome.domain.guestbook.entity.RelationType;
 import com.roome.domain.guestbook.notificationEvent.GuestBookCreatedEvent;
 import com.roome.domain.guestbook.repository.GuestbookRepository;
+import com.roome.domain.houseMate.repository.HousemateRepository;
 import com.roome.domain.point.service.PointService;
+import com.roome.domain.rank.entity.ActivityType;
+import com.roome.domain.rank.service.UserActivityService;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
@@ -13,6 +16,9 @@ import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import jakarta.transaction.Transactional;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -23,6 +29,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -32,8 +39,10 @@ public class GuestbookService {
     private final GuestbookRepository guestbookRepository;
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
+    private final HousemateRepository housemateRepository;
     private final PointService pointService;
     private final ApplicationEventPublisher eventPublisher; // 이벤트 발행자
+    private final UserActivityService userActivityService;
 
     public GuestbookListResponseDto getGuestbook(Long roomId, int page, int size) {
         Room room = roomRepository.findById(roomId)
@@ -43,8 +52,24 @@ public class GuestbookService {
                 room,
                 PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt")));
 
+        Long roomOwnerId = room.getUser().getId();
+
+        List<Long> userIds = guestbookPage.getContent().stream()
+                .map(guestbook -> guestbook.getUser().getId())
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, Boolean> housemateStatusMap = userIds.stream()
+                .collect(Collectors.toMap(
+                        userId -> userId,
+                        userId -> housemateRepository.existsByUserIdAndAddedId(userId, roomOwnerId)
+                ));
+
         List<GuestbookResponseDto> guestbooks = guestbookPage.stream()
-                .map(GuestbookResponseDto::from)
+                .map(guestbook -> {
+                    boolean isHousemate = housemateStatusMap.getOrDefault(guestbook.getUser().getId(), false);
+                    return GuestbookResponseDto.from(guestbook, isHousemate);
+                })
                 .collect(Collectors.toList());
 
         return GuestbookListResponseDto.builder()
@@ -59,12 +84,16 @@ public class GuestbookService {
     }
 
     @Transactional
-    public GuestbookResponseDto addGuestbook(Long roomId, Long userId, GuestbookRequestDto requestDto) {
+    public void addGuestbook(Long roomId, Long userId, GuestbookRequestDto requestDto) {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        Long roomOwnerId = room.getUser().getId();
+
+        boolean isHousemate = housemateRepository.existsByUserIdAndAddedId(userId, roomOwnerId);
 
         Guestbook guestbook = Guestbook.builder()
                 .room(room)
@@ -72,14 +101,17 @@ public class GuestbookService {
                 .nickname(user.getNickname())
                 .profileImage(user.getProfileImage())
                 .message(requestDto.getMessage())
-                .relation(RelationType.지나가던_나그네)
+                .relation(isHousemate ? RelationType.하우스메이트 : RelationType.지나가던_나그네) // 하우스메이트 여부 반영
                 .createdAt(LocalDateTime.now())
                 .build();
 
         guestbookRepository.save(guestbook);
 
 
-        Long roomOwnerId = room.getUser().getId();
+        // 방명록 작성 활동 기록 - 길이 체크
+        userActivityService.recordUserActivity(userId, ActivityType.GUESTBOOK, roomId,
+            requestDto.getMessage().length());
+
         if (!userId.equals(roomOwnerId)) {
             log.info("방명록 알림 이벤트 발행: 발신자={}, 수신자={}, 방명록={}",
                     userId, roomOwnerId, guestbook.getGuestbookId());
@@ -97,7 +129,7 @@ public class GuestbookService {
             }
         }
 
-        return GuestbookResponseDto.from(guestbook);
+        GuestbookResponseDto.from(guestbook);
     }
 
     @Transactional

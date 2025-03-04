@@ -63,6 +63,9 @@ public enum ErrorCode {
   PAYMENT_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "결제 검증에 실패했습니다."),
   PAYMENT_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "결제 처리 중 오류가 발생했습니다."),
   PAYMENT_ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 결제에 대한 접근 권한이 없습니다."),
+  PAYMENT_NOT_CANCELABLE(HttpStatus.BAD_REQUEST, "이 결제는 취소할 수 없습니다."),
+  PAYMENT_CANCEL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "결제 취소 중 오류가 발생했습니다."),
+
 
   // 서평 관련 예외
   MY_BOOK_REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "서평을 찾을 수 없습니다."),
@@ -105,6 +108,7 @@ public enum ErrorCode {
   INVALID_POINT_OPERATION(HttpStatus.BAD_REQUEST, "잘못된 포인트 조회 요청입니다."),
 
   // 이미지 업로드 관련 예외
+  POINT_NOT_FOUND(HttpStatus.NOT_FOUND, "포인트 정보를 찾을 수 없습니다."),
   IMAGE_NOT_FOUND(HttpStatus.BAD_REQUEST, "이미지 파일이 없거나 비어 있습니다."),
   INVALID_IMAGE_FORMAT(HttpStatus.BAD_REQUEST, "지원되지 않는 이미지 형식입니다."),
   IMAGE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "이미지 크기가 제한을 초과했습니다."),
@@ -112,6 +116,17 @@ public enum ErrorCode {
   INVALID_IMAGE_URL(HttpStatus.BAD_REQUEST, "잘못된 이미지 URL입니다."),
   S3_DELETE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 삭제 중 오류가 발생했습니다."),
 
+  // WebSocket 관련 예외
+  WEBSOCKET_TOKEN_MISSING(HttpStatus.UNAUTHORIZED, "웹소켓 연결에 필요한 인증 토큰이 없습니다."),
+  WEBSOCKET_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "웹소켓 연결에 사용된 토큰이 유효하지 않습니다."),
+  WEBSOCKET_TOKEN_BLACKLISTED(HttpStatus.UNAUTHORIZED, "웹소켓 연결에 사용된 토큰이 블랙리스트에 등록되어 있습니다."),
+  NOTIFICATION_DELIVERY_FAILED(HttpStatus.SERVICE_UNAVAILABLE, "알림 메시지 전송에 실패했습니다. 수신자가 연결되어 있지 않거나 대상을 찾을 수 없습니다."),
+  NOTIFICATION_BROKER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "알림 메시지 브로커 오류가 발생했습니다."),
+  NOTIFICATION_SENDING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "알림 메시지 전송 중 오류가 발생했습니다."),
+  //알림 파라미터 관련 예외
+  NOTIFICATION_INVALID_RECEIVER(HttpStatus.BAD_REQUEST, "알림 수신자 ID가 유효하지 않습니다."),
+  NOTIFICATION_INVALID_TYPE(HttpStatus.BAD_REQUEST, "알림 타입이 유효하지 않습니다."),
+  NOTIFICATION_INVALID_ID(HttpStatus.BAD_REQUEST, "알림 ID가 유효하지 않습니다."),
   // 서버 에러
   INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 에러가 발생했습니다.");
 

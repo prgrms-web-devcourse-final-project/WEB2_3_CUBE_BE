@@ -23,7 +23,7 @@ public class RankingController {
 
   @Operation(
       summary = "상위 랭킹 조회",
-      description = "포인트 기준 상위 10명의 사용자 랭킹을 조회합니다."
+      description = "활동 점수 기준 상위 10명의 사용자 랭킹을 조회합니다."
   )
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "랭킹 조회 성공"),
