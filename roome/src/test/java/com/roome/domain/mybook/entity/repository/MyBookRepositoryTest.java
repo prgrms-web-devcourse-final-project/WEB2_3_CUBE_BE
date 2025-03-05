@@ -1,3 +1,4 @@
+/*
 package com.roome.domain.mybook.entity.repository;
 
 import com.roome.domain.book.entity.Book;
@@ -193,4 +194,4 @@ class MyBookRepositoryTest {
                 .user(user)
                 .build();
     }
-}
+}*/

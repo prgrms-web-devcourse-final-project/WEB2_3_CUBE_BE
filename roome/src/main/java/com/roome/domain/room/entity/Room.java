@@ -97,7 +97,6 @@ public class Room {
 
   public static Room createRoom(User user, RoomTheme theme) {
     Room room = new Room();
-    room.id = user.getId();  // userId와 동일한 값 설정
     room.user = user;
     room.theme = theme;
     room.furnitures = new ArrayList<>();

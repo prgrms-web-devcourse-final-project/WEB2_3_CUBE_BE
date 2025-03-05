@@ -1,13 +1,15 @@
 package com.roome.domain.point.entity;
 
 import com.roome.domain.furniture.exception.BookshelfMaxLevelException;
-import com.roome.domain.furniture.exception.CdRackMaxLevelException;
 
 public enum PointReason {
   // 포인트 적립
   GUESTBOOK_REWARD,  // 방명록 작성 보상 (+10P, 1일 1회)
   FIRST_COME_EVENT,  // 선착순 이벤트 보상 (랜덤 지급)
   DAILY_ATTENDANCE,  // 출석 체크 보상 (하루 1회 랜덤 지급)
+  RANK_1,            // 주간 랭킹 1등 (100P)
+  RANK_2,            // 주간 랭킹 2등 (70P)
+  RANK_3,            // 주간 랭킹 3등 (50P)
 
   // 포인트 사용
   THEME_PURCHASE,    // 테마 구매
@@ -30,15 +32,5 @@ public enum PointReason {
       return BOOK_UNLOCK_LV3;
     }
     throw new BookshelfMaxLevelException();
-  }
-
-  public static PointReason getCdRackUpgradeReason(int level) {
-    if (level == 1) {
-      return CD_UNLOCK_LV2;
-    }
-    if (level == 2) {
-      return CD_UNLOCK_LV3;
-    }
-    throw new CdRackMaxLevelException();
   }
 }
