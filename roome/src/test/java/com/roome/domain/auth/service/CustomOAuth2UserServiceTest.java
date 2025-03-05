@@ -22,6 +22,7 @@ import com.roome.domain.furniture.repository.FurnitureRepository;
 import com.roome.domain.point.entity.Point;
 import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.point.repository.PointRepository;
+import com.roome.domain.point.service.PointService;
 import com.roome.domain.rank.entity.ActivityType;
 import com.roome.domain.rank.service.UserActivityService;
 import com.roome.domain.room.entity.Room;
@@ -77,6 +78,9 @@ class CustomOAuth2UserServiceTest {
 
   @Mock
   private RoomService roomService;
+
+  @Mock
+  private PointService pointService;
 
   @Mock
   private UserActivityService userActivityService;
