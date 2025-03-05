@@ -1,6 +1,7 @@
 package com.roome.domain.notification.listener;
 
 import com.roome.domain.cdcomment.notificationEvent.CdCommentCreatedEvent;
+import com.roome.domain.event.notificationEvent.EventUpcomingNotificationEvent;
 import com.roome.domain.guestbook.notificationEvent.GuestBookCreatedEvent;
 import com.roome.domain.houseMate.notificationEvent.HouseMateCreatedEvent;
 import com.roome.domain.notification.dto.CreateNotificationRequest;
@@ -218,6 +219,72 @@ public class NotificationEventListenerTest {
         // When & Then
         assertThrows(BusinessException.class, () -> notificationEventListener.handleHouseMateCreated(event));
         verify(notificationWebSocketService, never()).sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
+    }
+
+    @Test
+    @DisplayName("이벤트 알림 처리가 성공적으로 이루어져야 한다")
+    void handleEventUpcoming_Success() {
+        // Given
+        Object source = new Object();
+        EventUpcomingNotificationEvent event = new EventUpcomingNotificationEvent(
+                source, 1L, 2L, 3L);
+
+        when(notificationService.createNotification(any())).thenReturn(1L);
+        doNothing().when(notificationWebSocketService).sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
+
+        // When
+        notificationEventListener.handleEventUpcoming(event);
+
+        // Then
+        verify(notificationService, times(1)).createNotification(any());
+        verify(notificationWebSocketService, times(1)).sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
+    }
+
+    @Test
+    @DisplayName("이벤트 알림 처리 중 예외가 발생하면 비즈니스 예외로 변환되어야 한다")
+    void handleEventUpcoming_WithException() {
+        // Given
+        Object source = new Object();
+        EventUpcomingNotificationEvent event = new EventUpcomingNotificationEvent(
+                source, 1L, 2L, 3L);
+
+        when(notificationService.createNotification(any())).thenThrow(new RuntimeException("Service error"));
+
+        // When & Then
+        assertThrows(BusinessException.class, () -> notificationEventListener.handleEventUpcoming(event));
+        verify(notificationWebSocketService, never()).sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
+    }
+
+    @Test
+    @DisplayName("이벤트 알림의 필드가 올바르게 전달되는지 검증한다")
+    void handleEventUpcoming_VerifyFields() {
+        // Given
+        Object source = new Object();
+        Long senderId = 1L;
+        Long receiverId = 2L;
+        Long eventId = 3L;
+        EventUpcomingNotificationEvent event = new EventUpcomingNotificationEvent(
+                source, senderId, receiverId, eventId);
+
+        when(notificationService.createNotification(any())).thenReturn(1L);
+        doNothing().when(notificationWebSocketService).sendNotificationToUser(anyLong(), anyLong(), any(NotificationType.class));
+
+        // When
+        notificationEventListener.handleEventUpcoming(event);
+
+        // Then
+        ArgumentCaptor<CreateNotificationRequest> captor = ArgumentCaptor.forClass(CreateNotificationRequest.class);
+        verify(notificationService).createNotification(captor.capture());
+
+        CreateNotificationRequest capturedRequest = captor.getValue();
+        assertEquals(eventId, capturedRequest.getTargetId());
+        assertEquals(NotificationType.EVENT, capturedRequest.getType());
+        assertEquals(senderId, capturedRequest.getSenderId());
+        assertEquals(receiverId, capturedRequest.getReceiverId());
+
+        // 웹소켓 발송 검증
+        verify(notificationWebSocketService).sendNotificationToUser(
+                eq(receiverId), eq(1L), eq(NotificationType.EVENT));
     }
 
     // 추가 테스트
