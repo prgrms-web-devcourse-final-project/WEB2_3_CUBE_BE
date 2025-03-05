@@ -5,18 +5,8 @@ import com.roome.domain.furniture.entity.FurnitureType;
 import com.roome.domain.furniture.exception.BookshelfFullException;
 import com.roome.domain.room.exception.RoomAuthorizationException;
 import com.roome.domain.user.entity.User;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
-import jakarta.persistence.Version;
+import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +27,8 @@ import lombok.Setter;
 public class Room {
 
   @Id
-  private Long id; // userId와 동일한 값
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false, unique = true)
