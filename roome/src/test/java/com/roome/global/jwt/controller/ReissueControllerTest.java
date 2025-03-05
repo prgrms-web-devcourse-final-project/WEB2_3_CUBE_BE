@@ -125,7 +125,7 @@ class ReissueControllerTest {
     mockMvc.perform(post("/api/auth/reissue-token").contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request)).with(csrf()))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.message").value("리프레시 토큰이 필요합니다."));
+        .andExpect(jsonPath("$.message").value("Refresh 토큰이 유효하지 않거나, 입력값이 비어 있습니다."));
   }
 
   @Test
@@ -139,7 +139,7 @@ class ReissueControllerTest {
     mockMvc.perform(post("/api/auth/reissue-token").contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request)).with(csrf()))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.message").value("리프레시 토큰이 필요합니다."));
+        .andExpect(jsonPath("$.message").value("Refresh 토큰이 유효하지 않거나, 입력값이 비어 있습니다."));
   }
 
   @Test
@@ -158,6 +158,6 @@ class ReissueControllerTest {
     mockMvc.perform(post("/api/auth/reissue-token").contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request)).with(csrf()))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.message").value("유효하지 않은 리프레시 토큰입니다."));
+        .andExpect(jsonPath("$.message").value("Refresh 토큰이 유효하지 않거나, 입력값이 비어 있습니다."));
   }
 }
