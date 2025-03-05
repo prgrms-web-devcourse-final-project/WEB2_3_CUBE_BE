@@ -64,7 +64,6 @@ public class PointService {
       throw new DuplicatePointEarnException();
     }
 
-
     Point point = pointRepository.findByUser(user)
         .orElseThrow(PointNotFoundException::new);
 
