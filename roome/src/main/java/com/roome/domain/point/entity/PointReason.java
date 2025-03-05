@@ -23,7 +23,12 @@ public enum PointReason {
   POINT_PURCHASE_100,
   POINT_PURCHASE_550,
   POINT_PURCHASE_1200,
-  POINT_PURCHASE_4000;
+  POINT_PURCHASE_4000,
+
+  POINT_REFUND_100,
+  POINT_REFUND_550,
+  POINT_REFUND_1200,
+  POINT_REFUND_4000;
 
   public static PointReason getBookShelfUpgradeReason(int level) {
     if (level == 1) {
