@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Repository
 public interface PointHistoryRepository extends JpaRepository<PointHistory, Long> {
 
-  boolean existsByUserIdAndReasonAndCreatedAt(Long userId, PointReason reason, LocalDate createdAt);
+  boolean existsByUserIdAndReasonAndCreatedAtBetween(Long userId, PointReason reason, LocalDateTime start, LocalDateTime end);
 
   Slice<PointHistory> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
 

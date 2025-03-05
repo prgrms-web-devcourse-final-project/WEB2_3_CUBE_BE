@@ -5,11 +5,14 @@ import com.roome.domain.cd.entity.CdGenre;
 import com.roome.domain.cd.entity.CdGenreType;
 import com.roome.domain.cd.repository.CdGenreTypeRepository;
 import com.roome.domain.cd.repository.CdRepository;
+import com.roome.domain.furniture.entity.FurnitureCapacity;
+import com.roome.domain.furniture.service.FurnitureService;
 import com.roome.domain.mycd.dto.MyCdCreateRequest;
 import com.roome.domain.mycd.dto.MyCdListResponse;
 import com.roome.domain.mycd.dto.MyCdResponse;
 import com.roome.domain.mycd.entity.MyCd;
 import com.roome.domain.mycd.entity.MyCdCount;
+import com.roome.domain.mycd.exception.CdRackCapacityExceededException;
 import com.roome.domain.mycd.exception.MyCdAlreadyExistsException;
 import com.roome.domain.mycd.exception.MyCdDatabaseException;
 import com.roome.domain.mycd.exception.MyCdListEmptyException;
@@ -49,12 +52,24 @@ public class MyCdService {
   private final UserRepository userRepository;
   private final CdGenreTypeRepository cdGenreTypeRepository;
   private final UserActivityService userActivityService;
+  private final FurnitureService furnitureService;
+  private final FurnitureCapacity furnitureCapacity;
 
   public MyCdResponse addCdToMyList(Long userId, MyCdCreateRequest request) {
     User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-
     Room room = roomRepository.findByUserId(userId).orElseThrow(RoomNoFoundException::new);
 
+    // CD_RACK 레벨 확인
+    int cdRackLevel = furnitureService.getCdRackLevel(room);
+    int maxCapacity = furnitureCapacity.getMaxCdCapacity(cdRackLevel);
+
+    // 현재 등록된 CD 개수 조회
+    long currentCdCount = myCdRepository.countByUserId(userId);
+    if (currentCdCount >= maxCapacity) {
+      throw new CdRackCapacityExceededException();
+    }
+
+    // CD 존재 여부 확인 후 저장 (없으면 새로 생성)
     Cd cd = cdRepository.findByTitleAndArtist(request.getTitle(), request.getArtist())
         .orElseGet(() -> {
           Cd newCd = Cd.create(request.getTitle(), request.getArtist(), request.getAlbum(),
@@ -72,14 +87,16 @@ public class MyCdService {
           return cdRepository.save(newCd);
         });
 
-    // 중복 추가 체크 최적화
+    // 중복 추가 방지
     myCdRepository.findByUserIdAndCdId(userId, cd.getId())
         .ifPresent(existingCd -> {
           throw new MyCdAlreadyExistsException();
         });
 
+    // MyCd 저장
     MyCd myCd = myCdRepository.save(MyCd.create(user, room, cd));
 
+    // MyCdCount 업데이트
     MyCdCount myCdCount = myCdCountRepository.findByRoom(room)
         .orElseGet(() -> myCdCountRepository.save(MyCdCount.init(room)));
     myCdCount.increment();

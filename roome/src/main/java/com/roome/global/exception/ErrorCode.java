@@ -27,7 +27,7 @@ public enum ErrorCode {
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
   INVALID_NICKNAME_FORMAT(HttpStatus.BAD_REQUEST, "닉네임 형식이 올바르지 않습니다."),
   INVALID_BIO_LENGTH(HttpStatus.BAD_REQUEST, "자기소개는 100자를 초과할 수 없습니다."),
-    INVALID_BIO_NULL(HttpStatus.BAD_REQUEST, "자기소개는 비어 있을 수 없습니다."),
+  INVALID_BIO_NULL(HttpStatus.BAD_REQUEST, "자기소개는 비어 있을 수 없습니다."),
 
   // Auth 관련 예외
   UNAUTHORIZED_ACCESS(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
@@ -78,6 +78,9 @@ public enum ErrorCode {
   MY_BOOK_DUPLICATE(HttpStatus.BAD_REQUEST, "책장에 등록된 도서입니다."),
 
   // CD 관련 예외
+  CD_RACK_CAPACITY_EXCEEDED(HttpStatus.BAD_REQUEST, "CD 랙의 저장 용량을 초과하였습니다."),
+  CD_RACK_MAX_LEVEL(HttpStatus.BAD_REQUEST, "CD 랙이 최대 레벨입니다."),
+  CD_RACK_NOT_FOUND(HttpStatus.NOT_FOUND, "CD 랙을 찾을 수 없습니다."),
   MYCD_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 MyCd를 찾을 수 없습니다."),
   MYCD_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 추가된 CD입니다."),
   MYCD_LIST_EMPTY(HttpStatus.NOT_FOUND, "CD 목록이 비어 있습니다."),
@@ -104,9 +107,15 @@ public enum ErrorCode {
   // Point 관련 예외
   INSUFFICIENT_POINTS(HttpStatus.BAD_REQUEST, "포인트가 부족합니다."),
   DUPLICATE_POINT_EARN(HttpStatus.BAD_REQUEST, "해당 포인트는 하루 1회만 적립 가능합니다."),
-  POINT_HISTORY_EMPTY(HttpStatus.BAD_REQUEST,"포인트 내역이 존재하지 않습니다."),
+  POINT_HISTORY_EMPTY(HttpStatus.BAD_REQUEST, "포인트 내역이 존재하지 않습니다."),
   INVALID_POINT_OPERATION(HttpStatus.BAD_REQUEST, "잘못된 포인트 조회 요청입니다."),
   POINT_NOT_FOUND(HttpStatus.NOT_FOUND, "포인트 정보를 찾을 수 없습니다."),
+
+  // 이벤트 관련 예외
+  EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "이벤트를 찾을 수 없습니다."),
+  EVENT_NOT_STARTED(HttpStatus.BAD_REQUEST, "이벤트가 아직 시작되지 않았습니다."),
+  EVENT_FULL(HttpStatus.BAD_REQUEST, "이벤트의 최대 참여 인원이 초과되었습니다."),
+  ALREADY_PARTICIPATED(HttpStatus.BAD_REQUEST, "이미 참여한 이벤트입니다."),
 
   // 이미지 업로드 관련 예외
   IMAGE_NOT_FOUND(HttpStatus.BAD_REQUEST, "이미지 파일이 없거나 비어 있습니다."),
@@ -120,13 +129,16 @@ public enum ErrorCode {
   WEBSOCKET_TOKEN_MISSING(HttpStatus.UNAUTHORIZED, "웹소켓 연결에 필요한 인증 토큰이 없습니다."),
   WEBSOCKET_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "웹소켓 연결에 사용된 토큰이 유효하지 않습니다."),
   WEBSOCKET_TOKEN_BLACKLISTED(HttpStatus.UNAUTHORIZED, "웹소켓 연결에 사용된 토큰이 블랙리스트에 등록되어 있습니다."),
-  NOTIFICATION_DELIVERY_FAILED(HttpStatus.SERVICE_UNAVAILABLE, "알림 메시지 전송에 실패했습니다. 수신자가 연결되어 있지 않거나 대상을 찾을 수 없습니다."),
+  NOTIFICATION_DELIVERY_FAILED(HttpStatus.SERVICE_UNAVAILABLE,
+      "알림 메시지 전송에 실패했습니다. 수신자가 연결되어 있지 않거나 대상을 찾을 수 없습니다."),
   NOTIFICATION_BROKER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "알림 메시지 브로커 오류가 발생했습니다."),
   NOTIFICATION_SENDING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "알림 메시지 전송 중 오류가 발생했습니다."),
+
   //알림 파라미터 관련 예외
   NOTIFICATION_INVALID_RECEIVER(HttpStatus.BAD_REQUEST, "알림 수신자 ID가 유효하지 않습니다."),
   NOTIFICATION_INVALID_TYPE(HttpStatus.BAD_REQUEST, "알림 타입이 유효하지 않습니다."),
   NOTIFICATION_INVALID_ID(HttpStatus.BAD_REQUEST, "알림 ID가 유효하지 않습니다."),
+
   // 서버 에러
   INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 에러가 발생했습니다.");
 
