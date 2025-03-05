@@ -43,7 +43,7 @@ public class UserActivityService {
     }
 
     // 제한 조건 체크
-    if (!checkDailyLimit(userId, activityType)) {
+    if (!checkDailyLimit(userId, activityType, relatedEntityId)) {
       log.info("일일 한도 초과: 유저={}, 활동={}", userId, activityType);
       return false;
     }
@@ -140,7 +140,7 @@ public class UserActivityService {
   }
 
   // 일일 활동 제한 체크
-  private boolean checkDailyLimit(Long userId, ActivityType activityType) {
+  private boolean checkDailyLimit(Long userId, ActivityType activityType, Long relatedEntityId) {
     LocalDate today = LocalDate.now();
     String key = "user:daily:" + activityType + ":" + userId + ":" + today;
 
@@ -148,6 +148,18 @@ public class UserActivityService {
     if (count == null) {
       // 키가 없는 경우 (첫 활동인 경우)
       count = 0L;
+    }
+
+    // 방명록은 방마다 하루에 하나만 허용
+    if (activityType == ActivityType.GUESTBOOK && relatedEntityId != null) {
+      String roomGuestbookKey = "user:guestbook:" + userId + ":" + relatedEntityId + ":" + today;
+      Boolean alreadyWritten = redisTemplate.hasKey(roomGuestbookKey);
+      if (Boolean.TRUE.equals(alreadyWritten)) {
+        log.info("같은 방에 이미 방명록 작성함: userId={}, roomId={}", userId, relatedEntityId);
+        return false;
+      }
+      // 방명록 작성 기록 (24시간 유효)
+      redisTemplate.opsForValue().set(roomGuestbookKey, 1, 24, TimeUnit.HOURS);
     }
 
     // 활동별 제한
@@ -164,6 +176,12 @@ public class UserActivityService {
         }
         redisTemplate.opsForValue().set(timeKey, 1, 24, TimeUnit.HOURS);
         return true;
+
+      case BOOK_REGISTRATION:
+        return count < 1; // 하루 최대 1번
+
+      case MUSIC_REGISTRATION:
+        return count < 1; // 하루 최대 1번
 
       case BOOK_REVIEW:
         return count < 3; // 하루 최대 3번
