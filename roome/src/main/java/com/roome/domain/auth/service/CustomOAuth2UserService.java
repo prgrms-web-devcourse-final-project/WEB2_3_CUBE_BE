@@ -167,11 +167,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         room.setCreatedAt(now);
         // id가 자동으로 설정되지 않는 경우 명시적으로 설정
         // room.setId(savedUser.getId());
-        //room = roomRepository.saveAndFlush(room);
+        room = roomRepository.saveAndFlush(room);
 
         // 5. Furniture 생성 및 저장
-        //List<Furniture> furnitures = Furniture.createDefaultFurnitures(room, now);
-        //furnitureRepository.saveAllAndFlush(furnitures);
+        List<Furniture> furnitures = Furniture.createDefaultFurnitures(room, now);
+        furnitureRepository.saveAllAndFlush(furnitures);
 
         // 6. User에 Room과 Point 설정
         savedUser = userRepository.findById(savedUser.getId()).orElseThrow();
