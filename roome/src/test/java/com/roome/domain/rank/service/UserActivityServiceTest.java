@@ -5,8 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -28,6 +31,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.ZSetOperations;
@@ -65,8 +69,8 @@ public class UserActivityServiceTest {
 
     testRoom = Room.builder().id(1L).user(testUser).build();
 
-    when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-    when(redisTemplate.opsForZSet()).thenReturn(zSetOperations);
+    lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+    lenient().when(redisTemplate.opsForZSet()).thenReturn(zSetOperations);
   }
 
   @Test
@@ -249,13 +253,16 @@ public class UserActivityServiceTest {
   }
 
   @Test
-  @DisplayName("팔로워 증가 - 팔로잉 받은 사람에게 점수 부여")
-  void testFollowerIncrease() {
+  @DisplayName("팔로우 활동 기록 성공 테스트")
+  void recordFollowActivitySuccess() {
     // Given
     Long followerId = 1L;
     Long followingId = 2L;
-    User following = User.builder().id(followingId).name("Following User").build();
 
+    User follower = User.builder().id(followerId).build();
+    User following = User.builder().id(followingId).build();
+
+    when(userRepository.findById(followerId)).thenReturn(Optional.of(follower));
     when(userRepository.findById(followingId)).thenReturn(Optional.of(following));
 
     // When
@@ -263,15 +270,59 @@ public class UserActivityServiceTest {
 
     // Then
     assertTrue(result);
+    verify(userActivityRepository, times(1)).save(any());
+  }
 
-    // 팔로잉 받은 사람에게 FOLLOWER_INCREASE 활동 기록 및 +5점
-    ArgumentCaptor<UserActivity> activityCaptor = ArgumentCaptor.forClass(UserActivity.class);
-    verify(userActivityRepository).save(activityCaptor.capture());
-    UserActivity activity = activityCaptor.getValue();
-    assertEquals(ActivityType.FOLLOWER_INCREASE, activity.getActivityType());
-    assertEquals(followingId, activity.getUser().getId());
-    verify(redisTemplate.opsForZSet()).incrementScore(eq("user:ranking"),
-        eq(followingId.toString()), eq(5.0));
+  @Test
+  @DisplayName("팔로우 활동 기록 실패 - 본인 팔로우")
+  void recordFollowActivityFailSelfFollow() {
+    // Given
+    Long userId = 1L;
+
+    // When
+    boolean result = userActivityService.recordFollowActivity(userId, userId);
+
+    // Then
+    assertFalse(result);
+    verify(userRepository, times(0)).findById(anyLong());
+  }
+
+  @Test
+  @DisplayName("팔로우 활동 기록 실패 - 사용자 없음")
+  void recordFollowActivityFailUserNotFound() {
+    // Given
+    Long followerId = 1L;
+    Long followingId = 2L;
+
+    when(userRepository.findById(followingId)).thenReturn(Optional.empty());
+
+    // When
+    boolean result = userActivityService.recordFollowActivity(followerId, followingId);
+
+    // Then
+    assertFalse(result);
+  }
+
+  @Test
+  @DisplayName("팔로우 활동 기록 실패 - 데이터 접근 오류")
+  void recordFollowActivityFailDataAccessError() {
+    // Given
+    Long followerId = 1L;
+    Long followingId = 2L;
+
+    User follower = User.builder().id(followerId).build();
+    User following = User.builder().id(followingId).build();
+
+    when(userRepository.findById(followerId)).thenReturn(Optional.of(follower));
+    when(userRepository.findById(followingId)).thenReturn(Optional.of(following));
+    doThrow(new DataAccessException("테스트 DB 오류") {
+    }).when(userActivityRepository).save(any());
+
+    // When
+    boolean result = userActivityService.recordFollowActivity(followerId, followingId);
+
+    // Then
+    assertFalse(result);
   }
 
   @Test

@@ -65,12 +65,12 @@ public class HousemateService {
         AddedHousemate.builder().userId(userId).addedId(targetId).build());
 
     //팔로워 증가 활동 기록 (팔로잉 받은 사람에게 점수 부여)
-//    try {
-//      userActivityService.recordFollowActivity(userId, targetId);
-//    } catch (Exception e) {
-//      log.error("팔로워 활동 기록 중 오류 발생: {}", e.getMessage(), e);
-//      // 활동 기록 실패가 기존 비즈니스 로직에 영향을 주지 않도록 예외를 잡아서 처리
-//    }
+    try {
+      userActivityService.recordFollowActivity(userId, targetId);
+    } catch (Exception e) {
+      log.error("팔로워 활동 기록 중 오류 발생: {}", e.getMessage(), e);
+      // 활동 기록 실패가 기존 비즈니스 로직에 영향을 주지 않도록 예외를 잡아서 처리
+    }
 
     // 하우스메이트 추가 알림 발행
     log.info("하우스메이트 알림 이벤트 발행: 발신자={}, 수신자={}, 대상 ID={}", userId, targetId, targetId);
