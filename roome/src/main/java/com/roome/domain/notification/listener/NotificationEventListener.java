@@ -1,6 +1,7 @@
 package com.roome.domain.notification.listener;
 
 import com.roome.domain.cdcomment.notificationEvent.CdCommentCreatedEvent;
+import com.roome.domain.event.notificationEvent.EventUpcomingNotificationEvent;
 import com.roome.domain.guestbook.notificationEvent.GuestBookCreatedEvent;
 import com.roome.domain.houseMate.notificationEvent.HouseMateCreatedEvent;
 import com.roome.domain.notification.dto.CreateNotificationRequest;
@@ -127,6 +128,26 @@ public class NotificationEventListener {
             handleNotificationEvent(event);
         } catch (Exception e) {
             log.error("하우스메이트 알림 처리 중 오류 발생: {}", e.getMessage(), e);
+            throw new BusinessException(ErrorCode.NOTIFICATION_EVENT_PROCESSING_FAILED);
+        }
+    }
+
+    /// 이벤트 알림 전용 핸들러
+    @Async
+    @TransactionalEventListener(fallbackExecution = true)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void handleEventUpcoming(EventUpcomingNotificationEvent event) {
+        log.info("이벤트 알림 수신: 발신자={}, 수신자={}, 이벤트 ID={}",
+                event.getSenderId(), event.getReceiverId(), event.getTargetId());
+
+        try {
+            // 이벤트 특화 로직이 필요한 경우 여기에 추가
+            // 이벤트 알림이므로 별도 처리 없이 일반 알림으로 처리
+
+            // 일반 알림 처리로 위임
+            handleNotificationEvent(event);
+        } catch (Exception e) {
+            log.error("이벤트 알림 처리 중 오류 발생: {}", e.getMessage(), e);
             throw new BusinessException(ErrorCode.NOTIFICATION_EVENT_PROCESSING_FAILED);
         }
     }
