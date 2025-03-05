@@ -120,17 +120,6 @@ public class AuthController {
       log.error("로그아웃 중 오류 발생: ", e);
       result = ResponseEntity.internalServerError().body(Map.of("message", "로그아웃 처리 중 오류가 발생했습니다."));
     }
-
-    // 메인 로직과 분리하여 사용자 상태 업데이트 처리
-    try {
-      userStatusService.updateUserStatus(authenticatedUserId, Status.OFFLINE);
-      log.info("사용자 상태 변경: userId={}, status={}", authenticatedUserId, Status.OFFLINE);
-    } catch (Exception e) {
-      // 상태 업데이트 실패는 로깅만 하고 메인 로직에 영향을 주지 않음
-      log.warn("사용자 상태 업데이트 실패 (무시됨): userId={}, error={}",
-              authenticatedUserId, e.getMessage());
-    }
-
     return result;
   }
 
