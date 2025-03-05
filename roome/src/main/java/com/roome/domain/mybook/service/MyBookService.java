@@ -77,10 +77,11 @@ public class MyBookService {
         );
     }
 
-    public MyBooksResponse readAll(Long roomOwnerId, Long pageSize, Long lastMyBookId) {
+    public MyBooksResponse readAll(Long roomOwnerId, Long pageSize, Long lastMyBookId, String keyword) {
+        keyword = keyword == null || keyword.isBlank() ? null : keyword.toLowerCase();
         List<MyBook> myBooks = lastMyBookId == null ?
-                myBookRepository.findAll(roomOwnerId, pageSize) :
-                myBookRepository.findAll(roomOwnerId, pageSize, lastMyBookId);
+                myBookRepository.findAll(roomOwnerId, pageSize, keyword) :
+                myBookRepository.findAll(roomOwnerId, pageSize, lastMyBookId, keyword);
         return MyBooksResponse.of(myBooks, count(roomOwnerId));
     }
 

@@ -25,12 +25,17 @@ public interface MyBookRepository extends JpaRepository<MyBook, Long> {
                     from MyBook mb
                     join fetch mb.book
                     where mb.user.id = :roomOwnerId
+                    and (:keyword is null or
+                    lower(mb.book.title) like concat('%', :keyword, '%')
+                    or lower(mb.book.author) like concat('%', :keyword, '%')
+                    or lower(mb.book.publisher) like concat('%', :keyword, '%'))
                     order by mb.id desc limit :limit
                     """
     )
     List<MyBook> findAll(
             @Param("roomOwnerId") Long roomOwnerId,
-            @Param("limit") Long limit
+            @Param("limit") Long limit,
+            @Param("keyword") String keyword
     );
 
     @Query(
@@ -39,13 +44,18 @@ public interface MyBookRepository extends JpaRepository<MyBook, Long> {
                     from MyBook mb
                     join fetch mb.book
                     where mb.user.id = :roomOwnerId and mb.id < :lastMyBookId
+                    and (:keyword is null or
+                    lower(mb.book.title) like concat('%', :keyword, '%')
+                    or lower(mb.book.author) like concat('%', :keyword, '%')
+                    or lower(mb.book.publisher) like concat('%', :keyword, '%'))
                     order by mb.id desc limit :limit
                     """
     )
     List<MyBook> findAll(
             @Param("roomOwnerId") Long roomOwnerId,
             @Param("limit") Long limit,
-            @Param("lastMyBookId") Long lastMyBookId
+            @Param("lastMyBookId") Long lastMyBookId,
+            @Param("keyword") String keyword
     );
 
     @Modifying
