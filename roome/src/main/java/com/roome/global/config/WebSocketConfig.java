@@ -3,6 +3,7 @@ package com.roome.global.config;
 import com.roome.global.jwt.interceptor.JwtWebSocketInterceptor;
 import com.roome.global.jwt.service.JwtTokenProvider;
 import com.roome.global.service.RedisService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
@@ -16,20 +17,17 @@ import org.springframework.web.socket.config.annotation.WebSocketTransportRegist
 
 @Configuration
 @EnableWebSocketMessageBroker
+@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisService redisService;
 
-    public WebSocketConfig(JwtTokenProvider jwtTokenProvider, RedisService redisService) {
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.redisService = redisService;
-    }
-
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic", "/user")
-                .setHeartbeatValue(new long[]{25000, 25000}); // 서버->클라이언트, 클라이언트->서버 하트비트 주기 설정(밀리초 단위)
+                .setHeartbeatValue(new long[]{25000, 25000})
+                .setTaskScheduler(taskScheduler()); // 서버->클라이언트, 클라이언트->서버 하트비트 주기 설정(밀리초 단위)
         config.setUserDestinationPrefix("/user");
         config.setApplicationDestinationPrefixes("/app");
     }
