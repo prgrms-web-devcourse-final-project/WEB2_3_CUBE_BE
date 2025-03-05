@@ -1,6 +1,8 @@
 package com.roome.domain.auth.controller;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -9,8 +11,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.roome.domain.furniture.repository.FurnitureRepository;
 import com.roome.domain.room.service.RoomService;
-import com.roome.domain.user.entity.Status;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.domain.user.service.UserService;
 import com.roome.domain.user.service.UserStatusService;
@@ -55,13 +57,17 @@ class AuthControllerTest {
   private RoomService roomService;
 
   @MockBean
+  private FurnitureRepository furnitureRepository;
+
+  @MockBean
   private UserStatusService userStatusService;
 
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Test
   @DisplayName("로그아웃 시 Access Token이 Redis 블랙리스트에 추가된다.")
-  @WithMockUser(username = "1")  // Spring Security에서 제공하는 어노테이션 사용
+  @WithMockUser(username = "1")
+    // Spring Security에서 제공하는 어노테이션 사용
   void logoutSuccess_RedisBlacklist() throws Exception {
     // Given
     String accessToken = "mockAccessToken";
@@ -75,9 +81,9 @@ class AuthControllerTest {
 
     // When & Then
     mockMvc.perform(post("/api/auth/logout")
-                    .header("Authorization", "Bearer " + accessToken)
-                    .with(csrf()))
-            .andExpect(status().isOk());
+            .header("Authorization", "Bearer " + accessToken)
+            .with(csrf()))
+        .andExpect(status().isOk());
 
     // Verify 블랙리스트 추가 확인
     verify(redisService, times(1)).addToBlacklist(eq(accessToken), eq(expiration));
@@ -86,7 +92,8 @@ class AuthControllerTest {
 
   @Test
   @DisplayName("로그아웃 시 Redis에서 Refresh Token이 삭제된다.")
-  @WithMockUser(username = "1")  // Spring Security에서 제공하는 어노테이션 사용
+  @WithMockUser(username = "1")
+    // Spring Security에서 제공하는 어노테이션 사용
   void logoutSuccess_RedisTokenDeleted() throws Exception {
     // Given
     String accessToken = "mockAccessToken";
@@ -100,9 +107,9 @@ class AuthControllerTest {
 
     // When & Then
     mockMvc.perform(post("/api/auth/logout")
-                    .header("Authorization", "Bearer " + accessToken)
-                    .with(csrf()))
-            .andExpect(status().isOk());
+            .header("Authorization", "Bearer " + accessToken)
+            .with(csrf()))
+        .andExpect(status().isOk());
 
     // Verify Redis에서 Refresh Token 삭제 확인
     verify(redisService, times(1)).deleteRefreshToken(eq(userId));
@@ -111,19 +118,20 @@ class AuthControllerTest {
 
   @Test
   @DisplayName("잘못된 Access Token으로 로그아웃 시 Redis 블랙리스트에 등록되지 않는다.")
-  @WithMockUser(username = "1")  // Spring Security에서 제공하는 어노테이션 사용
+  @WithMockUser(username = "1")
+    // Spring Security에서 제공하는 어노테이션 사용
   void logoutFail_InvalidAccessToken() throws Exception {
     // Given
     String invalidToken = "invalidAccessToken";
 
     when(jwtTokenProvider.getUserIdFromToken(invalidToken)).thenThrow(
-            new IllegalArgumentException("Invalid Token"));
+        new IllegalArgumentException("Invalid Token"));
 
     // When & Then
     mockMvc.perform(post("/api/auth/logout")
-                    .header("Authorization", "Bearer " + invalidToken)
-                    .with(csrf()))
-            .andExpect(status().isInternalServerError());
+            .header("Authorization", "Bearer " + invalidToken)
+            .with(csrf()))
+        .andExpect(status().isInternalServerError());
 
     // Verify Redis 블랙리스트 등록이 호출되지 않음
     verify(redisService, times(0)).addToBlacklist(anyString(), anyLong());
