@@ -3,8 +3,6 @@ package com.roome.domain.point.repository;
 import com.roome.domain.point.entity.PointHistory;
 import com.roome.domain.point.entity.PointReason;
 import com.roome.domain.user.entity.User;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,11 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Repository
 public interface PointHistoryRepository extends JpaRepository<PointHistory, Long> {
 
-  boolean existsByUserIdAndReasonAndCreatedAtBetween(Long userId, PointReason reason, LocalDateTime start, LocalDateTime end);
+  // 최신순 (id 기준) 내역 조회
+  Slice<PointHistory> findByUserOrderByIdDesc(User user, Pageable pageable);
 
-  Slice<PointHistory> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
-
-  Slice<PointHistory> findByUserAndIdLessThanOrderByCreatedAtDesc(User user, Long cursor,
+  // 특정 id(cursor) 이전의 내역을 최신순으로 조회
+  Slice<PointHistory> findByUserAndIdLessThanOrderByIdDesc(User user, Long cursor,
       Pageable pageable);
 
   long countByUserId(Long userId);
@@ -30,5 +28,11 @@ public interface PointHistoryRepository extends JpaRepository<PointHistory, Long
   @Transactional
   @Query("DELETE FROM PointHistory p WHERE p.user.id = :userId")
   int deleteByUserId(@Param("userId") Long userId);
-}
 
+  // 중복 포인트 적립 여부 확인 (당일 기준)
+  @Query("SELECT CASE WHEN COUNT(ph) > 0 THEN TRUE ELSE FALSE END " +
+      "FROM PointHistory ph WHERE ph.user.id = :userId " +
+      "AND ph.reason = :reason " +
+      "AND ph.createdAt >= CURRENT_DATE")
+  boolean existsRecentEarned(@Param("userId") Long userId, @Param("reason") PointReason reason);
+}
