@@ -4,6 +4,7 @@ import com.roome.domain.guestbook.dto.GuestbookRequestDto;
 import com.roome.domain.guestbook.entity.Guestbook;
 import com.roome.domain.guestbook.entity.RelationType;
 import com.roome.domain.guestbook.repository.GuestbookRepository;
+import com.roome.domain.houseMate.repository.HousemateRepository;
 import com.roome.domain.point.service.PointService;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.repository.RoomRepository;
@@ -40,6 +41,10 @@ public class GuestbookServiceTest {
     @Mock
     private PointService pointService;
 
+    @Mock
+    private HousemateRepository housemateRepository;
+
+
     @InjectMocks
     private GuestbookService guestbookService;
 
@@ -48,8 +53,16 @@ public class GuestbookServiceTest {
     @DisplayName("방명록을 조회할 수 있다")
     public void testGetGuestbook_Success() {
         Long roomId = 1L;
+
+        User roomOwner = User.builder()
+                .id(2L)
+                .nickname("RoomOwner")
+                .profileImage("owner.jpg")
+                .build();
+
         Room room = Room.builder()
                 .id(roomId)
+                .user(roomOwner)
                 .build();
 
         User user = User.builder()
@@ -69,7 +82,8 @@ public class GuestbookServiceTest {
                 .build();
 
         when(roomRepository.findById(roomId)).thenReturn(java.util.Optional.of(room));
-        when(guestbookRepository.findByRoom(eq(room), any())).thenReturn(new PageImpl<>(Collections.singletonList(guestbook), PageRequest.of(0, 10), 1));
+        when(guestbookRepository.findByRoom(eq(room), any()))
+                .thenReturn(new PageImpl<>(Collections.singletonList(guestbook), PageRequest.of(0, 10), 1));
 
         var result = guestbookService.getGuestbook(roomId, 1, 10);
         assertNotNull(result);
@@ -77,6 +91,7 @@ public class GuestbookServiceTest {
         assertEquals(1, result.getGuestbook().size());
         assertEquals("Great room!", result.getGuestbook().get(0).getMessage());
     }
+
 
 
     @Test

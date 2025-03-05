@@ -65,7 +65,8 @@ public enum ErrorCode {
   PAYMENT_ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 결제에 대한 접근 권한이 없습니다."),
   PAYMENT_NOT_CANCELABLE(HttpStatus.BAD_REQUEST, "이 결제는 취소할 수 없습니다."),
   PAYMENT_CANCEL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "결제 취소 중 오류가 발생했습니다."),
-
+  INVALID_PAYMENT_AMOUNT(HttpStatus.BAD_REQUEST, "잘못된 결제 단위입니다."),
+  INVALID_REFUND_AMOUNT(HttpStatus.BAD_REQUEST, "잘못된 환불 단위입니다."),
 
   // 서평 관련 예외
   MY_BOOK_REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "서평을 찾을 수 없습니다."),

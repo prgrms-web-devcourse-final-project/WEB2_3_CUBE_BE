@@ -1,5 +1,7 @@
 package com.roome.domain.room.service;
 
+import com.roome.domain.book.entity.repository.GenreRepository;
+import com.roome.domain.cd.repository.CdGenreTypeRepository;
 import com.roome.domain.cdcomment.repository.CdCommentRepository;
 import com.roome.domain.furniture.dto.FurnitureResponseDto;
 import com.roome.domain.furniture.entity.Furniture;
@@ -10,12 +12,14 @@ import com.roome.domain.mybook.entity.repository.MyBookCountRepository;
 import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
 import com.roome.domain.mycd.entity.MyCdCount;
 import com.roome.domain.mycd.repository.MyCdCountRepository;
+import com.roome.domain.point.entity.Point;
 import com.roome.domain.room.dto.RoomResponseDto;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.entity.RoomTheme;
 import com.roome.domain.room.exception.RoomAuthorizationException;
 import com.roome.domain.room.exception.RoomNoFoundException;
 import com.roome.domain.room.repository.RoomRepository;
+import com.roome.domain.room.repository.RoomThemeUnlockRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
@@ -58,6 +62,14 @@ public class RoomServiceTest {
     private CdCommentRepository cdCommentRepository;
     @Mock
     private FurnitureRepository furnitureRepository;
+    @Mock
+    private GenreRepository genreRepository;
+    @Mock
+    private CdGenreTypeRepository cdGenreTypeRepository;
+    @Mock
+    private RoomThemeUnlockRepository roomThemeUnlockRepository;
+
+
 
     private User user;
     private Room room;
@@ -67,7 +79,19 @@ public class RoomServiceTest {
     @BeforeEach
     void setUp() {
         // 테스트용 사용자 생성
-        user = User.builder().id(1L).build();
+        user = User.builder()
+                .id(1L)
+                .build();
+
+        // ✅ Point 객체 생성 후 User에 설정
+        Point point = Point.builder()
+                .user(user)
+                .balance(1000)  // 초기 보유 포인트 설정
+                .totalEarned(1000)
+                .totalUsed(0)
+                .build();
+
+        user.setPoint(point);
 
         // 테스트용 방 생성
         room = Room.builder()
@@ -98,6 +122,7 @@ public class RoomServiceTest {
         // 방에 기본 가구 추가
         room.getFurnitures().add(bookshelf);
         room.getFurnitures().add(cdRack);
+
     }
 
     @Test
@@ -232,7 +257,7 @@ public class RoomServiceTest {
         assertNotNull(response);
         assertEquals(roomId, response.getRoomId());
         assertEquals(user.getId(), response.getUserId());
-        assertEquals(room.getTheme().getThemeName(), response.getTheme());
+        assertEquals("basic", response.getTheme().toLowerCase());
 
         // 저장 데이터 검증
         assertEquals(5L, response.getUserStorage().getSavedMusic());

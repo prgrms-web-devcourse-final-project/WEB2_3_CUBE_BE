@@ -1,5 +1,6 @@
 package com.roome.domain.payment.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.roome.domain.payment.dto.PaymentRequestDto;
 import com.roome.domain.payment.dto.PaymentResponseDto;
 import com.roome.domain.payment.dto.PaymentVerifyDto;
@@ -9,15 +10,24 @@ import com.roome.domain.payment.entity.PaymentStatus;
 import com.roome.domain.payment.repository.PaymentLogRepository;
 import com.roome.domain.payment.repository.PaymentRepository;
 import com.roome.domain.point.entity.Point;
+import com.roome.domain.point.entity.PointReason;
 import com.roome.domain.point.repository.PointRepository;
+import com.roome.domain.point.service.PointService;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 @Slf4j
 @Service
@@ -29,6 +39,8 @@ public class PaymentService {
   private final UserRepository userRepository;
   private final PointRepository pointRepository;
   private final TossPaymentClient tossPaymentClient;
+  private final PointService pointService;
+
 
   // 사용자가 포인트 결제를 요청하면 DB에 저장해 줌
   // 결제 진행 중인 상태
@@ -58,21 +70,46 @@ public class PaymentService {
         .build();
   }
 
+
   // 결제 성공 후, 토스 API의 응답을 검증하고 포인트 지급
   @Transactional
   public PaymentResponseDto verifyPayment(Long userId, PaymentVerifyDto verifyDto) {
+    log.info("결제 검증 요청: paymentKey={}, orderId={}, amount={}",
+            verifyDto.getPaymentKey(), verifyDto.getOrderId(), verifyDto.getAmount());
+
     Payment payment = paymentRepository.findByOrderId(verifyDto.getOrderId())
         .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
+    log.info("DB 조회 결과: orderId={}, amount={}, paymentKey={}",
+            payment.getOrderId(), payment.getAmount(), payment.getPaymentKey());
+
     // 결제 금액 검증
     if (payment.getAmount() != verifyDto.getAmount()) {
-      // !payment.getAmount().equals(verifyDto.getAmount()) 둘 중 뭐로 if문 쓸지 ?
       throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
     }
 
+
+    //토스에 결제 승인 요청
+    try {
+      ResponseEntity<String> response = tossPaymentClient.requestConfirm(verifyDto);
+
+      if (response.getStatusCode().is2xxSuccessful()) {
+        log.error("❌ 결제 승인 실패 - Status={}, Response={}", response.getStatusCode(), response.getBody());
+        throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+      }
+      log.info("✅ 결제 승인 성공 - paymentKey={}", verifyDto.getPaymentKey());
+    } catch (Exception e) {
+      log.error("❌ 결제 승인 중 오류 발생: {}", e.getMessage());
+      throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+    }
+
     // 토스 API에서 결제 상태 확인
-    boolean isVerified = tossPaymentClient.verifyPayment(verifyDto.getPaymentKey(),
-        verifyDto.getOrderId(), verifyDto.getAmount());
+    log.info("토스 결제 검증 요청: paymentKey={}, orderId={}, amount={}",
+            verifyDto.getPaymentKey(), verifyDto.getOrderId(), verifyDto.getAmount());
+
+    boolean isVerified = tossPaymentClient.verifyPayment(
+            verifyDto.getPaymentKey(), verifyDto.getOrderId(), verifyDto.getAmount()
+    );
     if (!isVerified) {
       log.error("토스 결제 검증 실패: orderId={}, paymentKey={}", verifyDto.getOrderId(),
           verifyDto.getPaymentKey());
@@ -85,24 +122,14 @@ public class PaymentService {
     paymentRepository.save(payment);
 
     // 사용자 포인트 지급
-    User user = payment.getUser();
-    Point userPoint = pointRepository.findByUserId(user.getId())
-        .orElseGet(() -> new Point(user, 0, 0, 0)); // 포인트 계정이 없으면 생성
-
-    userPoint.addPoints(payment.getPurchasedPoints());
-    pointRepository.save(userPoint);
+    PointReason pointReason = getPointReasonForAmount(payment.getPurchasedPoints());
+    pointService.earnPoints(payment.getUser(), pointReason);
 
     // 결제 내역 로그 저장
-    PaymentLog paymentLog = PaymentLog.builder()
-        .user(user)
-        .amount(payment.getAmount())
-        .earnedPoints(payment.getPurchasedPoints())
-        .paymentKey(verifyDto.getPaymentKey())
-        .build();
-    paymentLogRepository.save(paymentLog);
+    savePaymentLog(payment, verifyDto.getPaymentKey());
 
     log.info("결제 성공 및 포인트 지급 완료: orderId={}, userId={}, pointsAdded={}",
-        verifyDto.getOrderId(), user.getId(), payment.getPurchasedPoints());
+        verifyDto.getOrderId(), userId, payment.getPurchasedPoints());
 
     return PaymentResponseDto.builder()
         .orderId(payment.getOrderId())
@@ -153,12 +180,8 @@ public class PaymentService {
     paymentRepository.save(payment);
 
     // 사용자 포인트 차감
-    Point userPoint = pointRepository.findByUserId(payment.getUser().getId())
-        .orElseThrow(() -> new BusinessException(ErrorCode.POINT_NOT_FOUND));
-
     int refundAmount = (cancelAmount != null) ? cancelAmount : payment.getPurchasedPoints();
-    userPoint.subtractPoints(refundAmount);
-    pointRepository.save(userPoint);
+    pointService.usePoints(payment.getUser(), getRefundReasonForAmount(refundAmount));
 
     log.info("결제 취소 완료: orderId={}, userId={}, refundAmount={}", orderId, userId, refundAmount);
 
@@ -171,4 +194,33 @@ public class PaymentService {
         .build();
   }
 
+  private void savePaymentLog(Payment payment, String paymentKey) {
+    PaymentLog paymentLog = PaymentLog.builder()
+            .user(payment.getUser())
+            .amount(payment.getAmount())
+            .earnedPoints(payment.getPurchasedPoints())
+            .paymentKey(paymentKey)
+            .build();
+    paymentLogRepository.save(paymentLog);
+  }
+
+  private PointReason getPointReasonForAmount(int purchasedPoints) {
+    return switch (purchasedPoints) {
+      case 100 -> PointReason.POINT_PURCHASE_100;
+      case 550 -> PointReason.POINT_PURCHASE_550;
+      case 1200 -> PointReason.POINT_PURCHASE_1200;
+      case 4000 -> PointReason.POINT_PURCHASE_4000;
+      default -> throw new BusinessException(ErrorCode.INVALID_PAYMENT_AMOUNT);
+    };
+  }
+
+  private PointReason getRefundReasonForAmount(int refundPoints) {
+    return switch (refundPoints) {
+      case 100 -> PointReason.POINT_REFUND_100;
+      case 550 -> PointReason.POINT_REFUND_550;
+      case 1200 -> PointReason.POINT_REFUND_1200;
+      case 4000 -> PointReason.POINT_REFUND_4000;
+      default -> throw new BusinessException(ErrorCode.INVALID_REFUND_AMOUNT);
+    };
+  }
 }
