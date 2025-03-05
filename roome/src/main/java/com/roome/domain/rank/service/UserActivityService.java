@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -86,11 +87,30 @@ public class UserActivityService {
       return false;
     }
 
-    // 팔로잉 받은 사람에게 점수 부여 (+5)
-    recordUserActivity(followingId, ActivityType.FOLLOWER_INCREASE, followerId);
+    try {
+      // 팔로잉 받은 사람이 존재하는지 확인
+      User followingUser = userRepository.findById(followingId)
+          .orElseThrow(() -> new IllegalArgumentException("팔로잉 대상 사용자를 찾을 수 없습니다: " + followingId));
 
-    log.info("팔로우 기록 완료: 팔로워={}, 팔로잉={}", followerId, followingId);
-    return true;
+      // 팔로워가 존재하는지 확인
+      User followerUser = userRepository.findById(followerId)
+          .orElseThrow(() -> new IllegalArgumentException("팔로워 사용자를 찾을 수 없습니다: " + followerId));
+
+      // 팔로잉 받은 사람에게 점수 부여 (+5)
+      recordUserActivity(followingId, ActivityType.FOLLOWER_INCREASE, followerId);
+
+      log.info("팔로우 기록 완료: 팔로워={}, 팔로잉={}", followerId, followingId);
+      return true;
+    } catch (DataAccessException e) {
+      // 데이터 접근 관련 예외 (DB, Redis 등)
+      log.error("팔로우 활동 점수 부여 중 데이터 접근 오류: followerId={}, followingId={}, 오류={}",
+          followerId, followingId, e.getMessage());
+      return false;
+    } catch (Exception e) {
+      log.error("팔로우 활동 점수 부여 중 오류 발생: followerId={}, followingId={}, 오류={}",
+          followerId, followingId, e.getMessage());
+      return false;
+    }
   }
 
   // 방문 기록 및 점수 부여
