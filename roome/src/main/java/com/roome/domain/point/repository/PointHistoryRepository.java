@@ -35,4 +35,11 @@ public interface PointHistoryRepository extends JpaRepository<PointHistory, Long
       "AND ph.reason = :reason " +
       "AND ph.createdAt >= CURRENT_DATE")
   boolean existsRecentEarned(@Param("userId") Long userId, @Param("reason") PointReason reason);
+
+  @Query("SELECT MAX(ph.id) FROM PointHistory ph WHERE ph.user.id = :userId")
+  Long findFirstIdByUser(@Param("userId") Long userId);
+
+  @Query("SELECT MIN(ph.id) FROM PointHistory ph WHERE ph.user.id = :userId")
+  Long findLastIdByUser(@Param("userId") Long userId);
+
 }
