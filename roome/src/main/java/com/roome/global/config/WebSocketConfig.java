@@ -9,6 +9,7 @@ import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -24,7 +25,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/topic", "/user");
+        config.enableSimpleBroker("/topic", "/user")
+                .setHeartbeatValue(new long[]{25000, 25000}); // 서버->클라이언트, 클라이언트->서버 하트비트 주기 설정(밀리초 단위)
         config.setUserDestinationPrefix("/user");
         config.setApplicationDestinationPrefixes("/app");
     }
@@ -47,4 +49,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // JWT 토큰 검증을 위한 인터셉터 등록
         registration.interceptors(new JwtWebSocketInterceptor(jwtTokenProvider, redisService));
     }
+
+    @Override
+    public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
+        // 10분(600,000 밀리초) 동안 메시지가 없으면 연결 해제
+        registration.setMessageSizeLimit(64 * 1024) // 메시지 크기 제한 (64KB)
+                .setSendBufferSizeLimit(512 * 1024) // 버퍼 크기 (512KB)
+                .setSendTimeLimit(20000) // 메시지 전송 제한 시간 (20초)
+                .setTimeToFirstMessage(60000); // 첫 메시지까지 대기 시간 (60초)
+    }
+
 }
