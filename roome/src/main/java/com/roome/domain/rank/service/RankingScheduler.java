@@ -109,7 +109,7 @@ public class RankingScheduler {
         }
 
         // Point 엔티티 조회 or 생성
-        Point pointEntity = pointRepository.findByUser(user)
+        Point pointEntity = pointRepository.findByUserId(user.getId())
             .orElseGet(() -> {
               // 포인트 엔티티가 없는 경우 새로 생성
               Point newPoint = Point.builder()

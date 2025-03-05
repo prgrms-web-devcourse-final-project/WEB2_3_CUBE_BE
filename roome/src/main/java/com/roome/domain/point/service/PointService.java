@@ -7,7 +7,6 @@ import com.roome.domain.point.entity.Point;
 import com.roome.domain.point.entity.PointHistory;
 import com.roome.domain.point.entity.PointReason;
 import com.roome.domain.point.exception.InsufficientPointsException;
-import com.roome.domain.point.exception.PointNotFoundException;
 import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.user.entity.User;
@@ -62,10 +61,11 @@ public class PointService {
       throw new DuplicatePointEarnException();
     }
 
-    Point point = pointRepository.findByUser(user)
-        .orElseThrow(() -> {
-          log.warn("earnPoints - 포인트 데이터 없음! User: {}", user.getId());
-          return new PointNotFoundException();
+    // 포인트가 없으면 자동 생성하도록 수정
+    Point point = pointRepository.findByUserId(user.getId())
+        .orElseGet(() -> {
+          log.info("earnPoints - 포인트 계정 없음, 새로 생성! User: {}", user.getId());
+          return pointRepository.save(new Point(user, 0, 0, 0));
         });
 
     point.addPoints(amount);
@@ -79,10 +79,11 @@ public class PointService {
     int amount = POINT_USAGE_MAP.getOrDefault(reason, 0);
     log.info("usePoints - User: {}, Reason: {}, Amount: {}", user.getId(), reason, amount);
 
-    Point point = pointRepository.findByUser(user)
-        .orElseThrow(() -> {
-          log.warn("usePoints - 포인트 데이터 없음! User: {}", user.getId());
-          return new PointNotFoundException();
+    // 포인트가 없으면 자동 생성하도록 수정
+    Point point = pointRepository.findByUserId(user.getId())
+        .orElseGet(() -> {
+          log.info("usePoints - 포인트 계정 없음, 새로 생성! User: {}", user.getId());
+          return pointRepository.save(new Point(user, 0, 0, 0));
         });
 
     if (point.getBalance() < amount) {
@@ -111,11 +112,11 @@ public class PointService {
       return new UserNotFoundException();
     });
 
-    int balance = pointRepository.findByUser(user).map(Point::getBalance).orElse(0);
+    int balance = pointRepository.findByUserId(user.getId()).map(Point::getBalance).orElse(0);
     Pageable pageable = PageRequest.of(0, size);
     Slice<PointHistory> historySlice = cursor == 0 ?
-        pointHistoryRepository.findByUserOrderByCreatedAtDesc(user, pageable) :
-        pointHistoryRepository.findByUserAndIdLessThanOrderByCreatedAtDesc(user, cursor, pageable);
+        pointHistoryRepository.findByUserOrderByIdDesc(user, pageable) :
+        pointHistoryRepository.findByUserAndIdLessThanOrderByIdDesc(user, cursor, pageable);
 
     List<PointHistoryDto> historyItems = historySlice.getContent().stream()
         .map(PointHistoryDto::fromEntity)
@@ -139,7 +140,7 @@ public class PointService {
       return new UserNotFoundException();
     });
 
-    int balance = pointRepository.findByUser(user).map(Point::getBalance).orElse(0);
+    int balance = pointRepository.findByUserId(user.getId()).map(Point::getBalance).orElse(0);
 
     log.info("getMyPointBalance - User: {}, Balance: {}", userId, balance);
     return new PointBalanceResponse(balance);
