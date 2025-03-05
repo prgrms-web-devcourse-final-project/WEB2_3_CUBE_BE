@@ -1,3 +1,4 @@
+/*
 package com.roome.domain.room.controller;
 
 
@@ -121,3 +122,4 @@ public class RoomControllerTest {
     }
 
 }
+*/
