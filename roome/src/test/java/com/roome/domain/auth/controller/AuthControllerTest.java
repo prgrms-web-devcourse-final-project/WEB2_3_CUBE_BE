@@ -82,8 +82,6 @@ class AuthControllerTest {
     // Verify 블랙리스트 추가 확인
     verify(redisService, times(1)).addToBlacklist(eq(accessToken), eq(expiration));
     verify(redisService, times(1)).deleteRefreshToken(eq(userId));
-    // 사용자 상태 업데이트 확인
-    verify(userStatusService, times(1)).updateUserStatus(eq(1L), eq(Status.OFFLINE));
   }
 
   @Test
@@ -109,8 +107,6 @@ class AuthControllerTest {
     // Verify Redis에서 Refresh Token 삭제 확인
     verify(redisService, times(1)).deleteRefreshToken(eq(userId));
     verify(redisService, times(1)).addToBlacklist(eq(accessToken), eq(expiration));
-    // 사용자 상태 업데이트 확인
-    verify(userStatusService, times(1)).updateUserStatus(eq(1L), eq(Status.OFFLINE));
   }
 
   @Test

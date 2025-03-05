@@ -45,16 +45,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         log.info("OAuth2 로그인 성공: userId={}, email={}", user.getId(), user.getEmail());
 
-        // 사용자 상태 업데이트는 별도의 try-catch 블록으로 분리
-        try {
-            userStatusService.updateUserStatus(user.getId(), Status.ONLINE);
-            log.info("사용자 상태 변경: userId={}, status={}", user.getId(), Status.ONLINE);
-        } catch (Exception e) {
-            // 상태 업데이트 실패는 로깅만 하고 계속 진행
-            log.warn("사용자 상태 업데이트 실패 (무시됨): userId={}, error={}",
-                    user.getId(), e.getMessage());
-        }
-
         // 기본 인증 로직은 그대로 유지 (상태 관리와 분리)
         JwtToken jwtToken = jwtTokenProvider.createToken(user.getId().toString());
 
