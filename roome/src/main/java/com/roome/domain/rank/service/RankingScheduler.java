@@ -1,6 +1,9 @@
 package com.roome.domain.rank.service;
 
 import com.roome.domain.point.entity.Point;
+import com.roome.domain.point.entity.PointHistory;
+import com.roome.domain.point.entity.PointReason;
+import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.rank.entity.UserActivity;
 import com.roome.domain.rank.repository.UserActivityRepository;
@@ -29,6 +32,7 @@ public class RankingScheduler {
   private final UserActivityRepository userActivityRepository;
   private final UserRepository userRepository;
   private final PointRepository pointRepository;
+  private final PointHistoryRepository pointHistoryRepository;
 
   private static final String RANKING_KEY = "user:ranking";
 
@@ -62,8 +66,9 @@ public class RankingScheduler {
   }
 
 
-  // 매주 월요일 자정에 포인트 지급 및 점수 리셋 (상위 3명에게 포인트 지급)
+  // 포인트 지급 및 점수 리셋 (상위 3명에게 포인트 지급)
   @Scheduled(cron = "0 0 0 * * MON") // 매주 월요일 자정
+  //  @Scheduled(fixedDelay = 60000) // 1분 후 실행
   @Transactional
   public void awardWeeklyPoints() {
     log.info("주간 랭킹 보상 지급 시작: {}", LocalDateTime.now());
@@ -81,52 +86,66 @@ public class RankingScheduler {
     try {
       int rank = 0;
       for (ZSetOperations.TypedTuple<Object> ranker : topRankers) {
-        String userId = (String) ranker.getValue();
+        Object userIdObj = ranker.getValue();
         Double score = ranker.getScore();
         rank++;
 
-        if (userId == null) {
+        if (userIdObj == null) {
           continue;
         }
 
-        int points = 0;
-        switch (rank) {
-          case 1:
-            points = 100;
-            break;
-          case 2:
-            points = 70;
-            break;
-          case 3:
-            points = 50;
-            break;
+        try {
+          String userIdStr = userIdObj.toString();
+          Long userId = Long.valueOf(userIdStr);
+
+          // 사용자 정보 조회
+          User user = userRepository.findById(userId).orElse(null);
+          if (user == null) {
+            log.warn("랭킹 보상 지급 중 사용자 정보 없음: userId={}", userId);
+            continue;
+          }
+
+          // 포인트 금액 결정 및 이유
+          int points;
+          PointReason reason;
+          switch (rank) {
+            case 1:
+              points = 100;
+              reason = PointReason.RANK_1;
+              break;
+            case 2:
+              points = 70;
+              reason = PointReason.RANK_2;
+              break;
+            case 3:
+              points = 50;
+              reason = PointReason.RANK_3;
+              break;
+            default:
+              continue;
+          }
+
+          // Point 엔티티 조회 or 생성
+          Point pointEntity = pointRepository.findByUser(user).orElseGet(() -> {
+            // 포인트 엔티티가 없는 경우 새로 생성
+            Point newPoint = Point.builder().user(user).balance(0).totalEarned(0).totalUsed(0)
+                .build();
+            return pointRepository.save(newPoint);
+          });
+
+          // 포인트 적립
+          pointEntity.addPoints(points);
+          pointRepository.save(pointEntity);
+
+          // 포인트 히스토리 기록
+          PointHistory history = new PointHistory(user, points, reason);
+          pointHistoryRepository.save(history);
+
+          log.info("포인트 지급: 유저={}, 순위={}, 점수={}, 포인트={}", userId, rank,
+              score != null ? score.intValue() : 0, points);
+        } catch (NumberFormatException e) {
+          log.error("랭킹 데이터 처리 중 형변환 오류: {}", e.getMessage());
         }
-
-        // 포인트 지급
-        User user = userRepository.findById(Long.valueOf(userId)).orElse(null);
-        if (user == null) {
-          continue;
-        }
-
-        // Point 엔티티 조회 or 생성
-        Point pointEntity = pointRepository.findByUser(user)
-            .orElseGet(() -> {
-              // 포인트 엔티티가 없는 경우 새로 생성
-              Point newPoint = Point.builder()
-                  .user(user)
-                  .balance(0)
-                  .totalEarned(0)
-                  .totalUsed(0)
-                  .build();
-              return pointRepository.save(newPoint);
-            });
-
-        // 포인트 적립
-        pointEntity.addPoints(points);
-        pointRepository.save(pointEntity);
-
-        log.info("포인트 지급: 유저={}, 순위={}, 점수={}, 포인트={}",
-            userId, rank, score != null ? score.intValue() : 0, points);
       }
 
       // 지난 주 활동 데이터 삭제
