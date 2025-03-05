@@ -1,6 +1,7 @@
 package com.roome.domain.point.entity;
 
 import com.roome.domain.furniture.exception.BookshelfMaxLevelException;
+import com.roome.domain.furniture.exception.CdRackMaxLevelException;
 
 public enum PointReason {
   // 포인트 적립
@@ -32,5 +33,15 @@ public enum PointReason {
       return BOOK_UNLOCK_LV3;
     }
     throw new BookshelfMaxLevelException();
+  }
+
+  public static PointReason getCdRackUpgradeReason(int level) {
+    if (level == 1) {
+      return CD_UNLOCK_LV2;
+    }
+    if (level == 2) {
+      return CD_UNLOCK_LV3;
+    }
+    throw new CdRackMaxLevelException();
   }
 }
