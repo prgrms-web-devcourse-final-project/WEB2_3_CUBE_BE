@@ -3,6 +3,7 @@ package com.roome.domain.rank.service;
 import com.roome.domain.point.entity.Point;
 import com.roome.domain.point.entity.PointHistory;
 import com.roome.domain.point.entity.PointReason;
+import com.roome.domain.point.exception.PointNotFoundException;
 import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.rank.entity.UserActivity;
@@ -125,13 +126,9 @@ public class RankingScheduler {
               continue;
           }
 
-          // Point 엔티티 조회 or 생성
-          Point pointEntity = pointRepository.findByUser(user).orElseGet(() -> {
-            // 포인트 엔티티가 없는 경우 새로 생성
-            Point newPoint = Point.builder().user(user).balance(0).totalEarned(0).totalUsed(0)
-                .build();
-            return pointRepository.save(newPoint);
-          });
+          // Point 엔티티 조회
+          Point pointEntity = pointRepository.findByUserId(user.getId())
+              .orElseThrow(PointNotFoundException::new);
 
           // 포인트 적립
           pointEntity.addPoints(points);
@@ -146,32 +143,6 @@ public class RankingScheduler {
         } catch (NumberFormatException e) {
           log.error("랭킹 데이터 처리 중 형변환 오류: {}", e.getMessage());
         }
-
-        // 포인트 지급
-        User user = userRepository.findById(Long.valueOf(userId)).orElse(null);
-        if (user == null) {
-          continue;
-        }
-
-        // Point 엔티티 조회 or 생성
-        Point pointEntity = pointRepository.findByUserId(user.getId())
-            .orElseGet(() -> {
-              // 포인트 엔티티가 없는 경우 새로 생성
-              Point newPoint = Point.builder()
-                  .user(user)
-                  .balance(0)
-                  .totalEarned(0)
-                  .totalUsed(0)
-                  .build();
-              return pointRepository.save(newPoint);
-            });
-
-        // 포인트 적립
-        pointEntity.addPoints(points);
-        pointRepository.save(pointEntity);
-
-        log.info("포인트 지급: 유저={}, 순위={}, 점수={}, 포인트={}",
-            userId, rank, score != null ? score.intValue() : 0, points);
       }
 
       // 지난 주 활동 데이터 삭제
