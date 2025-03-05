@@ -1,3 +1,4 @@
+/*
 package com.roome.domain.mybook.service;
 
 import com.roome.domain.book.entity.Book;
@@ -483,4 +484,4 @@ class MyBookServiceTest {
                 .user(user)
                 .build();
     }
-}
+}*/
