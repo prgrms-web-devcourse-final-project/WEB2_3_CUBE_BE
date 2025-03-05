@@ -32,7 +32,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
   private final JwtTokenProvider jwtTokenProvider;
   private final RedisService redisService;
   private final RoomService roomService;
-  private final UserStatusService userStatusService;
   private final FurnitureRepository furnitureRepository;
 
   @Value("${app.oauth2.redirectUri}")

@@ -2,7 +2,7 @@
 FROM openjdk:17-jdk-slim
 
 # 2. 작성자 정보
-LABEL authors="jhyngu"
+LABEL authors="yubanghyeon"
 
 # 3. 작업 디렉토리 생성 (컨테이너 내부에서 실행할 폴더)
 WORKDIR /app
