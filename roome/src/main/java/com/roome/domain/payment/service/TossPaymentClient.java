@@ -3,6 +3,7 @@ package com.roome.domain.payment.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.roome.domain.payment.dto.PaymentVerifyDto;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,11 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
@@ -28,6 +34,40 @@ public class TossPaymentClient {
     @Value("${toss.secret-key}")
     private String secretKey;
 
+    public ResponseEntity<String> requestConfirm(PaymentVerifyDto verifyDto) {
+        log.info("[Toss 결제 승인 요청] paymentKey={}, orderId={}, amount={}",
+                verifyDto.getPaymentKey(), verifyDto.getOrderId(), verifyDto.getAmount());
+
+        String requestUrl = "https://api.tosspayments.com/v1/payments/confirm";
+
+        // 승인 요청 바디 생성
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("orderId", verifyDto.getOrderId());
+        requestBody.put("amount", verifyDto.getAmount());
+        requestBody.put("paymentKey", verifyDto.getPaymentKey());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", encodeSecretKey());
+
+        log.info("Toss API 요청 URL: {}", requestUrl);
+        log.info("Toss API 요청 Headers: {}", headers);
+        log.info("Toss API 요청 Body: {}", requestBody);
+
+        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+
+        // ✅ RestTemplate을 사용하여 POST 요청 수행
+        ResponseEntity<String> response = restTemplate.exchange(
+                requestUrl, HttpMethod.POST, requestEntity, String.class
+        );
+
+        log.info("Toss 결제 승인 응답 - Status: {}, Body: {}", response.getStatusCode(), response.getBody());
+
+        return response;
+    }
+
+
+
     //토스 페이먼츠 API를 사용하여 결제 검증
     public boolean verifyPayment(String paymentKey, String orderId, int amount) {
         String requestUrl = UriComponentsBuilder.fromHttpUrl(TOSS_API_URL + "/" + paymentKey)
@@ -43,6 +83,9 @@ public class TossPaymentClient {
             ResponseEntity<String> response = restTemplate.exchange(
                     requestUrl, HttpMethod.GET, requestEntity, String.class
             );
+
+            log.info("!!!!!! 토스 응답: status={}, body={}", response.getStatusCode(), response.getBody());
+
 
             if (response.getStatusCode() == HttpStatus.OK) {
                 JsonNode jsonResponse = objectMapper.readTree(response.getBody());
@@ -102,7 +145,18 @@ public class TossPaymentClient {
 
     // Secret Key를 Base64 인코딩하여 반환
     private String encodeSecretKey() {
+        log.info("현재 사용 중인 Toss Secret Key: {}", secretKey);
+
+        if (secretKey == null || secretKey.isEmpty()) {
+            throw new RuntimeException("Toss Secret Key가 설정되지 않았습니다.");
+        }
+
+        // Secret Key에 ":"를 붙이고 Base64로 인코딩
         String key = secretKey + ":";
-        return Base64.getEncoder().encodeToString(key.getBytes(StandardCharsets.UTF_8));
-    }
+        String encodedKey = Base64.getEncoder().encodeToString((secretKey + ":").getBytes(StandardCharsets.UTF_8));
+
+        log.info("Base64 인코딩된 Secret Key: {}", encodedKey);
+
+        return "Basic " + encodedKey;    }
+
 }
