@@ -3,6 +3,7 @@ package com.roome.domain.rank.service;
 import com.roome.domain.point.entity.Point;
 import com.roome.domain.point.entity.PointHistory;
 import com.roome.domain.point.entity.PointReason;
+import com.roome.domain.point.exception.PointNotFoundException;
 import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.rank.entity.UserActivity;
@@ -125,13 +126,9 @@ public class RankingScheduler {
               continue;
           }
 
-          // Point 엔티티 조회 or 생성
-          Point pointEntity = pointRepository.findByUser(user).orElseGet(() -> {
-            // 포인트 엔티티가 없는 경우 새로 생성
-            Point newPoint = Point.builder().user(user).balance(0).totalEarned(0).totalUsed(0)
-                .build();
-            return pointRepository.save(newPoint);
-          });
+          // Point 엔티티 조회
+          Point pointEntity = pointRepository.findByUserId(user.getId())
+              .orElseThrow(PointNotFoundException::new);
 
           // 포인트 적립
           pointEntity.addPoints(points);
