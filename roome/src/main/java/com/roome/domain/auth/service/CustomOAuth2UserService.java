@@ -134,7 +134,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     userActivityService.recordUserActivity(userId, ActivityType.ATTENDANCE, null);
   }
 
-  private User updateOrCreateUser(OAuth2Response response, LocalDateTime now) {
+  @Transactional
+  public User updateOrCreateUser(OAuth2Response response, LocalDateTime now) {
     Provider provider = Provider.valueOf(response.getProvider().name());
     String providerId = response.getProviderId();
 
