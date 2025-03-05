@@ -3,6 +3,8 @@ package com.roome.domain.event.entity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -38,20 +40,29 @@ public class FirstComeEvent {
   @Column(nullable = false)
   private LocalDateTime eventTime; // 이벤트 시작 시간
 
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private EventStatus status;
+
   @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<EventParticipation> participants = new ArrayList<>();
 
   @Builder
   public FirstComeEvent(String eventName, int rewardPoints, int maxParticipants,
-      LocalDateTime eventTime) {
+      LocalDateTime eventTime, EventStatus status) {
     this.eventName = eventName;
     this.rewardPoints = rewardPoints;
     this.maxParticipants = maxParticipants;
     this.eventTime = eventTime;
+    this.status = status;
   }
 
   public boolean isEventOpen() {
     return LocalDateTime.now().isAfter(eventTime);
+  }
+
+  public void endEvent() {
+    this.status = EventStatus.ENDED;
   }
 }
 

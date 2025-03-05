@@ -90,7 +90,6 @@ public class AuthController {
   @PostMapping("/logout")
   public ResponseEntity<?> logout(
           @RequestHeader(value = "Authorization", required = false) String authHeader,
-          @AuthenticatedUser Long authenticatedUserId,
           HttpServletResponse response) {
     ResponseEntity<?> result;
     try {

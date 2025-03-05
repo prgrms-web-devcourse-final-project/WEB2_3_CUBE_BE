@@ -22,7 +22,7 @@ public class Payment {
     @JoinColumn(name = "user_id", nullable = false)
     private User user; // 결제한 사용자
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true)
     private String paymentKey; // 결제 성공 시 반환되는 키
 
     @Column(nullable = false, unique = true)
