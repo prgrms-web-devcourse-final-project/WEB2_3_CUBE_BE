@@ -65,7 +65,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // 10분(600,000 밀리초) 동안 메시지가 없으면 연결 해제
         registration.setMessageSizeLimit(64 * 1024) // 메시지 크기 제한 (64KB)
                 .setSendBufferSizeLimit(512 * 1024) // 버퍼 크기 (512KB)
-                .setSendTimeLimit(20000) // 메시지 전송 제한 시간 (20초)
+                .setSendTimeLimit(30000) // 메시지 전송 제한 시간 (20초)
                 .setTimeToFirstMessage(60000); // 첫 메시지까지 대기 시간 (60초)
     }
 
