@@ -81,7 +81,7 @@ public class MockRoomControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"furnitureType\":\"BOOKSHELF\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.furnitureType").value("BOOKSHELF"));
+                .andExpect(jsonPath("$.furniture.furnitureType").value("BOOKSHELF"));
     }
 
     @Test
