@@ -32,23 +32,58 @@ public class GenrePreferenceService {
 
     // 사용자의 CD 장르 선호도 조회
     public List<String> getTopCdGenres(Long userId) {
-        return userGenrePreferenceRepository
-                .findByUserIdAndGenreTypeOrderByRankAsc(userId, GenreType.CD)
-                .stream()
-                .map(UserGenrePreference::getGenreName)
+        List<MyCd> userCds = myCdRepository.findByUserId(userId);
+
+        if (userCds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 장르 카운팅
+        Map<String, Integer> genreCounts = new HashMap<>();
+        for (MyCd myCd : userCds) {
+            List<String> genres = myCd.getCd().getGenres();
+            for (String genre : genres) {
+                genreCounts.put(genre, genreCounts.getOrDefault(genre, 0) + 1);
+            }
+        }
+
+        // 상위 3개 장르 반환
+        return genreCounts.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(3)
+                .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
 
     // 사용자의 책 장르 선호도 조회
     public List<String> getTopBookGenres(Long userId) {
-        return userGenrePreferenceRepository
-                .findByUserIdAndGenreTypeOrderByRankAsc(userId, GenreType.BOOK)
-                .stream()
-                .map(UserGenrePreference::getGenreName)
+        List<MyBook> userBooks = myBookRepository.findAllByUserId(userId);
+
+        if (userBooks.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 장르 카운팅
+        Map<String, Integer> genreCounts = new HashMap<>();
+        for (MyBook myBook : userBooks) {
+            List<String> genres = myBook.getBook().getBookGenres().stream()
+                    .map(bg -> bg.getGenre().getName())
+                    .collect(Collectors.toList());
+
+            for (String genre : genres) {
+                genreCounts.put(genre, genreCounts.getOrDefault(genre, 0) + 1);
+            }
+        }
+
+        // 상위 3개 장르 반환
+        return genreCounts.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(3)
+                .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
 
-    // CD 장르 선호도 계산 및 업데이트
+    // CD 장르 선호도 저장 (캐싱 목적)
     @Transactional
     public void updateCdGenrePreferences(Long userId) {
         User user = userRepository.findById(userId)
@@ -56,9 +91,10 @@ public class GenrePreferenceService {
 
         List<MyCd> userCds = myCdRepository.findByUserId(userId);
 
+        // 기존 선호도 삭제
+        userGenrePreferenceRepository.deleteByUserIdAndGenreType(userId, GenreType.CD);
+
         if (userCds.isEmpty()) {
-            // 선호도가 있으면 삭제
-            userGenrePreferenceRepository.deleteByUserIdAndGenreType(userId, GenreType.CD);
             return;
         }
 
@@ -71,26 +107,19 @@ public class GenrePreferenceService {
             }
         }
 
-        // 상위 3개 장르 선별
-        List<Map.Entry<String, Integer>> topGenres = genreCounts.entrySet().stream()
+        // 상위 3개 장르 저장
+        genreCounts.entrySet().stream()
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .limit(3)
-                .collect(Collectors.toList());
-
-        // 기존 선호도 삭제
-        userGenrePreferenceRepository.deleteByUserIdAndGenreType(userId, GenreType.CD);
-
-        // 새 선호도 저장
-        for (int i = 0; i < topGenres.size(); i++) {
-            Map.Entry<String, Integer> entry = topGenres.get(i);
-            UserGenrePreference preference = UserGenrePreference.create(
-                    user, GenreType.CD, entry.getKey(), entry.getValue(), i + 1
-            );
-            userGenrePreferenceRepository.save(preference);
-        }
+                .forEach(entry -> {
+                    UserGenrePreference preference = UserGenrePreference.create(
+                            user, GenreType.CD, entry.getKey()
+                    );
+                    userGenrePreferenceRepository.save(preference);
+                });
     }
 
-    // 책 장르 선호도 계산 및 업데이트
+    // 책 장르 선호도 저장 (캐싱 목적)
     @Transactional
     public void updateBookGenrePreferences(Long userId) {
         User user = userRepository.findById(userId)
@@ -98,9 +127,10 @@ public class GenrePreferenceService {
 
         List<MyBook> userBooks = myBookRepository.findAllByUserId(userId);
 
+        // 기존 선호도 삭제
+        userGenrePreferenceRepository.deleteByUserIdAndGenreType(userId, GenreType.BOOK);
+
         if (userBooks.isEmpty()) {
-            // 선호도가 있으면 삭제
-            userGenrePreferenceRepository.deleteByUserIdAndGenreType(userId, GenreType.BOOK);
             return;
         }
 
@@ -116,22 +146,15 @@ public class GenrePreferenceService {
             }
         }
 
-        // 상위 3개 장르 선별
-        List<Map.Entry<String, Integer>> topGenres = genreCounts.entrySet().stream()
+        // 상위 3개 장르 저장
+        genreCounts.entrySet().stream()
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .limit(3)
-                .collect(Collectors.toList());
-
-        // 기존 선호도 삭제
-        userGenrePreferenceRepository.deleteByUserIdAndGenreType(userId, GenreType.BOOK);
-
-        // 새 선호도 저장
-        for (int i = 0; i < topGenres.size(); i++) {
-            Map.Entry<String, Integer> entry = topGenres.get(i);
-            UserGenrePreference preference = UserGenrePreference.create(
-                    user, GenreType.BOOK, entry.getKey(), entry.getValue(), i + 1
-            );
-            userGenrePreferenceRepository.save(preference);
-        }
+                .forEach(entry -> {
+                    UserGenrePreference preference = UserGenrePreference.create(
+                            user, GenreType.BOOK, entry.getKey()
+                    );
+                    userGenrePreferenceRepository.save(preference);
+                });
     }
 }
