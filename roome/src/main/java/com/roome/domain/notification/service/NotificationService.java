@@ -103,16 +103,29 @@ public class NotificationService {
     }
 
     private NotificationInfo convertToNotificationInfo(Notification notification) {
-        User sender = userRepository.getById(notification.getSenderId());  // 가정: Notification 엔티티에 sender 관계가 매핑되어 있음
+        String senderNickName;
+        String senderProfileImage;
+
+        // 시스템 알림(senderId = 0L)인 경우 특별 처리
+        if (notification.getSenderId() == 0L) {
+            senderNickName = "시스템";
+            senderProfileImage = null; // 또는 시스템 기본 프로필 이미지 경로
+        } else {
+            // 일반 사용자 알림인 경우
+            User sender = userRepository.findById(notification.getSenderId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+            senderNickName = sender.getName();
+            senderProfileImage = sender.getProfileImage();
+        }
 
         return NotificationInfo.builder()
-                               .notificationId(notification.getId())
-                               .type(notification.getType())
-                               .senderId(notification.getSenderId())
-                               .senderNickName(sender.getName())
-                               .senderProfileImage(sender.getProfileImage())
-                               .targetId(notification.getTargetId())
-                               .createdAt(notification.getCreatedAt())
-                               .build();
+                .notificationId(notification.getId())
+                .type(notification.getType())
+                .senderId(notification.getSenderId())
+                .senderNickName(senderNickName)
+                .senderProfileImage(senderProfileImage)
+                .targetId(notification.getTargetId())
+                .createdAt(notification.getCreatedAt())
+                .build();
     }
 }

@@ -2,8 +2,8 @@ version: '3'
 
 services:
   roome-app:
-    image: ${DOCKER_HUB_USERNAME}/roome:latest
-    container_name: roome
+    image: ${DOCKER_HUB_USERNAME}/roome-prod:latest
+    container_name: roome-prod
     ports:
       - "8081:8080"
     env_file:
