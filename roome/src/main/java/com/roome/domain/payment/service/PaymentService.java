@@ -266,10 +266,8 @@ public class PaymentService {
 
     return paymentLogs.stream()
             .map(log -> {
-              PaymentStatus status = paymentRepository.findByPaymentKey(log.getPaymentKey())
-                      .map(Payment::getStatus)
-                      .orElse(PaymentStatus.FAILED);
-
+              // 환불 내역이면 CANCELED, 기존 결제면 SUCCESS 유지
+              PaymentStatus status = log.isRefund() ? PaymentStatus.CANCELED : PaymentStatus.SUCCESS;
               return PaymentLogResponseDto.from(log, status);
             })
             .toList();
@@ -292,10 +290,12 @@ public class PaymentService {
             .user(payment.getUser())
             .amount(-refundAmount)
             .earnedPoints(-payment.getPurchasedPoints())
-            .paymentKey(paymentKey)
+            .paymentKey(paymentKey + "-REFUND")
+            .isRefund(true) // 환불 내역임을 표시
             .build();
     paymentLogRepository.save(refundLog);
   }
+
 
 
   private PointReason getPointReasonForAmount(int purchasedPoints) {
