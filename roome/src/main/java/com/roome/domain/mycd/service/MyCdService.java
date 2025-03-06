@@ -31,11 +31,13 @@ import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.jwt.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -55,6 +57,7 @@ public class MyCdService {
   private final FurnitureService furnitureService;
   private final FurnitureCapacity furnitureCapacity;
 
+  @CacheEvict(value = "myCdList", allEntries = true)
   public MyCdResponse addCdToMyList(Long userId, MyCdCreateRequest request) {
     User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
     Room room = roomRepository.findByUserId(userId).orElseThrow(RoomNoFoundException::new);
@@ -107,12 +110,11 @@ public class MyCdService {
     return MyCdResponse.fromEntity(myCd);
   }
 
+  @Cacheable(value = "myCdList", key = "#userId + '_' + #keyword + '_' + #cursor + '_' + #size", unless = "#result == null")
   public MyCdListResponse getMyCdList(Long userId, String keyword, Long cursor, int size) {
-    log.info("조회할 사용자 ID: {}", userId);
+    log.info("캐시 적용: userId={}, cursor={}, size={}", userId, cursor, size);
 
     boolean isKeywordSearch = keyword != null && !keyword.trim().isEmpty();
-    Pageable pageable = PageRequest.of(0, size, Sort.by(Sort.Direction.ASC, "id"));
-
     Page<MyCd> myCdsPage;
 
     try {
@@ -163,6 +165,7 @@ public class MyCdService {
     return MyCdResponse.fromEntity(myCd);
   }
 
+  @CacheEvict(value = "myCdList", allEntries = true)
   public void delete(Long userId, List<Long> myCdIds) {
     // 삭제할 CD 목록을 가져오기
     List<MyCd> myCds = myCdRepository.findAllById(myCdIds);
