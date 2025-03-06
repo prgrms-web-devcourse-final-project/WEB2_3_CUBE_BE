@@ -259,6 +259,19 @@ public class RoomService {
     return FurnitureResponseDto.from(furniture, topGenres);
   }
 
+  @Transactional(readOnly = true)
+  public List<String> getUnlockedThemes(Long userId) {
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+    List<RoomThemeUnlock> unlockedThemes = roomThemeUnlockRepository.findByUser(user);
+
+    return unlockedThemes.stream()
+            .map(themeUnlock -> themeUnlock.getTheme().name().toLowerCase()) // 소문자로 변환
+            .toList();
+  }
+
+
 
   private RoomResponseDto buildRoomResponse(Room room) {
     Long savedMusic = fetchSavedMusicCount(room);

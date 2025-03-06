@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @Tag(name = "Room API", description = "방 조회/테마 업데이트/가구 활성화 및 비활성화")
 @RestController
 @RequestMapping("/api/rooms")
@@ -76,6 +78,16 @@ public class RoomController {
 
     return ResponseEntity.ok(responseDto);
   }
+
+  @Operation(summary = "사용자가 잠금 해제한 테마 목록 조회", description = "해당 사용자가 잠금 해제한 방 테마 목록을 반환한다.")
+  @GetMapping("/{userId}/unlocked-themes")
+  public ResponseEntity<List<String>> getUnlockedThemes(
+          @PathVariable Long userId
+  ) {
+    List<String> unlockedThemes = roomService.getUnlockedThemes(userId);
+    return ResponseEntity.ok(unlockedThemes);
+  }
+
 
   @Operation(summary = "다른 사용자 방 방문", description = "방문자가 다른 사용자의 방을 방문하고 랭킹 점수 부여")
   @PostMapping("/visit/{roomId}")
