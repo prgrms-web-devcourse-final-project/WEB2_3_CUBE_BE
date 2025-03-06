@@ -28,7 +28,7 @@ public class PaymentLog {
     @Column(nullable = false)
     private int earnedPoints; // 적립된 포인트
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String paymentKey; // 토스 결제 키
 
     @Column(nullable = false, updatable = false)
