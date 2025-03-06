@@ -116,6 +116,13 @@ public class MockRoomController {
         return ResponseEntity.ok(responseDto);
     }
 
+    @Operation(summary = "Mock - 사용자가 잠금 해제한 테마 목록 조회", description = "해당 사용자가 잠금 해제한 방 테마 목록을 반환한다.")
+    @GetMapping("/{userId}/unlocked-themes")
+    public ResponseEntity<List<String>> getUnlockedThemes(@PathVariable Long userId) {
+        List<String> unlockedThemes = List.of("forest", "marine", "vintage");
+        return ResponseEntity.ok(unlockedThemes);
+    }
+
     private RoomResponseDto createMockRoomResponse(Long roomId, String theme) {
         return RoomResponseDto.builder()
                 .roomId(roomId)
