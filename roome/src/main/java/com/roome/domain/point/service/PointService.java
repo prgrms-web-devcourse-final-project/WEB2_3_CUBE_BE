@@ -56,9 +56,11 @@ public class PointService {
     int amount = POINT_EARN_MAP.getOrDefault(reason, 0);
     log.info("earnPoints - User: {}, Reason: {}, Amount: {}", user.getId(), reason, amount);
 
-    if (pointHistoryRepository.existsRecentEarned(user.getId(), reason)) {
-      log.warn("earnPoints - 중복 적립 시도! User: {}, Reason: {}", user.getId(), reason);
-      throw new DuplicatePointEarnException();
+    if(!reason.name().startsWith("POINT_PURCHASE")){
+      if (pointHistoryRepository.existsRecentEarned(user.getId(), reason)) {
+        log.warn("earnPoints - 중복 적립 시도! User: {}, Reason: {}", user.getId(), reason);
+        throw new DuplicatePointEarnException();
+      }
     }
 
     // 포인트가 없으면 자동 생성하도록 수정
