@@ -90,12 +90,12 @@ class GenrePreferenceServiceTest {
     void getTopCdGenres_ShouldReturnGenreList() {
         // Given
         List<UserGenrePreference> preferences = Arrays.asList(
-                UserGenrePreference.create(testUser, GenreType.CD, "Rock", 2, 1),
-                UserGenrePreference.create(testUser, GenreType.CD, "Pop", 2, 2),
-                UserGenrePreference.create(testUser, GenreType.CD, "Jazz", 1, 3)
+                UserGenrePreference.create(testUser, GenreType.CD, "Rock"),
+                UserGenrePreference.create(testUser, GenreType.CD, "Pop"),
+                UserGenrePreference.create(testUser, GenreType.CD, "Jazz")
         );
 
-        when(userGenrePreferenceRepository.findByUserIdAndGenreTypeOrderByRankAsc(
+        when(userGenrePreferenceRepository.findByUserIdAndGenreTypeOrderByIdAsc(
                 eq(1L), eq(GenreType.CD))).thenReturn(preferences);
 
         // When
@@ -104,7 +104,7 @@ class GenrePreferenceServiceTest {
         // Then
         assertThat(result).hasSize(3);
         assertThat(result).containsExactly("Rock", "Pop", "Jazz");
-        verify(userGenrePreferenceRepository).findByUserIdAndGenreTypeOrderByRankAsc(
+        verify(userGenrePreferenceRepository).findByUserIdAndGenreTypeOrderByIdAsc(
                 eq(1L), eq(GenreType.CD));
     }
 
@@ -113,12 +113,12 @@ class GenrePreferenceServiceTest {
     void getTopBookGenres_ShouldReturnGenreList() {
         // Given
         List<UserGenrePreference> preferences = Arrays.asList(
-                UserGenrePreference.create(testUser, GenreType.BOOK, "Fiction", 2, 1),
-                UserGenrePreference.create(testUser, GenreType.BOOK, "Fantasy", 1, 2),
-                UserGenrePreference.create(testUser, GenreType.BOOK, "Sci-Fi", 1, 3)
+                UserGenrePreference.create(testUser, GenreType.BOOK, "Fiction"),
+                UserGenrePreference.create(testUser, GenreType.BOOK, "Fantasy"),
+                UserGenrePreference.create(testUser, GenreType.BOOK, "Sci-Fi")
         );
 
-        when(userGenrePreferenceRepository.findByUserIdAndGenreTypeOrderByRankAsc(
+        when(userGenrePreferenceRepository.findByUserIdAndGenreTypeOrderByIdAsc(
                 eq(1L), eq(GenreType.BOOK))).thenReturn(preferences);
 
         // When
@@ -127,7 +127,7 @@ class GenrePreferenceServiceTest {
         // Then
         assertThat(result).hasSize(3);
         assertThat(result).containsExactly("Fiction", "Fantasy", "Sci-Fi");
-        verify(userGenrePreferenceRepository).findByUserIdAndGenreTypeOrderByRankAsc(
+        verify(userGenrePreferenceRepository).findByUserIdAndGenreTypeOrderByIdAsc(
                 eq(1L), eq(GenreType.BOOK));
     }
 
