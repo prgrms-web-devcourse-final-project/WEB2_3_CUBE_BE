@@ -120,6 +120,7 @@ public class MockRoomController {
     @GetMapping("/{userId}/unlocked-themes")
     public ResponseEntity<List<String>> getUnlockedThemes(@PathVariable Long userId) {
         List<String> unlockedThemes = List.of("basic", "forest", "marine");
+
         return ResponseEntity.ok(unlockedThemes);
     }
 

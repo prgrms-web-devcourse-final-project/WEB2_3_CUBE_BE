@@ -6,7 +6,6 @@ import com.roome.domain.cdcomment.dto.CdCommentResponse;
 import com.roome.domain.cdcomment.entity.CdComment;
 import com.roome.domain.cdcomment.exception.CdCommentListEmptyException;
 import com.roome.domain.cdcomment.exception.CdCommentNotFoundException;
-import com.roome.domain.cdcomment.exception.CdCommentSearchEmptyException;
 import com.roome.domain.cdcomment.notificationEvent.CdCommentCreatedEvent;
 import com.roome.domain.cdcomment.repository.CdCommentRepository;
 import com.roome.domain.mycd.entity.MyCd;
@@ -92,7 +91,7 @@ public class CdCommentService {
   }
 
   public CdCommentListResponse getComments(Long myCdId, String keyword, int page, int size) {
-    int adjustedPage = page - 1;
+    int adjustedPage = Math.max(page, 0);
     Pageable pageable = PageRequest.of(adjustedPage, size);
     Page<CdComment> commentPage;
 
@@ -116,7 +115,7 @@ public class CdCommentService {
             comment.getContent(),
             comment.getCreatedAt()
         )).toList(),
-        page,
+        adjustedPage,
         size,
         commentPage.getTotalElements(),
         commentPage.getTotalPages()
@@ -125,6 +124,8 @@ public class CdCommentService {
 
   public List<CdCommentResponse> getAllComments(Long myCdId) {
     List<CdComment> comments = cdCommentRepository.findByMyCdId(myCdId);
+
+    System.out.println("조회된 댓글 개수: " + comments.size()); // 디버깅
 
     if (comments.isEmpty()) {
       throw new CdCommentListEmptyException();
@@ -143,31 +144,6 @@ public class CdCommentService {
         .collect(Collectors.toList());
   }
 
-  public CdCommentListResponse searchComments(Long myCdId, String keyword, int page, int size) {
-    Pageable pageable = PageRequest.of(page, size);
-    Page<CdComment> commentPage = cdCommentRepository.findByMyCdIdAndKeyword(myCdId, keyword,
-        pageable);
-
-    if (commentPage.isEmpty()) {
-      throw new CdCommentSearchEmptyException();
-    }
-
-    return new CdCommentListResponse(
-        commentPage.map(comment -> new CdCommentResponse(
-            comment.getId(),
-            comment.getMyCd().getId(),
-            comment.getUser().getId(),
-            comment.getUser().getNickname(),
-            comment.getTimestamp(),
-            comment.getContent(),
-            comment.getCreatedAt()
-        )).toList(),
-        page,
-        size,
-        commentPage.getTotalElements(),
-        commentPage.getTotalPages()
-    );
-  }
 
   @Transactional
   public void deleteComment(Long userId, Long commentId) {

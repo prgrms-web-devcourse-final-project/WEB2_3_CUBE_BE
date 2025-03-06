@@ -114,6 +114,12 @@ public class PointService {
 
     int balance = pointRepository.findByUserId(user.getId()).map(Point::getBalance).orElse(0);
     Pageable pageable = PageRequest.of(0, size);
+
+    // 전체 데이터 기준으로 firstId / lastId 조회
+    Long firstId = pointHistoryRepository.findFirstIdByUser(userId);
+    Long lastId = pointHistoryRepository.findLastIdByUser(userId);
+
+    // 커서 기반 페이징
     Slice<PointHistory> historySlice = cursor == 0 ?
         pointHistoryRepository.findByUserOrderByIdDesc(user, pageable) :
         pointHistoryRepository.findByUserAndIdLessThanOrderByIdDesc(user, cursor, pageable);
@@ -126,10 +132,11 @@ public class PointService {
 
     return PointHistoryResponse.fromEntityList(historyItems, balance,
         pointHistoryRepository.countByUserId(user.getId()),
-        historyItems.isEmpty() ? null : historyItems.get(0).getId(),
-        historyItems.isEmpty() ? null : historyItems.get(historyItems.size() - 1).getId(),
+        firstId,   // 전체 기준 firstId 적용
+        lastId,    // 전체 기준 lastId 적용
         historySlice.hasNext() ? historyItems.get(historyItems.size() - 1).getId() : null);
   }
+
 
   @Transactional(readOnly = true)
   public PointBalanceResponse getMyPointBalance(Long userId) {

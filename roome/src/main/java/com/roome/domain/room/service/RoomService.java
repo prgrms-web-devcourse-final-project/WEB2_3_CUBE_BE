@@ -266,6 +266,7 @@ public class RoomService {
 
     List<RoomThemeUnlock> unlockedThemes = roomThemeUnlockRepository.findByUser(user);
 
+
     List<String> themeList = new ArrayList<>(unlockedThemes.stream()
             .map(themeUnlock -> themeUnlock.getTheme().name().toLowerCase())
             .toList());
@@ -275,6 +276,7 @@ public class RoomService {
     }
 
     return themeList;
+
   }
 
 
