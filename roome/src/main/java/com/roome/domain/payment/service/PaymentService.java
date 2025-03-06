@@ -93,16 +93,16 @@ public class PaymentService {
     try {
       ResponseEntity<String> response = tossPaymentClient.requestConfirm(verifyDto);
 
-      if (response.getStatusCode().is2xxSuccessful()) {
+      if (!response.getStatusCode().is2xxSuccessful()) {
         log.error("❌ 결제 승인 실패 - Status={}, Response={}", response.getStatusCode(), response.getBody());
         throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
       }
       log.info("✅ 결제 승인 성공 - paymentKey={}", verifyDto.getPaymentKey());
     } catch (Exception e) {
-      log.error("❌ 결제 승인 중 오류 발생: {}", e.getMessage());
       throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
     }
 
+    /*
     // 토스 API에서 결제 상태 확인
     log.info("토스 결제 검증 요청: paymentKey={}, orderId={}, amount={}",
             verifyDto.getPaymentKey(), verifyDto.getOrderId(), verifyDto.getAmount());
@@ -115,6 +115,7 @@ public class PaymentService {
           verifyDto.getPaymentKey());
       throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
     }
+    */
 
     // 결제 상태 업데이트
     payment.updateStatus(PaymentStatus.SUCCESS);
