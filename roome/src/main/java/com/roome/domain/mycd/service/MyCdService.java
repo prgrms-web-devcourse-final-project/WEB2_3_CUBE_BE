@@ -122,11 +122,13 @@ public class MyCdService {
 
     try {
       if (isKeywordSearch) {
-        myCdsPage = myCdRepository.searchByUserIdAndKeyword(userId, keyword, pageable);
+        myCdsPage = myCdRepository.searchMyCd(userId, keyword, cursor, size);
       } else {
         myCdsPage = (cursor == null || cursor == 0)
-            ? myCdRepository.findByUserIdOrderByIdAsc(userId, pageable) // 첫 페이지
-            : myCdRepository.findByUserIdAndIdGreaterThanOrderByIdAsc(userId, cursor, pageable);
+            ? myCdRepository.findByUserIdOrderByIdAsc(userId,
+            PageRequest.of(0, size, Sort.by(Sort.Direction.ASC, "id")))
+            : myCdRepository.findByUserIdAndIdGreaterThanOrderByIdAsc(userId, cursor,
+                PageRequest.of(0, size, Sort.by(Sort.Direction.ASC, "id")));
       }
     } catch (Exception e) {
       throw new MyCdDatabaseException("CD 목록을 불러오는 중 오류가 발생했습니다.");
