@@ -297,7 +297,6 @@ public class PaymentService {
   }
 
 
-
   private PointReason getPointReasonForAmount(int purchasedPoints) {
     return switch (purchasedPoints) {
       case 100 -> PointReason.POINT_PURCHASE_100;
