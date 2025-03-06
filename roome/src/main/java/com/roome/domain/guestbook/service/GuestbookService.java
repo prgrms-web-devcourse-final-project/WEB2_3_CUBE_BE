@@ -9,6 +9,7 @@ import com.roome.domain.guestbook.entity.RelationType;
 import com.roome.domain.guestbook.notificationEvent.GuestBookCreatedEvent;
 import com.roome.domain.guestbook.repository.GuestbookRepository;
 import com.roome.domain.houseMate.repository.HousemateRepository;
+import com.roome.domain.point.entity.PointReason;
 import com.roome.domain.point.service.PointService;
 import com.roome.domain.rank.entity.ActivityType;
 import com.roome.domain.rank.service.UserActivityService;
@@ -114,6 +115,8 @@ public class GuestbookService {
       // 방명록 작성 활동 기록 - 길이 체크
       userActivityService.recordUserActivity(userId, ActivityType.GUESTBOOK, roomId,
           requestDto.getMessage().length());
+
+      pointService.earnPoints(user, PointReason.GUESTBOOK_REWARD);
     }
 
     if (!isSelfRoom) {
