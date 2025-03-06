@@ -186,7 +186,6 @@ public class PaymentService {
   public PaymentResponseDto cancelPayment(Long userId, String paymentKey, String cancelReason,
       Integer cancelAmount) {
     Payment payment = paymentRepository.findByPaymentKey(paymentKey)
-    Payment payment = paymentRepository.findByOrderId(orderId)
         .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
     if (!payment.getUser().getId().equals(userId)) {
