@@ -12,6 +12,8 @@ import com.roome.domain.mybook.entity.repository.MyBookCountRepository;
 import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
 import com.roome.domain.mycd.entity.MyCdCount;
 import com.roome.domain.mycd.repository.MyCdCountRepository;
+import com.roome.domain.point.entity.PointReason;
+import com.roome.domain.point.service.PointService;
 import com.roome.domain.rank.service.UserActivityService;
 import com.roome.domain.room.dto.RoomResponseDto;
 import com.roome.domain.room.entity.Room;
@@ -48,6 +50,7 @@ public class RoomService {
   private final GenreRepository genreRepository;
   private final CdGenreTypeRepository cdGenreTypeRepository;
   private final RoomThemeUnlockRepository roomThemeUnlockRepository;
+  private final PointService pointService;
 
   @Transactional
   public RoomResponseDto createRoom(Long userId) {
@@ -202,7 +205,7 @@ public class RoomService {
       boolean isUnlocked = roomThemeUnlockRepository.existsByUserAndTheme(room.getUser(), theme);
 
       if (!isUnlocked) {
-        room.getUser().getPoint().subtractPoints(400);
+        pointService.usePoints(room.getUser(), PointReason.THEME_PURCHASE);
         roomThemeUnlockRepository.save(RoomThemeUnlock.create(room.getUser(), theme));
 
         log.info("테마 잠금 해제 완료: 사용자(userId={}), 테마({})", userId, newTheme);
