@@ -266,9 +266,17 @@ public class RoomService {
 
     List<RoomThemeUnlock> unlockedThemes = roomThemeUnlockRepository.findByUser(user);
 
-    return unlockedThemes.stream()
-            .map(themeUnlock -> themeUnlock.getTheme().name().toLowerCase()) // 소문자로 변환
-            .toList();
+
+    List<String> themeList = new ArrayList<>(unlockedThemes.stream()
+            .map(themeUnlock -> themeUnlock.getTheme().name().toLowerCase())
+            .toList());
+
+    if (!themeList.contains("basic")) {
+      themeList.add("basic");
+    }
+
+    return themeList;
+
   }
 
 
