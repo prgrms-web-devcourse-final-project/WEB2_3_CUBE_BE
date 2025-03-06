@@ -78,7 +78,6 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            docker-compose -f docker-compose-prod.yml -p roome-prod down
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/roome-prod:latest
-            docker stop roome-prod || true
-            docker rm roome-prod || true
-            docker-compose -f docker-compose-prod.yml up -d --no-deps roome-app
+            docker-compose -f docker-compose-prod.yml -p roome-prod up -d
