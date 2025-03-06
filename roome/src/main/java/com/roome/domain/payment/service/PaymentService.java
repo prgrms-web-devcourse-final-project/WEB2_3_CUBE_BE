@@ -2,6 +2,7 @@ package com.roome.domain.payment.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.roome.domain.payment.dto.PaymentLogResponseDto;
 import com.roome.domain.payment.dto.PaymentRequestDto;
 import com.roome.domain.payment.dto.PaymentResponseDto;
 import com.roome.domain.payment.dto.PaymentVerifyDto;
@@ -22,7 +23,9 @@ import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -179,10 +182,10 @@ public class PaymentService {
 
   // 결제 취소 (환불)
   @Transactional
-  public PaymentResponseDto cancelPayment(Long userId, String orderId, String cancelReason,
+  public PaymentResponseDto cancelPayment(Long userId, String paymentKey, String cancelReason,
       Integer cancelAmount) {
 
-    Payment payment = paymentRepository.findByOrderId(orderId)
+    Payment payment = paymentRepository.findByPaymentKey(paymentKey)
         .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
     if (!payment.getUser().getId().equals(userId)) {
@@ -207,12 +210,12 @@ public class PaymentService {
 
     PointHistory lastPurchase = latestPurchase.get();
 
-// 환불 가능 기간 체크
+    // 환불 가능 기간 체크
     if (lastPurchase.getCreatedAt().isBefore(LocalDateTime.now().minusDays(7))) {
       throw new BusinessException(ErrorCode.PAYMENT_REFUND_PERIOD_EXCEEDED);
     }
 
-// 포인트 사용 여부 체크
+    // 포인트 사용 여부 체크
     boolean hasUsedPoints = pointHistoryRepository.hasUsedPointsAfterLastPurchase(userId);
     if (hasUsedPoints) {
       throw new BusinessException(ErrorCode.PAYMENT_ALREADY_USED);
@@ -222,6 +225,8 @@ public class PaymentService {
     if (!payment.getStatus().equals(PaymentStatus.SUCCESS)) {
       throw new BusinessException(ErrorCode.PAYMENT_NOT_CANCELABLE);
     }
+
+    int refundPoints = getRefundPointsForAmount(cancelAmount);
 
     // Toss API에 결제 취소 요청
     boolean isCanceled = tossPaymentClient.cancelPayment(payment.getPaymentKey(), cancelReason,
@@ -235,10 +240,10 @@ public class PaymentService {
     paymentRepository.save(payment);
 
     // 사용자 포인트 차감
-    int refundAmount = (cancelAmount != null) ? cancelAmount : payment.getPurchasedPoints();
-    pointService.usePoints(payment.getUser(), getRefundReasonForAmount(refundAmount));
+    pointService.usePoints(payment.getUser(), getRefundReasonForAmount(refundPoints));
 
-    log.info("결제 취소 완료: orderId={}, userId={}, refundAmount={}", orderId, userId, refundAmount);
+    log.info("결제 취소 완료: paymentKey={}, userId={}, refundPoints={}, refundAmount={}",
+            paymentKey, userId, refundPoints, cancelAmount);
 
     return PaymentResponseDto.builder()
         .orderId(payment.getOrderId())
@@ -248,6 +253,20 @@ public class PaymentService {
         .status(PaymentStatus.CANCELED)
         .build();
   }
+
+  @Transactional(readOnly = true)
+  public List<PaymentLogResponseDto> getPaymentHistory(Long userId, int page, int size) {
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+    PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+    Page<PaymentLog> paymentLogs = paymentLogRepository.findByUser(user, pageRequest);
+
+    return paymentLogs.stream()
+            .map(PaymentLogResponseDto::from)
+            .toList();
+  }
+
 
   private void savePaymentLog(Payment payment, String paymentKey) {
     PaymentLog paymentLog = PaymentLog.builder()
@@ -275,6 +294,16 @@ public class PaymentService {
       case 550 -> PointReason.POINT_REFUND_550;
       case 1200 -> PointReason.POINT_REFUND_1200;
       case 4000 -> PointReason.POINT_REFUND_4000;
+      default -> throw new BusinessException(ErrorCode.INVALID_REFUND_POINT_AMOUNT);
+    };
+  }
+
+  private int getRefundPointsForAmount(int cancelAmount) {
+    return switch (cancelAmount) {
+      case 1000 -> 100;
+      case 5000 -> 550;
+      case 10000 -> 1200;
+      case 30000 -> 4000;
       default -> throw new BusinessException(ErrorCode.INVALID_REFUND_AMOUNT);
     };
   }
