@@ -49,7 +49,11 @@ public class PointService {
       PointReason.BOOK_UNLOCK_LV2, 500,
       PointReason.BOOK_UNLOCK_LV3, 1500,
       PointReason.CD_UNLOCK_LV2, 500,
-      PointReason.CD_UNLOCK_LV3, 1500
+      PointReason.CD_UNLOCK_LV3, 1500,
+          PointReason.POINT_REFUND_100, 100,
+          PointReason.POINT_REFUND_550, 550,
+          PointReason.POINT_REFUND_1200, 1200,
+          PointReason.POINT_REFUND_4000, 4000
   );
 
   public void earnPoints(User user, PointReason reason) {
