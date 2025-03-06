@@ -110,6 +110,7 @@ public class PaymentService {
       if (!"DONE".equals(paymentStatus)) {
         log.error("❌ Step 9: 결제 상태 검증 실패 - orderId={}, paymentKey={}, status={}",
                 verifyDto.getOrderId(), verifyDto.getPaymentKey(), paymentStatus);
+
         throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
       }
       log.info("✅ Step 10: 결제 승인 성공 및 상태 확인 완료");
@@ -132,6 +133,7 @@ public class PaymentService {
           verifyDto.getPaymentKey());
       throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
     }
+    */
 
 
     // 결제 상태 업데이트

@@ -8,12 +8,14 @@ import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class NotificationService {
@@ -24,11 +26,16 @@ public class NotificationService {
     // 알림 생성 서비스
     @Transactional
     public Long createNotification(CreateNotificationRequest request) {
-        // 발신자와 수신자 존재 확인
-        userRepository.findById(request.getSenderId())
-                      .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-        userRepository.findById(request.getReceiverId())
-                      .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        if(request.getSenderId() == 0L){
+            log.info("시스템 알림이므로 발신자 및 수신자 ID를 검증하지 않습니다.");
+        } else {
+            // 발신자와 수신자 존재 확인
+            userRepository.findById(request.getSenderId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+            userRepository.findById(request.getReceiverId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+            log.info("발신자 및 수신자 ID가 존재합니다. snederId: {}, receiverId: {}", request.getSenderId(), request.getReceiverId());
+        }
 
         Notification notification = Notification.builder()
                                                 .type(request.getType())
