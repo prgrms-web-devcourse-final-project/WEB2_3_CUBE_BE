@@ -242,6 +242,8 @@ public class PaymentService {
     // 사용자 포인트 차감
     pointService.usePoints(payment.getUser(), getRefundReasonForAmount(refundPoints));
 
+    saveRefundLog(payment, cancelAmount, paymentKey);
+
     log.info("결제 취소 완료: paymentKey={}, userId={}, refundPoints={}, refundAmount={}",
             paymentKey, userId, refundPoints, cancelAmount);
 
@@ -263,9 +265,16 @@ public class PaymentService {
     Page<PaymentLog> paymentLogs = paymentLogRepository.findByUser(user, pageRequest);
 
     return paymentLogs.stream()
-            .map(PaymentLogResponseDto::from)
+            .map(log -> {
+              PaymentStatus status = paymentRepository.findByPaymentKey(log.getPaymentKey())
+                      .map(Payment::getStatus)
+                      .orElse(PaymentStatus.FAILED);
+
+              return PaymentLogResponseDto.from(log, status);
+            })
             .toList();
   }
+
 
 
   private void savePaymentLog(Payment payment, String paymentKey) {
@@ -277,6 +286,17 @@ public class PaymentService {
             .build();
     paymentLogRepository.save(paymentLog);
   }
+
+  private void saveRefundLog(Payment payment, int refundAmount, String paymentKey) {
+    PaymentLog refundLog = PaymentLog.builder()
+            .user(payment.getUser())
+            .amount(-refundAmount)
+            .earnedPoints(-payment.getPurchasedPoints())
+            .paymentKey(paymentKey)
+            .build();
+    paymentLogRepository.save(refundLog);
+  }
+
 
   private PointReason getPointReasonForAmount(int purchasedPoints) {
     return switch (purchasedPoints) {

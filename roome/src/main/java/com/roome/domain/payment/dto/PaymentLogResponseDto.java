@@ -1,6 +1,7 @@
 package com.roome.domain.payment.dto;
 
 import com.roome.domain.payment.entity.PaymentLog;
+import com.roome.domain.payment.entity.PaymentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,14 +20,16 @@ public class PaymentLogResponseDto {
     private int earnedPoints;
     private String paymentKey;
     private LocalDateTime createdAt;
+    private PaymentStatus status;
 
-    public static PaymentLogResponseDto from(PaymentLog paymentLog) {
+    public static PaymentLogResponseDto from(PaymentLog paymentLog, PaymentStatus status) {
         return PaymentLogResponseDto.builder()
                 .id(paymentLog.getId())
                 .amount(paymentLog.getAmount())
                 .earnedPoints(paymentLog.getEarnedPoints())
                 .paymentKey(paymentLog.getPaymentKey())
                 .createdAt(paymentLog.getCreatedAt())
+                .status(status)
                 .build();
     }
 }
