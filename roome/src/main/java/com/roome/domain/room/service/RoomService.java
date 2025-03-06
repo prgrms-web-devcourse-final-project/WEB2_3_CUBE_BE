@@ -268,11 +268,11 @@ public class RoomService {
 
 
     List<String> themeList = new ArrayList<>(unlockedThemes.stream()
-            .map(themeUnlock -> themeUnlock.getTheme().name().toLowerCase())
+            .map(themeUnlock -> themeUnlock.getTheme().name().toUpperCase())
             .toList());
 
-    if (!themeList.contains("basic")) {
-      themeList.add("basic");
+    if (!themeList.contains("BASIC")) {
+      themeList.add("BASIC");
     }
 
     return themeList;
