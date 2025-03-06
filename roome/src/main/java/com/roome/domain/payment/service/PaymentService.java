@@ -1,6 +1,7 @@
 package com.roome.domain.payment.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.roome.domain.payment.dto.PaymentRequestDto;
 import com.roome.domain.payment.dto.PaymentResponseDto;
 import com.roome.domain.payment.dto.PaymentVerifyDto;
@@ -74,35 +75,52 @@ public class PaymentService {
   // 결제 성공 후, 토스 API의 응답을 검증하고 포인트 지급
   @Transactional
   public PaymentResponseDto verifyPayment(Long userId, PaymentVerifyDto verifyDto) {
-    log.info("결제 검증 요청: paymentKey={}, orderId={}, amount={}",
-            verifyDto.getPaymentKey(), verifyDto.getOrderId(), verifyDto.getAmount());
-
+    log.info("✅ Step 1: 결제 검증 시작");
     Payment payment = paymentRepository.findByOrderId(verifyDto.getOrderId())
-        .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+            .orElseThrow(() -> {
+              log.error("❌ Step 2: 결제 정보 없음 - orderId={}", verifyDto.getOrderId());
+              return new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
+            });
 
-    log.info("DB 조회 결과: orderId={}, amount={}, paymentKey={}",
+    log.info("✅ Step 3: DB 조회 완료 - orderId={}, amount={}, paymentKey={}",
             payment.getOrderId(), payment.getAmount(), payment.getPaymentKey());
 
-    // 결제 금액 검증
     if (payment.getAmount() != verifyDto.getAmount()) {
+      log.error("❌ Step 4: 결제 금액 불일치 - 요청 금액={}, 저장된 금액={}",
+              verifyDto.getAmount(), payment.getAmount());
       throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
     }
 
-
-    //토스에 결제 승인 요청
+    log.info("✅ Step 5: Toss 결제 승인 요청 시작");
     try {
       ResponseEntity<String> response = tossPaymentClient.requestConfirm(verifyDto);
+      log.info("✅ Step 6: Toss API 응답 수신 - Status={}, Body={}",
+              response.getStatusCode(), response.getBody());
 
       if (!response.getStatusCode().is2xxSuccessful()) {
-        log.error("❌ 결제 승인 실패 - Status={}, Response={}", response.getStatusCode(), response.getBody());
+        log.error("❌ Step 7: 결제 승인 실패 - Status={}, Response={}",
+                response.getStatusCode(), response.getBody());
         throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
       }
-      log.info("✅ 결제 승인 성공 - paymentKey={}", verifyDto.getPaymentKey());
+
+      JsonNode jsonResponse = new ObjectMapper().readTree(response.getBody());
+      String paymentStatus = jsonResponse.get("status").asText();
+      log.info("✅ Step 8: Toss 응답 상태 확인 - paymentKey={}, status={}", verifyDto.getPaymentKey(), paymentStatus);
+
+      if (!"DONE".equals(paymentStatus)) {
+        log.error("❌ Step 9: 결제 상태 검증 실패 - orderId={}, paymentKey={}, status={}",
+                verifyDto.getOrderId(), verifyDto.getPaymentKey(), paymentStatus);
+
+        throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+      }
+      log.info("✅ Step 10: 결제 승인 성공 및 상태 확인 완료");
     } catch (Exception e) {
+      log.error("❌ Step 11: 결제 승인 중 예외 발생: {}", e.getMessage());
       throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
     }
 
-    /*
+    log.info("✅ Step 12: 결제 상태 업데이트 및 포인트 지급 시작");
+
     // 토스 API에서 결제 상태 확인
     log.info("토스 결제 검증 요청: paymentKey={}, orderId={}, amount={}",
             verifyDto.getPaymentKey(), verifyDto.getOrderId(), verifyDto.getAmount());
@@ -116,6 +134,7 @@ public class PaymentService {
       throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
     }
     */
+
 
     // 결제 상태 업데이트
     payment.updateStatus(PaymentStatus.SUCCESS);
