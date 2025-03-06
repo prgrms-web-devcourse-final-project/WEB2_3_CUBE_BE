@@ -1,22 +1,31 @@
 package com.roome.domain.mycd.dto;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.roome.domain.mycd.entity.MyCd;
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
-public class MyCdResponse {
+public class MyCdResponse implements Serializable {
+
+  private static final long serialVersionUID = 1L;
 
   private Long myCdId;
   private String title;
   private String artist;
   private String album;
+  @JsonSerialize(using = LocalDateSerializer.class)
   private LocalDate releaseDate;
+
   private List<String> genres;
   private String coverUrl;
   private String youtubeUrl;

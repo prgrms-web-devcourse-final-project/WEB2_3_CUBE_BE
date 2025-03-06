@@ -1,5 +1,8 @@
 package com.roome.domain.mycd.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.roome.domain.cd.entity.Cd;
 import com.roome.domain.cd.entity.CdGenre;
 import com.roome.domain.cd.entity.CdGenreType;
@@ -154,8 +157,26 @@ public class MyCdService {
 
     // 현재 페이지의 데이터 가져오기
     List<MyCd> myCds = myCdsPage.getContent();
-    return MyCdListResponse.fromEntities(myCds, totalCount, firstMyCdId, lastMyCdId);
+    MyCdListResponse response = MyCdListResponse.fromEntities(myCds, totalCount, firstMyCdId,
+        lastMyCdId);
 
+    // 캐시된 데이터가 LinkedHashMap인지 확인 후 변환
+    if (response instanceof Map) {
+      log.warn("Redis에서 가져온 데이터가 Map 형태임. MyCdListResponse로 변환 중...");
+
+      ObjectMapper objectMapper = new ObjectMapper();
+      objectMapper.registerModule(new JavaTimeModule()); // LocalDate 변환 지원
+      objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+      try {
+        response = objectMapper.convertValue(response, MyCdListResponse.class);
+      } catch (Exception e) {
+        log.error("Redis 캐시 변환 실패: {}", e.getMessage(), e);
+        throw new RuntimeException("Redis 캐시 변환 중 오류 발생");
+      }
+    }
+
+    return response;
   }
 
   public MyCdResponse getMyCd(Long targetUserId, Long myCdId) {
