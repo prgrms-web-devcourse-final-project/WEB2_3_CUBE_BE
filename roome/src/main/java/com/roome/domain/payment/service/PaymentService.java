@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -184,8 +185,8 @@ public class PaymentService {
   @Transactional
   public PaymentResponseDto cancelPayment(Long userId, String paymentKey, String cancelReason,
       Integer cancelAmount) {
-
     Payment payment = paymentRepository.findByPaymentKey(paymentKey)
+    Payment payment = paymentRepository.findByOrderId(orderId)
         .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
     if (!payment.getUser().getId().equals(userId)) {
