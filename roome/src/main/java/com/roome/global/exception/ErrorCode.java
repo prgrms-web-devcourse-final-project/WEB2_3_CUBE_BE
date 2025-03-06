@@ -45,6 +45,8 @@ public enum ErrorCode {
   ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 방을 찾을 수 없습니다."),
   INVALID_ROOM_THEME(HttpStatus.BAD_REQUEST, "해당 테마가 유효하지 않거나 입력 값이 비어 있습니다."),
   ROOM_ACCESS_DENIED(HttpStatus.UNAUTHORIZED, "해당 방의 소유주가 아닙니다."),
+  THEME_ALREADY_UNLOCKED(HttpStatus.BAD_REQUEST, "이미 잠금 해제된 테마입니다"),
+  THEME_NOT_UNLOCKED(HttpStatus.BAD_REQUEST, "구매하지 않은 테마는 변경할 수 없습니다."),
 
   // 가구 관련 예외
   INVALID_FURNITURE_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 가구 타입입니다."),

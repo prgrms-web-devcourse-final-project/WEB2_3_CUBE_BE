@@ -3,6 +3,7 @@ package com.roome.domain.room.controller;
 import com.roome.domain.furniture.dto.FurnitureRequestDto;
 import com.roome.domain.furniture.dto.FurnitureResponseDto;
 import com.roome.domain.furniture.dto.ToggleFurnitureResponseDto;
+import com.roome.domain.room.dto.PurchaseRoomThemeResponseDto;
 import com.roome.domain.room.dto.RoomResponseDto;
 import com.roome.domain.room.dto.UpdateRoomThemeRequestDto;
 import com.roome.domain.room.dto.UpdateRoomThemeResponseDto;
@@ -42,19 +43,38 @@ public class RoomController {
     return ResponseEntity.ok(roomResponseDto);
   }
 
-  @Operation(summary = "방 테마 변경", description = "주어진 방 ID와 사용자 ID를 통해 방 테마 업데이트")
+  @Operation(summary = "방 테마 변경", description = "주어진 방 ID와 사용자 ID를 통해 방 테마 업데이트 (구매한 테마만 변경 가능)")
   @PutMapping("/{roomId}")
   public ResponseEntity<UpdateRoomThemeResponseDto> updateRoomTheme(
           @AuthenticationPrincipal Long userId,
-      @PathVariable Long roomId,
-      @RequestBody UpdateRoomThemeRequestDto requestDto
+          @PathVariable Long roomId,
+          @RequestBody UpdateRoomThemeRequestDto requestDto
   ) {
     String updatedTheme = roomService.updateRoomTheme(userId, roomId, requestDto.getThemeName());
 
     UpdateRoomThemeResponseDto responseDto = new UpdateRoomThemeResponseDto(roomId, updatedTheme);
+    return ResponseEntity.ok(responseDto);
+  }
+
+  @Operation(summary = "방 테마 구매", description = "포인트를 사용하여 방 테마를 구매하고 잠금 해제")
+  @PostMapping("/{roomId}/purchase-theme")
+  public ResponseEntity<PurchaseRoomThemeResponseDto> purchaseRoomTheme(
+          @AuthenticationPrincipal Long userId,
+          @PathVariable Long roomId,
+          @RequestBody UpdateRoomThemeRequestDto requestDto
+  ) {
+    int remainingPoints = roomService.purchaseRoomTheme(userId, roomId, requestDto.getThemeName());
+
+    PurchaseRoomThemeResponseDto responseDto = new PurchaseRoomThemeResponseDto(
+            roomId,
+            requestDto.getThemeName(),
+            remainingPoints
+    );
 
     return ResponseEntity.ok(responseDto);
   }
+
+
 
   @Operation(summary = "가구 표시 여부 토글", description = "주어진 방 ID와 가구 타입을 통해 가구의 표시 여부 토글")
   @PutMapping("/{roomId}/furniture")
