@@ -112,7 +112,7 @@ spring:
     password: ${DATASOURCE_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: update  # create에서 update로 변경하여 기존 데이터 유지
+      ddl-auto: create-drop  # create에서 update로 변경하여 기존 데이터 유지
       naming:
         physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
     show-sql: true
