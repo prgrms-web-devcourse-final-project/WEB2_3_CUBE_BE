@@ -10,8 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "user_genre_preferences",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "genre_type", "rank"}))
+@Table(name = "user_genre_preferences")
 public class UserGenrePreference extends BaseTimeEntity {
 
     @Id
@@ -29,27 +28,11 @@ public class UserGenrePreference extends BaseTimeEntity {
     @Column(nullable = false, length = 50)
     private String genreName;
 
-    @Column(nullable = false)
-    private Integer count;
-
-    @Column(nullable = false)
-    private Integer rank;
-
-    public void updateCount(Integer count) {
-        this.count = count;
-    }
-
-    public void updateRank(Integer rank) {
-        this.rank = rank;
-    }
-
-    public static UserGenrePreference create(User user, GenreType genreType, String genreName, Integer count, Integer rank) {
+    public static UserGenrePreference create(User user, GenreType genreType, String genreName) {
         return UserGenrePreference.builder()
                 .user(user)
                 .genreType(genreType)
                 .genreName(genreName)
-                .count(count)
-                .rank(rank)
                 .build();
     }
 }
