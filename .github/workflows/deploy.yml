@@ -81,8 +81,4 @@ jobs:
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/roome:latest
             docker stop roome || true
             docker rm roome || true
-            docker stop my-redis || true
-            docker rm my-redis || true
-            docker-compose down || true
-            docker system prune -f
-            docker-compose up -d
+            docker-compose up -d --no-deps roome-app
