@@ -34,6 +34,9 @@ public class PaymentLog {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(nullable = false)
+    private boolean isRefund = false;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
