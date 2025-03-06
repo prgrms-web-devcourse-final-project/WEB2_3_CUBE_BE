@@ -133,7 +133,6 @@ public class PaymentService {
           verifyDto.getPaymentKey());
       throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
     }
-    */
 
 
     // 결제 상태 업데이트
