@@ -14,13 +14,4 @@ public interface UserGenrePreferenceRepository extends JpaRepository<UserGenrePr
     List<UserGenrePreference> findByUserIdAndGenreTypeOrderByIdAsc(Long userId, GenreType genreType);
     // 사용자 ID와 장르 타입으로 모든 장르 선호도 삭제
     void deleteByUserIdAndGenreType(Long userId, GenreType genreType);
-
-    // 특정 장르를 선호하는 다른 사용자 찾기 (자신 제외)
-    @Query("SELECT up.user.id FROM UserGenrePreference up " +
-            "WHERE up.genreName = :genreName AND up.genreType = :genreType " +
-            "AND up.user.id != :userId")
-    List<Long> findUserIdsByGenreNameAndGenreTypeAndUserIdNot(
-            @Param("genreName") String genreName,
-            @Param("genreType") GenreType genreType,
-            @Param("userId") Long userId);
 }
