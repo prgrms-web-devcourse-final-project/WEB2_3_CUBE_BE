@@ -1,5 +1,8 @@
 package com.roome.domain.mycd.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.roome.domain.cd.entity.Cd;
 import com.roome.domain.cd.entity.CdGenre;
 import com.roome.domain.cd.entity.CdGenreType;
@@ -32,12 +35,14 @@ import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.jwt.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -58,6 +63,7 @@ public class MyCdService {
   private final FurnitureCapacity furnitureCapacity;
   private final ApplicationEventPublisher eventPublisher; // 이벤트 발행을 위해 추가
 
+  @CacheEvict(value = "myCdList", allEntries = true)
   public MyCdResponse addCdToMyList(Long userId, MyCdCreateRequest request) {
     User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
     Room room = roomRepository.findByUserId(userId).orElseThrow(RoomNoFoundException::new);
@@ -112,12 +118,11 @@ public class MyCdService {
     return MyCdResponse.fromEntity(myCd);
   }
 
+  @Cacheable(value = "myCdList", key = "#userId + '_' + #keyword + '_' + #cursor + '_' + #size", unless = "#result == null")
   public MyCdListResponse getMyCdList(Long userId, String keyword, Long cursor, int size) {
-    log.info("조회할 사용자 ID: {}", userId);
+    log.info("캐시 적용: userId={}, cursor={}, size={}", userId, cursor, size);
 
     boolean isKeywordSearch = keyword != null && !keyword.trim().isEmpty();
-    Pageable pageable = PageRequest.of(0, size, Sort.by(Sort.Direction.ASC, "id"));
-
     Page<MyCd> myCdsPage;
 
     try {
@@ -157,8 +162,26 @@ public class MyCdService {
 
     // 현재 페이지의 데이터 가져오기
     List<MyCd> myCds = myCdsPage.getContent();
-    return MyCdListResponse.fromEntities(myCds, totalCount, firstMyCdId, lastMyCdId);
+    MyCdListResponse response = MyCdListResponse.fromEntities(myCds, totalCount, firstMyCdId,
+        lastMyCdId);
 
+    // 캐시된 데이터가 LinkedHashMap인지 확인 후 변환
+    if (response instanceof Map) {
+      log.warn("Redis에서 가져온 데이터가 Map 형태임. MyCdListResponse로 변환 중...");
+
+      ObjectMapper objectMapper = new ObjectMapper();
+      objectMapper.registerModule(new JavaTimeModule()); // LocalDate 변환 지원
+      objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+      try {
+        response = objectMapper.convertValue(response, MyCdListResponse.class);
+      } catch (Exception e) {
+        log.error("Redis 캐시 변환 실패: {}", e.getMessage(), e);
+        throw new RuntimeException("Redis 캐시 변환 중 오류 발생");
+      }
+    }
+
+    return response;
   }
 
   public MyCdResponse getMyCd(Long targetUserId, Long myCdId) {
@@ -168,6 +191,7 @@ public class MyCdService {
     return MyCdResponse.fromEntity(myCd);
   }
 
+  @CacheEvict(value = "myCdList", allEntries = true)
   public void delete(Long userId, List<Long> myCdIds) {
     // 삭제할 CD 목록을 가져오기
     List<MyCd> myCds = myCdRepository.findAllById(myCdIds);
