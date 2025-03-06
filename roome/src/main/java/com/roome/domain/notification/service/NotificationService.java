@@ -114,7 +114,7 @@ public class NotificationService {
             // 일반 사용자 알림인 경우
             User sender = userRepository.findById(notification.getSenderId())
                     .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-            senderNickName = sender.getName();
+            senderNickName = sender.getNickname();
             senderProfileImage = sender.getProfileImage();
         }
 
