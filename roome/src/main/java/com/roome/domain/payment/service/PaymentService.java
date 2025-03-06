@@ -259,7 +259,7 @@ public class PaymentService {
     User user = userRepository.findById(userId)
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-    PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+    PageRequest pageRequest = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
     Page<PaymentLog> paymentLogs = paymentLogRepository.findByUser(user, pageRequest);
 
     return paymentLogs.stream()
