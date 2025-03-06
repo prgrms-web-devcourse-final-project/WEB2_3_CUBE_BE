@@ -12,6 +12,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Optional;
+
 @Repository
 public interface PointHistoryRepository extends JpaRepository<PointHistory, Long> {
 
@@ -41,5 +44,26 @@ public interface PointHistoryRepository extends JpaRepository<PointHistory, Long
 
   @Query("SELECT MIN(ph.id) FROM PointHistory ph WHERE ph.user.id = :userId")
   Long findLastIdByUser(@Param("userId") Long userId);
+
+  @Query("""
+        SELECT CASE WHEN COUNT(ph) > 0 THEN TRUE ELSE FALSE END
+        FROM PointHistory ph
+        WHERE ph.user.id = :userId
+        AND ph.reason = 'POINT_USE'
+        AND ph.createdAt > (
+            SELECT MAX(ph2.createdAt)
+            FROM PointHistory ph2
+            WHERE ph2.user.id = :userId AND ph2.reason = 'POINT_PURCHASE'
+        )
+    """)
+  boolean hasUsedPointsAfterLastPurchase(@Param("userId") Long userId);
+
+  @Query("""
+        SELECT ph FROM PointHistory ph
+        WHERE ph.user.id = :userId
+        AND ph.reason IN :purchaseReasons
+        ORDER BY ph.createdAt DESC
+    """)
+  List<PointHistory> findLatestPurchase(@Param("userId") Long userId, @Param("purchaseReasons") List<PointReason> purchaseReasons, Pageable pageable);
 
 }

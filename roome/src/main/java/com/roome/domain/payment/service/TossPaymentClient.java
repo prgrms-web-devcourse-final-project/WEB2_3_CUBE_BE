@@ -137,7 +137,7 @@ public class TossPaymentClient {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBasicAuth(encodeSecretKey());
+        headers.set("Authorization", encodeSecretKey());
 
         // 요청 바디 생성
         Map<String, Object> body = new HashMap<>();
