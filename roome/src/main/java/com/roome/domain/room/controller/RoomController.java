@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,7 +52,7 @@ public class RoomController {
   @Operation(summary = "방 테마 변경", description = "주어진 방 ID와 사용자 ID를 통해 방 테마 업데이트")
   @PutMapping("/{roomId}")
   public ResponseEntity<UpdateRoomThemeResponseDto> updateRoomTheme(
-      @RequestParam("userId") Long userId,
+          @AuthenticationPrincipal Long userId,
       @PathVariable Long roomId,
       @RequestBody UpdateRoomThemeRequestDto requestDto
   ) {
@@ -65,7 +66,7 @@ public class RoomController {
   @Operation(summary = "가구 표시 여부 토글", description = "주어진 방 ID와 가구 타입을 통해 가구의 표시 여부 토글")
   @PutMapping("/{roomId}/furniture")
   public ResponseEntity<ToggleFurnitureResponseDto> toggleFurnitureVisibility(
-      @RequestParam("userId") Long userId,
+          @AuthenticationPrincipal Long userId,
       @PathVariable Long roomId,
       @RequestBody FurnitureRequestDto furnitureRequestDto
   ) {
@@ -82,7 +83,7 @@ public class RoomController {
   @Operation(summary = "사용자가 잠금 해제한 테마 목록 조회", description = "해당 사용자가 잠금 해제한 방 테마 목록을 반환한다.")
   @GetMapping("/{userId}/unlocked-themes")
   public ResponseEntity<List<String>> getUnlockedThemes(
-          @PathVariable Long userId
+          @AuthenticationPrincipal Long userId
   ) {
     List<String> unlockedThemes = roomService.getUnlockedThemes(userId);
     return ResponseEntity.ok(unlockedThemes);
