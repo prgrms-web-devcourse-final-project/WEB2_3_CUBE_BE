@@ -49,16 +49,22 @@ public class PointService {
       PointReason.BOOK_UNLOCK_LV2, 500,
       PointReason.BOOK_UNLOCK_LV3, 1500,
       PointReason.CD_UNLOCK_LV2, 500,
-      PointReason.CD_UNLOCK_LV3, 1500
+      PointReason.CD_UNLOCK_LV3, 1500,
+          PointReason.POINT_REFUND_100, 100,
+          PointReason.POINT_REFUND_550, 550,
+          PointReason.POINT_REFUND_1200, 1200,
+          PointReason.POINT_REFUND_4000, 4000
   );
 
   public void earnPoints(User user, PointReason reason) {
     int amount = POINT_EARN_MAP.getOrDefault(reason, 0);
     log.info("earnPoints - User: {}, Reason: {}, Amount: {}", user.getId(), reason, amount);
 
-    if (pointHistoryRepository.existsRecentEarned(user.getId(), reason)) {
-      log.warn("earnPoints - 중복 적립 시도! User: {}, Reason: {}", user.getId(), reason);
-      throw new DuplicatePointEarnException();
+    if(!reason.name().startsWith("POINT_PURCHASE")){
+      if (pointHistoryRepository.existsRecentEarned(user.getId(), reason)) {
+        log.warn("earnPoints - 중복 적립 시도! User: {}, Reason: {}", user.getId(), reason);
+        throw new DuplicatePointEarnException();
+      }
     }
 
     // 포인트가 없으면 자동 생성하도록 수정
@@ -114,6 +120,12 @@ public class PointService {
 
     int balance = pointRepository.findByUserId(user.getId()).map(Point::getBalance).orElse(0);
     Pageable pageable = PageRequest.of(0, size);
+
+    // 전체 데이터 기준으로 firstId / lastId 조회
+    Long firstId = pointHistoryRepository.findFirstIdByUser(userId);
+    Long lastId = pointHistoryRepository.findLastIdByUser(userId);
+
+    // 커서 기반 페이징
     Slice<PointHistory> historySlice = cursor == 0 ?
         pointHistoryRepository.findByUserOrderByIdDesc(user, pageable) :
         pointHistoryRepository.findByUserAndIdLessThanOrderByIdDesc(user, cursor, pageable);
@@ -126,10 +138,11 @@ public class PointService {
 
     return PointHistoryResponse.fromEntityList(historyItems, balance,
         pointHistoryRepository.countByUserId(user.getId()),
-        historyItems.isEmpty() ? null : historyItems.get(0).getId(),
-        historyItems.isEmpty() ? null : historyItems.get(historyItems.size() - 1).getId(),
+        firstId,   // 전체 기준 firstId 적용
+        lastId,    // 전체 기준 lastId 적용
         historySlice.hasNext() ? historyItems.get(historyItems.size() - 1).getId() : null);
   }
+
 
   @Transactional(readOnly = true)
   public PointBalanceResponse getMyPointBalance(Long userId) {

@@ -6,17 +6,17 @@ import com.roome.domain.furniture.dto.ToggleFurnitureResponseDto;
 import com.roome.domain.furniture.entity.FurnitureCapacity;
 import com.roome.domain.furniture.entity.FurnitureType;
 import com.roome.domain.room.dto.*;
+import com.roome.global.exception.BusinessException;
+import com.roome.global.exception.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.sql.Update;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/mock/rooms")
@@ -45,7 +45,7 @@ public class MockRoomController {
     @Operation(summary = "Mock - 사용자 방 조회", description = "주어진 사용자 ID에 해당하는 방 정보 조회")
     @GetMapping
     public ResponseEntity<RoomResponseDto> getRoomByUserId(
-            @RequestParam("userId") Long userId
+            @AuthenticationPrincipal Long userId
     ){
         RoomResponseDto roomResponseDto = createMockRoomResponse(1L, "forest");
         return ResponseEntity.ok(roomResponseDto);
@@ -54,7 +54,7 @@ public class MockRoomController {
     @Operation(summary = "Mock - 방 테마 업데이트", description = "사용자가 지정한 테마로 업데이트")
     @PutMapping("/{roomId}")
     public ResponseEntity<UpdateRoomThemeResponseDto> updateRoomTheme(
-            @RequestParam("userId") Long userId,
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long roomId,
             @RequestBody UpdateRoomThemeRequestDto requestDto
     ) {
@@ -66,21 +66,21 @@ public class MockRoomController {
     @Operation(summary = "Mock - 가구 활성화/비활성화", description = "주어진 방에서 특정 가구를 활성화하거나 비활성화함")
     @PutMapping("/{roomId}/furniture")
     public ResponseEntity<ToggleFurnitureResponseDto> toggleFurnitureVisibility(
-            @RequestParam("userId") Long userId,
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long roomId,
             @RequestBody FurnitureRequestDto requestDto
     ) {
         String furnitureTypeStr = requestDto.getFurnitureType();
 
-        if (furnitureTypeStr == null) {
-            return ResponseEntity.badRequest().body(null);
+        if (furnitureTypeStr == null || furnitureTypeStr.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_FURNITURE_TYPE);
         }
 
         FurnitureType furnitureType;
         try {
             furnitureType = FurnitureType.valueOf(furnitureTypeStr.toUpperCase());
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(null);
+            throw new BusinessException(ErrorCode.INVALID_FURNITURE_TYPE);
         }
 
         List<String> topGenres = switch (furnitureType) {
@@ -97,11 +97,8 @@ public class MockRoomController {
         FurnitureResponseDto targetFurniture = furnitureList.stream()
                 .filter(f -> f.getFurnitureType().equals(furnitureType.name()))
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(() -> new BusinessException(ErrorCode.FURNITURE_NOT_FOUND));
 
-        if (targetFurniture == null) {
-            return ResponseEntity.badRequest().body(null);
-        }
 
         // `isVisible` 값 토글 (true → false, false → true)
         FurnitureResponseDto updatedFurniture = new FurnitureResponseDto(
@@ -114,6 +111,14 @@ public class MockRoomController {
 
         ToggleFurnitureResponseDto responseDto = new ToggleFurnitureResponseDto(roomId, updatedFurniture);
         return ResponseEntity.ok(responseDto);
+    }
+
+    @Operation(summary = "Mock - 사용자가 잠금 해제한 테마 목록 조회", description = "해당 사용자가 잠금 해제한 방 테마 목록을 반환한다.")
+    @GetMapping("/{userId}/unlocked-themes")
+    public ResponseEntity<List<String>> getUnlockedThemes(@AuthenticationPrincipal Long userId) {
+        List<String> unlockedThemes = List.of("basic", "forest", "marine");
+
+        return ResponseEntity.ok(unlockedThemes);
     }
 
     private RoomResponseDto createMockRoomResponse(Long roomId, String theme) {

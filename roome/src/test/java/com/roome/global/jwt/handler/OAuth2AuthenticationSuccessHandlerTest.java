@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.roome.domain.auth.security.OAuth2UserPrincipal;
+import com.roome.domain.furniture.repository.FurnitureRepository;
 import com.roome.domain.room.dto.RoomResponseDto;
 import com.roome.domain.room.service.RoomService;
 import com.roome.domain.user.entity.Provider;
@@ -24,6 +25,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -54,6 +56,9 @@ class OAuth2AuthenticationSuccessHandlerTest {
   private RoomService roomService;
 
   @Mock
+  private FurnitureRepository furnitureRepository;
+
+  @Mock
   private ObjectMapper objectMapper;
 
   @Mock
@@ -65,6 +70,8 @@ class OAuth2AuthenticationSuccessHandlerTest {
     ReflectionTestUtils.setField(successHandler, "redirectUri",
         "http://localhost:5173/oauth/callback");
     successHandler.setRedirectStrategy(redirectStrategy);
+
+    when(furnitureRepository.findByRoomId(anyLong())).thenReturn(Collections.emptyList());
   }
 
   @Test

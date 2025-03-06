@@ -15,6 +15,7 @@ import com.roome.domain.mycd.dto.MyCdListResponse;
 import com.roome.domain.mycd.dto.MyCdResponse;
 import com.roome.domain.mycd.entity.MyCd;
 import com.roome.domain.mycd.entity.MyCdCount;
+import com.roome.domain.mycd.event.CdCollectionEvent;
 import com.roome.domain.mycd.exception.CdRackCapacityExceededException;
 import com.roome.domain.mycd.exception.MyCdAlreadyExistsException;
 import com.roome.domain.mycd.exception.MyCdDatabaseException;
@@ -39,6 +40,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -59,6 +61,7 @@ public class MyCdService {
   private final UserActivityService userActivityService;
   private final FurnitureService furnitureService;
   private final FurnitureCapacity furnitureCapacity;
+  private final ApplicationEventPublisher eventPublisher; // 이벤트 발행을 위해 추가
 
   @CacheEvict(value = "myCdList", allEntries = true)
   public MyCdResponse addCdToMyList(Long userId, MyCdCreateRequest request) {
@@ -109,7 +112,9 @@ public class MyCdService {
 
     // 음악 등록 활동 기록 추가
     userActivityService.recordUserActivity(userId, ActivityType.MUSIC_REGISTRATION, cd.getId());
-
+    // 이벤트 발행
+    eventPublisher.publishEvent(new CdCollectionEvent.CdAddedEvent(this, userId));
+    log.debug("Published CD added event for user: {}", userId);
     return MyCdResponse.fromEntity(myCd);
   }
 
@@ -205,6 +210,9 @@ public class MyCdService {
 
     // 실제 삭제 수행
     myCdRepository.deleteByUserIdAndIds(userId, myCdIds);
+    //cd 삭제 후 이벤트 발행
+    eventPublisher.publishEvent(new CdCollectionEvent.CdRemovedEvent(this, userId));
+    log.debug("Published CD removed event for user: {}", userId);
   }
 
 }
