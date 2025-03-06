@@ -25,7 +25,7 @@ public class FirstComeEventScheduler {
     FirstComeEvent event = FirstComeEvent.builder()
         .eventName("테스트 선착순 이벤트")
         .rewardPoints(200)
-        .maxParticipants(10)
+        .maxParticipants(1)
         .eventTime(LocalDateTime.now()) // 즉시 진행
         .status(EventStatus.ONGOING) // 바로 진행 중 상태
         .build();
