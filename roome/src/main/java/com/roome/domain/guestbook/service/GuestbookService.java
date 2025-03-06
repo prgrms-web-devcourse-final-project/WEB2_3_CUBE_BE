@@ -117,6 +117,7 @@ public class GuestbookService {
           requestDto.getMessage().length());
 
       pointService.earnPoints(user, PointReason.GUESTBOOK_REWARD);
+      log.info("포인트 적립 완료");
     }
 
     if (!isSelfRoom) {
