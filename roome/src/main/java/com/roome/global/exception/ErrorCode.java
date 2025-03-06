@@ -69,7 +69,9 @@ public enum ErrorCode {
   PAYMENT_CANCEL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "결제 취소 중 오류가 발생했습니다."),
   INVALID_PAYMENT_AMOUNT(HttpStatus.BAD_REQUEST, "잘못된 결제 단위입니다."),
   INVALID_REFUND_AMOUNT(HttpStatus.BAD_REQUEST, "잘못된 환불 단위입니다."),
-
+  PAYMENT_REFUND_PERIOD_EXCEEDED(HttpStatus.BAD_REQUEST, "환불 가능 기간을 초과하였습니다."),
+  PAYMENT_ALREADY_USED(HttpStatus.BAD_REQUEST, "포인트를 이미 사용하여 환불할 수 없습니다."),
+  POINT_PURCHASE_NOT_FOUND(HttpStatus.NOT_FOUND, "포인트 결제 정보를 찾을 수 없습니다."),
   // 서평 관련 예외
   MY_BOOK_REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "서평을 찾을 수 없습니다."),
   MY_BOOK_REVIEW_ACCESS_DENIED(HttpStatus.BAD_REQUEST, "서평에 대한 권한이 없는 사용자입니다."),

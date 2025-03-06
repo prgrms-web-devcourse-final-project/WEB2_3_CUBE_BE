@@ -11,7 +11,9 @@ import com.roome.domain.payment.entity.PaymentStatus;
 import com.roome.domain.payment.repository.PaymentLogRepository;
 import com.roome.domain.payment.repository.PaymentRepository;
 import com.roome.domain.point.entity.Point;
+import com.roome.domain.point.entity.PointHistory;
 import com.roome.domain.point.entity.PointReason;
+import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.point.service.PointService;
 import com.roome.domain.user.entity.User;
@@ -20,6 +22,7 @@ import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +32,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -41,7 +47,7 @@ public class PaymentService {
   private final PointRepository pointRepository;
   private final TossPaymentClient tossPaymentClient;
   private final PointService pointService;
-
+  private final PointHistoryRepository pointHistoryRepository;
 
   // 사용자가 포인트 결제를 요청하면 DB에 저장해 줌
   // 결제 진행 중인 상태
@@ -175,11 +181,41 @@ public class PaymentService {
   @Transactional
   public PaymentResponseDto cancelPayment(Long userId, String orderId, String cancelReason,
       Integer cancelAmount) {
+
     Payment payment = paymentRepository.findByOrderId(orderId)
         .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
     if (!payment.getUser().getId().equals(userId)) {
       throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
+    }
+
+    List<PointReason> purchaseReasons = List.of(
+            PointReason.POINT_PURCHASE_100,
+            PointReason.POINT_PURCHASE_550,
+            PointReason.POINT_PURCHASE_1200,
+            PointReason.POINT_PURCHASE_4000
+    );
+    PageRequest pageRequest = PageRequest.of(0, 1); // 최신 1개만 조회
+
+    List<PointHistory> latestPurchases = pointHistoryRepository.findLatestPurchase(userId, purchaseReasons, pageRequest);
+
+    Optional<PointHistory> latestPurchase = latestPurchases.isEmpty() ? Optional.empty() : Optional.of(latestPurchases.get(0));
+
+    if (latestPurchase.isEmpty()) {
+      throw new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
+    }
+
+    PointHistory lastPurchase = latestPurchase.get();
+
+// 환불 가능 기간 체크
+    if (lastPurchase.getCreatedAt().isBefore(LocalDateTime.now().minusDays(7))) {
+      throw new BusinessException(ErrorCode.PAYMENT_REFUND_PERIOD_EXCEEDED);
+    }
+
+// 포인트 사용 여부 체크
+    boolean hasUsedPoints = pointHistoryRepository.hasUsedPointsAfterLastPurchase(userId);
+    if (hasUsedPoints) {
+      throw new BusinessException(ErrorCode.PAYMENT_ALREADY_USED);
     }
 
     // 결제 상태가 SUCCESS가 아닐 경우, 취소 불가능
