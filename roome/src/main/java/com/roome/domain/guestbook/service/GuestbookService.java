@@ -118,6 +118,7 @@ public class GuestbookService {
 
       pointService.earnPoints(user, PointReason.GUESTBOOK_REWARD);
       log.info("포인트 적립 완료");
+
     }
 
     if (!isSelfRoom) {

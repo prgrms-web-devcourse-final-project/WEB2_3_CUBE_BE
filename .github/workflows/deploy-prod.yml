@@ -2,7 +2,7 @@ name: Deploy to EC2
 
 on:
   push:
-    branches: [ main ]  # main 브랜치에 push가 발생하면 실행
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -81,5 +81,4 @@ jobs:
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/roome-prod:latest
             docker stop roome-prod || true
             docker rm roome-prod || true
-            docker system prune -f
-            docker-compose -f docker-compose-prod.yml up -d
+            docker-compose -f docker-compose-prod.yml up -d --no-deps roome-app
