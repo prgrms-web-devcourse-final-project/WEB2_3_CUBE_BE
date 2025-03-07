@@ -65,7 +65,7 @@ public class GuestbookService {
     Map<Long, Boolean> housemateStatusMap = userIds.stream()
         .collect(Collectors.toMap(
             userId -> userId,
-            userId -> housemateRepository.existsByUserIdAndAddedId(userId, roomOwnerId)
+            userId -> housemateRepository.existsByUserIdAndAddedId(roomOwnerId, userId)
         ));
 
     List<GuestbookResponseDto> guestbooks = guestbookPage.stream()
@@ -97,7 +97,7 @@ public class GuestbookService {
     Long roomOwnerId = room.getUser().getId();
     boolean isSelfRoom = userId.equals(roomOwnerId); // 본인 방인지 확인
 
-    boolean isHousemate = housemateRepository.existsByUserIdAndAddedId(userId, roomOwnerId);
+    boolean isHousemate = housemateRepository.existsByUserIdAndAddedId(roomOwnerId, userId);
 
     Guestbook guestbook = Guestbook.builder()
         .room(room)
