@@ -6,6 +6,7 @@ import lombok.Getter;
 
 @Getter
 public class HousemateInfo {
+    private Long id;
     private Long userId;
     private String nickname;
     private String profileImage;
@@ -13,7 +14,8 @@ public class HousemateInfo {
     private Status status;
 
     @Builder
-    public HousemateInfo(Long userId, String nickname, String profileImage, String bio, Status status) {
+    public HousemateInfo(Long id, Long userId, String nickname, String profileImage, String bio, Status status) {
+        this.id = id;
         this.userId = userId;
         this.nickname = nickname;
         this.profileImage = profileImage;

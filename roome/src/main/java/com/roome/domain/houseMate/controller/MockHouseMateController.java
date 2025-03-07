@@ -73,7 +73,7 @@ public class MockHouseMateController {
 
         HousemateListResponse response = HousemateListResponse.builder()
                 .housemates(resultList)
-                .nextCursor(nextCursor != null ? String.valueOf(nextCursor) : null)
+                .nextCursor(nextCursor != null ? nextCursor : null)
                 .hasNext(hasNext)
                 .build();
 
@@ -113,7 +113,7 @@ public class MockHouseMateController {
 
         HousemateListResponse response = HousemateListResponse.builder()
                 .housemates(resultList)
-                .nextCursor(nextCursor != null ? String.valueOf(nextCursor) : null)
+                .nextCursor(nextCursor != null ? nextCursor : null)
                 .hasNext(hasNext)
                 .build();
 
