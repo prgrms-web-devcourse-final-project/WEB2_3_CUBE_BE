@@ -45,7 +45,7 @@ class CdTemplateControllerTest {
     BDDMockito.given(cdTemplateService.createTemplate(eq(1L), eq(1L), any(CdTemplateRequest.class)))
         .willReturn(response);
 
-    mockMvc.perform(post("/api/my-cd/1/template")
+    mockMvc.perform(post("/my-cd/1/template")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request))
             .with(csrf()))
@@ -63,7 +63,7 @@ class CdTemplateControllerTest {
     BDDMockito.given(cdTemplateService.getTemplate(eq(1L)))
         .willReturn(response);
 
-    mockMvc.perform(get("/api/my-cd/1/template")
+    mockMvc.perform(get("/my-cd/1/template")
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.comment1").value("CD를 듣게 된 계기"));
@@ -79,7 +79,7 @@ class CdTemplateControllerTest {
     BDDMockito.given(cdTemplateService.updateTemplate(eq(1L), eq(1L), any(CdTemplateRequest.class)))
         .willReturn(response);
 
-    mockMvc.perform(patch("/api/my-cd/1/template")
+    mockMvc.perform(patch("/my-cd/1/template")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request))
             .with(csrf()))
@@ -91,7 +91,7 @@ class CdTemplateControllerTest {
   @DisplayName("CD 템플릿 삭제 성공")
   @WithMockUser(username = "1")
   void deleteTemplate_Success() throws Exception {
-    mockMvc.perform(delete("/api/my-cd/1/template")
+    mockMvc.perform(delete("/my-cd/1/template")
             .with(csrf()))
         .andExpect(status().isNoContent());
 

@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "CD 댓글", description = "CD 댓글 관련 API")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/my-cd/{myCdId}/comments")
+@RequestMapping("/my-cd/{myCdId}/comments")
 public class CdCommentController {
 
   private final CdCommentService cdCommentService;

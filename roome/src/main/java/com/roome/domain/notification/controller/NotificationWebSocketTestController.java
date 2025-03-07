@@ -16,7 +16,7 @@
 //@Slf4j
 //@RestController
 //@RequiredArgsConstructor
-//@RequestMapping("/api/notification/websocket/test")
+//@RequestMapping("/notification/websocket/test")
 //@Tag(name = "알림 테스트", description = "웹소켓 알림 시스템 테스트를 위한 API")
 //public class NotificationWebSocketTestController {
 //

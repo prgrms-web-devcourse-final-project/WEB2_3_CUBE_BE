@@ -17,8 +17,8 @@ public class TossPaymentService {
                 "amount", amount,
                 "orderId", orderId,
                 "orderName", "테스트 결제",
-                "successUrl", "http://localhost:8080/api/payments/verify",  // 백엔드 검증 API
-                "failUrl", "http://localhost:8080/api/payments/fail/" + orderId  // 결제 실패 처리 API
+                "successUrl", "http://localhost:8080/api/v3/payments/verify",  // 백엔드 검증 API
+                "failUrl", "http://localhost:8080/api/v3/payments/fail/" + orderId  // 결제 실패 처리 API
         );
 
         // 인증 정보 (Basic Auth)

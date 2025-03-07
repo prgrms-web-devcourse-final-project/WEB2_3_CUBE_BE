@@ -57,7 +57,7 @@ class MyBookReviewControllerTest {
 
         // when // then
         mockMvc.perform(
-                        post("/api/mybooks-review")
+                        post("/mybooks-review")
                                 .param("myBookId", String.valueOf(myBookId))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request))
@@ -84,7 +84,7 @@ class MyBookReviewControllerTest {
 
         // when // then
         mockMvc.perform(
-                        get("/api/mybooks-review")
+                        get("/mybooks-review")
                                 .param("myBookId", String.valueOf(myBookId))
                                 .with(csrf())
                 )
@@ -110,7 +110,7 @@ class MyBookReviewControllerTest {
 
         // when // then
         mockMvc.perform(
-                        patch("/api/mybooks-review/" + myBookReviewId)
+                        patch("/mybooks-review/" + myBookReviewId)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request))
                                 .with(csrf())
@@ -128,7 +128,7 @@ class MyBookReviewControllerTest {
         // given // when // then
         Long myBookReviewId = 1L;
         mockMvc.perform(
-                        MockMvcRequestBuilders.delete("/api/mybooks-review/" + myBookReviewId)
+                        MockMvcRequestBuilders.delete("/mybooks-review/" + myBookReviewId)
                                 .with(csrf())
                 )
                 .andExpect(status().isOk());

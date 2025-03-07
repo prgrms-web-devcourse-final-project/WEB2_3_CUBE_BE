@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/mates")
+@RequestMapping("/mates")
 public class HousemateController {
 
   private final HousemateService housemateService;

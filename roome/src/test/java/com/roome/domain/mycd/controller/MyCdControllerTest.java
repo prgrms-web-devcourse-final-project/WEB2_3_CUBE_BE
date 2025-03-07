@@ -46,7 +46,7 @@ class MyCdControllerTest {
     BDDMockito.given(myCdService.addCdToMyList(eq(1L), any(MyCdCreateRequest.class)))
         .willReturn(response);
 
-    mockMvc.perform(post("/api/my-cd")
+    mockMvc.perform(post("/my-cd")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request))
             .with(csrf()))
@@ -73,7 +73,7 @@ class MyCdControllerTest {
     BDDMockito.given(myCdService.getMyCdList(eq(1L), any(String.class), any(Long.class), any(Integer.class)))
         .willReturn(response);
 
-    mockMvc.perform(get("/api/my-cd")
+    mockMvc.perform(get("/my-cd")
             .param("size", "10")
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk());
@@ -98,7 +98,7 @@ class MyCdControllerTest {
     BDDMockito.given(myCdService.getMyCdList(eq(2L), any(String.class), any(Long.class), any(Integer.class)))
         .willReturn(response);
 
-    mockMvc.perform(get("/api/my-cd")
+    mockMvc.perform(get("/my-cd")
             .param("targetUserId", "2")  // 다른 사용자 조회
             .param("size", "10")
             .accept(MediaType.APPLICATION_JSON))
@@ -116,7 +116,7 @@ class MyCdControllerTest {
 
     BDDMockito.given(myCdService.getMyCd(eq(1L), eq(1L))).willReturn(response);
 
-    mockMvc.perform(get("/api/my-cd/1")
+    mockMvc.perform(get("/my-cd/1")
             .param("targetUserId", "1")) // 필수값 추가
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.title").value("Palette"));
@@ -128,7 +128,7 @@ class MyCdControllerTest {
   @WithMockUser(username = "1")
   @Test
   void deleteMyCd_Success() throws Exception {
-    mockMvc.perform(delete("/api/my-cd")
+    mockMvc.perform(delete("/my-cd")
             .param("myCdIds", "1")
             .param("myCdIds", "2")
             .param("myCdIds", "3")

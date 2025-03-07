@@ -54,7 +54,7 @@ class ReissueControllerTest {
     when(jwtTokenProvider.getAccessTokenExpirationTime()).thenReturn(3600000L); // 1시간
 
     // When & Then
-    mockMvc.perform(post("/api/auth/reissue-token").contentType(MediaType.APPLICATION_JSON)
+    mockMvc.perform(post("/auth/reissue-token").contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request)).with(csrf())).andExpect(status().isOk())
         .andExpect(jsonPath("$.accessToken").value(newAccessToken))
         .andExpect(jsonPath("$.tokenType").value("Bearer"))
@@ -82,7 +82,7 @@ class ReissueControllerTest {
 
     // When & Then
     mockMvc.perform(
-            post("/api/auth/reissue-token").header("Authorization", "Bearer " + currentAccessToken)
+            post("/auth/reissue-token").header("Authorization", "Bearer " + currentAccessToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)).with(csrf()))
         .andExpect(status().isOk()).andExpect(jsonPath("$.accessToken").value(newAccessToken))
@@ -107,7 +107,7 @@ class ReissueControllerTest {
 
     // When & Then
     mockMvc.perform(
-            post("/api/auth/reissue-token").header("Authorization", "Bearer " + currentAccessToken)
+            post("/auth/reissue-token").header("Authorization", "Bearer " + currentAccessToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)).with(csrf()))
         .andExpect(status().isBadRequest())
@@ -122,7 +122,7 @@ class ReissueControllerTest {
     request.setRefreshToken(null);
 
     // When & Then
-    mockMvc.perform(post("/api/auth/reissue-token").contentType(MediaType.APPLICATION_JSON)
+    mockMvc.perform(post("/auth/reissue-token").contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request)).with(csrf()))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.message").value("Refresh 토큰이 유효하지 않거나, 입력값이 비어 있습니다."));
@@ -136,7 +136,7 @@ class ReissueControllerTest {
     request.setRefreshToken("");
 
     // When & Then
-    mockMvc.perform(post("/api/auth/reissue-token").contentType(MediaType.APPLICATION_JSON)
+    mockMvc.perform(post("/auth/reissue-token").contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request)).with(csrf()))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.message").value("Refresh 토큰이 유효하지 않거나, 입력값이 비어 있습니다."));
@@ -155,7 +155,7 @@ class ReissueControllerTest {
     when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(false);
 
     // When & Then
-    mockMvc.perform(post("/api/auth/reissue-token").contentType(MediaType.APPLICATION_JSON)
+    mockMvc.perform(post("/auth/reissue-token").contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request)).with(csrf()))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.message").value("Refresh 토큰이 유효하지 않거나, 입력값이 비어 있습니다."));

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "CD 템플릿", description = "CD 템플릿 관련 API")
 @RestController
-@RequestMapping("/api/my-cd/{myCdId}/template")
+@RequestMapping("/my-cd/{myCdId}/template")
 @RequiredArgsConstructor
 public class CdTemplateController {
 

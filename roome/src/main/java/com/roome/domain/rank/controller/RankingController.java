@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/rankings")
+@RequestMapping("/rankings")
 @RequiredArgsConstructor
 @Tag(name = "랭킹", description = "랭킹 관련 API")
 public class RankingController {

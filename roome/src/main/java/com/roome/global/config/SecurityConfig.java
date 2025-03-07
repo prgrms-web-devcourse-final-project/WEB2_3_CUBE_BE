@@ -68,9 +68,9 @@ public class SecurityConfig {
             .requestMatchers(
                 "/oauth2/authorization/**",  // OAuth 인증 시작 엔드포인트
                 "/oauth/callback/**",        // OAuth 콜백 엔드포인트
-                "/api/auth/user",            // 사용자 정보 조회만 허용
-                "/api/auth/reissue-token", // 토큰 재발급
-                "/api/auth/**",
+                "/api/v3/auth/user",            // 사용자 정보 조회만 허용
+                "/api/v3/auth/reissue-token", // 토큰 재발급
+                "/api/v3/auth/**",
                 "/error",
                 "/v3/api-docs/**",
                 "/swagger-ui/**",

@@ -80,7 +80,7 @@ public class UserProfileImageControllerTest {
         when(userService.getProfileImageUrl(USER_ID)).thenReturn(null);
 
         // when & then
-        performWithAuthenticatedUser(multipart("/api/users/image")
+        performWithAuthenticatedUser(multipart("/users/image")
                 .file(imageFile))
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -107,7 +107,7 @@ public class UserProfileImageControllerTest {
         when(userService.getProfileImageUrl(USER_ID)).thenReturn(null);
 
         // PUT 요청 생성
-        MockMultipartHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/api/users/image");
+        MockMultipartHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/users/image");
         builder.with(request -> {
             request.setMethod("PUT");
             return request;
@@ -142,7 +142,7 @@ public class UserProfileImageControllerTest {
         when(s3Service.uploadImage(any(), eq("profile"))).thenReturn(newImageUrl);
 
         // when & then
-        performWithAuthenticatedUser(multipart("/api/users/image")
+        performWithAuthenticatedUser(multipart("/users/image")
                 .file(imageFile))
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -165,7 +165,7 @@ public class UserProfileImageControllerTest {
         );
 
         // when & then
-        performWithAuthenticatedUser(multipart("/api/users/image")
+        performWithAuthenticatedUser(multipart("/users/image")
                 .file(emptyFile))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
@@ -179,7 +179,7 @@ public class UserProfileImageControllerTest {
     @WithMockUser
     void uploadNullImageTest() throws Exception {
         // 파일 없이 요청
-        performWithAuthenticatedUser(multipart("/api/users/image"))
+        performWithAuthenticatedUser(multipart("/users/image"))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
 
@@ -200,7 +200,7 @@ public class UserProfileImageControllerTest {
         );
 
         // when & then
-        performWithAuthenticatedUser(multipart("/api/users/image")
+        performWithAuthenticatedUser(multipart("/users/image")
                 .file(noExtensionFile))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
@@ -221,7 +221,7 @@ public class UserProfileImageControllerTest {
         );
 
         // when & then
-        performWithAuthenticatedUser(multipart("/api/users/image")
+        performWithAuthenticatedUser(multipart("/users/image")
                 .file(invalidFile))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
@@ -245,7 +245,7 @@ public class UserProfileImageControllerTest {
         );
 
         // when & then
-        performWithAuthenticatedUser(multipart("/api/users/image")
+        performWithAuthenticatedUser(multipart("/users/image")
                 .file(largeFile))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
@@ -261,7 +261,7 @@ public class UserProfileImageControllerTest {
         String imageUrl = "https://roome-bucket.s3.amazonaws.com/profile/12345abcde12345abcde12345abcde12.jpg";
 
         // when & then
-        performWithAuthenticatedUser(delete("/api/users/image")
+        performWithAuthenticatedUser(delete("/users/image")
                 .param("imageUrl", imageUrl))
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -276,7 +276,7 @@ public class UserProfileImageControllerTest {
     @WithMockUser
     void deleteNullImageUrlTest() throws Exception {
         // when & then
-        performWithAuthenticatedUser(delete("/api/users/image")
+        performWithAuthenticatedUser(delete("/users/image")
                 .param("imageUrl", (String)null))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
@@ -290,7 +290,7 @@ public class UserProfileImageControllerTest {
     @WithMockUser
     void deleteEmptyImageUrlTest() throws Exception {
         // when & then
-        performWithAuthenticatedUser(delete("/api/users/image")
+        performWithAuthenticatedUser(delete("/users/image")
                 .param("imageUrl", ""))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
@@ -307,7 +307,7 @@ public class UserProfileImageControllerTest {
         String invalidImageUrl = "https://invalid-domain.com/image.jpg";
 
         // when & then
-        performWithAuthenticatedUser(delete("/api/users/image")
+        performWithAuthenticatedUser(delete("/users/image")
                 .param("imageUrl", invalidImageUrl))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
@@ -331,7 +331,7 @@ public class UserProfileImageControllerTest {
         when(s3Service.uploadImage(any(), eq("profile"))).thenThrow(new IOException("S3 upload failed"));
 
         // when & then
-        performWithAuthenticatedUser(multipart("/api/users/image")
+        performWithAuthenticatedUser(multipart("/users/image")
                 .file(imageFile))
                 .andDo(print())
                 .andExpect(status().isInternalServerError());
@@ -346,7 +346,7 @@ public class UserProfileImageControllerTest {
         doThrow(new RuntimeException("S3 delete failed")).when(s3Service).deleteImage(anyString());
 
         // when & then
-        performWithAuthenticatedUser(delete("/api/users/image")
+        performWithAuthenticatedUser(delete("/users/image")
                 .param("imageUrl", imageUrl))
                 .andDo(print())
                 .andExpect(status().isInternalServerError());
@@ -371,7 +371,7 @@ public class UserProfileImageControllerTest {
         when(s3Service.uploadImage(any(), eq("profile"))).thenReturn(uploadedImageUrl);
 
         // when & then
-        performWithAuthenticatedUser(multipart("/api/users/image")
+        performWithAuthenticatedUser(multipart("/users/image")
                 .file(pngFile))
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -396,7 +396,7 @@ public class UserProfileImageControllerTest {
         when(s3Service.uploadImage(any(), eq("profile"))).thenReturn(uploadedImageUrl);
 
         // when & then
-        performWithAuthenticatedUser(multipart("/api/users/image")
+        performWithAuthenticatedUser(multipart("/users/image")
                 .file(gifFile))
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -421,7 +421,7 @@ public class UserProfileImageControllerTest {
         when(s3Service.uploadImage(any(), eq("profile"))).thenReturn(uploadedImageUrl);
 
         // when & then
-        performWithAuthenticatedUser(multipart("/api/users/image")
+        performWithAuthenticatedUser(multipart("/users/image")
                 .file(fileWithExtension))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -437,7 +437,7 @@ public class UserProfileImageControllerTest {
         String imageUrl = "https://s3.amazonaws.com/profile/12345abcde12345abcde12345abcde12.jpg";
 
         // when & then
-        performWithAuthenticatedUser(delete("/api/users/image")
+        performWithAuthenticatedUser(delete("/users/image")
                 .param("imageUrl", imageUrl))
                 .andDo(print())
                 .andExpect(status().isBadRequest());

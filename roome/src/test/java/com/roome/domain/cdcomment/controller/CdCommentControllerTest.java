@@ -50,7 +50,7 @@ class CdCommentControllerTest {
     BDDMockito.given(cdCommentService.addComment(eq(1L), eq(1L), any(CdCommentCreateRequest.class)))
         .willReturn(response);
 
-    mockMvc.perform(post("/api/my-cd/1/comments")
+    mockMvc.perform(post("/my-cd/1/comments")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request))
             .with(csrf()))
@@ -73,7 +73,7 @@ class CdCommentControllerTest {
 
     System.out.println("Mock Response: " + objectMapper.writeValueAsString(response));
 
-    mockMvc.perform(get("/api/my-cd/1/comments")
+    mockMvc.perform(get("/my-cd/1/comments")
             .param("page", "0")
             .param("size", "5")
             .accept(MediaType.APPLICATION_JSON))
@@ -95,7 +95,7 @@ class CdCommentControllerTest {
 
     System.out.println("Mock Response: " + objectMapper.writeValueAsString(response));
 
-    mockMvc.perform(get("/api/my-cd/1/comments/all")
+    mockMvc.perform(get("/my-cd/1/comments/all")
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(2))
@@ -108,7 +108,7 @@ class CdCommentControllerTest {
   @WithMockUser(username = "1")
   @Test
   void deleteComment_Success() throws Exception {
-    mockMvc.perform(delete("/api/my-cd/1/comments/1")
+    mockMvc.perform(delete("/my-cd/1/comments/1")
             .with(csrf()))
         .andExpect(status().isNoContent());
 
@@ -122,7 +122,7 @@ class CdCommentControllerTest {
     BDDMockito.doThrow(new ForbiddenException("해당 댓글을 삭제할 권한이 없습니다."))
         .when(cdCommentService).deleteComment(eq(3L), eq(1L));
 
-    mockMvc.perform(delete("/api/my-cd/1/comments/1")
+    mockMvc.perform(delete("/my-cd/1/comments/1")
             .with(csrf()))
         .andExpect(status().isForbidden());
   }

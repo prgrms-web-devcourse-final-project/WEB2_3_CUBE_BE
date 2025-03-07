@@ -10,6 +10,9 @@ spring:
     multipart:
       max-file-size: 6MB
       max-request-size: 6MB
+  mvc:
+    servlet:
+      path: /api/v3/
   security:
     oauth2:
       client:

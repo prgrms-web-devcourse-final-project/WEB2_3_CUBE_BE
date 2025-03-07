@@ -111,7 +111,7 @@ class UserProfileControllerTest {
     @WithMockUser
     void getUserProfile_Self_Success() throws Exception {
         // when & then
-        performWithAuthenticatedUser(get("/api/users/{userId}/profile", testUser.getId()))
+        performWithAuthenticatedUser(get("/users/{userId}/profile", testUser.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(String.valueOf(testUser.getId())))
                 .andExpect(jsonPath("$.nickname").value("TestUser"))
@@ -127,7 +127,7 @@ class UserProfileControllerTest {
     @WithMockUser
     void getUserProfile_NotFriend_Success() throws Exception {
         // when & then
-        performWithAuthenticatedUser(get("/api/users/{userId}/profile", friendUser.getId()))
+        performWithAuthenticatedUser(get("/users/{userId}/profile", friendUser.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(String.valueOf(friendUser.getId())))
                 .andExpect(jsonPath("$.nickname").value("FriendUser"))
@@ -150,7 +150,7 @@ class UserProfileControllerTest {
         housemateRepository.save(housemate);
 
         // when & then
-        performWithAuthenticatedUser(get("/api/users/{userId}/profile", friendUser.getId()))
+        performWithAuthenticatedUser(get("/users/{userId}/profile", friendUser.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(String.valueOf(friendUser.getId())))
                 .andExpect(jsonPath("$.nickname").value("FriendUser"))
@@ -169,7 +169,7 @@ class UserProfileControllerTest {
         Long nonExistentUserId = 9999L;
 
         // when & then
-        performWithAuthenticatedUser(get("/api/users/{userId}/profile", nonExistentUserId))
+        performWithAuthenticatedUser(get("/users/{userId}/profile", nonExistentUserId))
                 .andExpect(status().isNotFound())
                 .andDo(print());
     }
@@ -185,7 +185,7 @@ class UserProfileControllerTest {
                 .build();
 
         // when & then
-        performWithAuthenticatedUser(patch("/api/users/profile")
+        performWithAuthenticatedUser(patch("/users/profile")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -213,7 +213,7 @@ class UserProfileControllerTest {
                 .build();
 
         // when & then
-        performWithAuthenticatedUser(patch("/api/users/profile")
+        performWithAuthenticatedUser(patch("/users/profile")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -231,7 +231,7 @@ class UserProfileControllerTest {
                 .build();
 
         // when & then
-        performWithAuthenticatedUser(patch("/api/users/profile")
+        performWithAuthenticatedUser(patch("/users/profile")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -249,7 +249,7 @@ class UserProfileControllerTest {
                 .build();
 
         // when & then
-        performWithAuthenticatedUser(patch("/api/users/profile")
+        performWithAuthenticatedUser(patch("/users/profile")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -268,7 +268,7 @@ class UserProfileControllerTest {
                 .build();
 
         // when & then - 100자는 성공해야 함
-        performWithAuthenticatedUser(patch("/api/users/profile")
+        performWithAuthenticatedUser(patch("/users/profile")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -287,7 +287,7 @@ class UserProfileControllerTest {
                 .build();
 
         // when & then
-        performWithAuthenticatedUser(patch("/api/users/profile")
+        performWithAuthenticatedUser(patch("/users/profile")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())

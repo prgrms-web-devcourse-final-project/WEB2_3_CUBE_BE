@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @Tag(name = "My CD", description = "사용자의 MyCd 관리 API - CD 추가, 조회, 삭제")
 @RestController
-@RequestMapping("/api/my-cd")
+@RequestMapping("/my-cd")
 @RequiredArgsConstructor
 public class MyCdController {
 

@@ -14,7 +14,7 @@ import java.util.List;
 
 @Tag(name = "선착순 이벤트 API", description = "선착순 이벤트 관련 API")
 @RestController
-@RequestMapping("/api/events")
+@RequestMapping("/events")
 @RequiredArgsConstructor
 public class FirstComeEventController {
 

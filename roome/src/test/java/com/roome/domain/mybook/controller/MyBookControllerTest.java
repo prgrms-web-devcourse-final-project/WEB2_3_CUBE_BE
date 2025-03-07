@@ -64,7 +64,7 @@ class MyBookControllerTest {
 
         // when // then
         mockMvc.perform(
-                        post("/api/mybooks")
+                        post("/mybooks")
                                 .param("userId", String.valueOf(roomOwnerId))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request))
@@ -93,7 +93,7 @@ class MyBookControllerTest {
 
         // when // then
         mockMvc.perform(
-                        get("/api/mybooks/" + myBookId)
+                        get("/mybooks/" + myBookId)
                                 .with(csrf())
                 )
                 .andExpect(status().isOk())
@@ -126,7 +126,7 @@ class MyBookControllerTest {
 
         // when // then
         mockMvc.perform(
-                        get("/api/mybooks")
+                        get("/mybooks")
                                 .param("userId", String.valueOf(roomOwnerId))
                                 .param("pageSize", String.valueOf(pageSize))
                                 .with(csrf())
@@ -160,7 +160,7 @@ class MyBookControllerTest {
 
         // when // then
         mockMvc.perform(
-                        get("/api/mybooks")
+                        get("/mybooks")
                                 .param("userId", String.valueOf(roomOwnerId))
                                 .param("pageSize", String.valueOf(pageSize))
                                 .param("lastMyBookId", String.valueOf(lastMyBookId))
@@ -178,7 +178,7 @@ class MyBookControllerTest {
 
         // given // when // then
         mockMvc.perform(
-                        MockMvcRequestBuilders.delete("/api/mybooks")
+                        MockMvcRequestBuilders.delete("/mybooks")
                                 .param("userId", String.valueOf(1L))
                                 .param("myBookIds", "1,2,3")
                                 .with(csrf())

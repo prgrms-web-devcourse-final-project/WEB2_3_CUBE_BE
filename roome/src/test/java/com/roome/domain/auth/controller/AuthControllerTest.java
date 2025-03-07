@@ -80,7 +80,7 @@ class AuthControllerTest {
     when(redisService.addToBlacklist(anyString(), anyLong())).thenReturn(true);
 
     // When & Then
-    mockMvc.perform(post("/api/auth/logout")
+    mockMvc.perform(post("/auth/logout")
             .header("Authorization", "Bearer " + accessToken)
             .with(csrf()))
         .andExpect(status().isOk());
@@ -106,7 +106,7 @@ class AuthControllerTest {
     when(redisService.addToBlacklist(anyString(), anyLong())).thenReturn(true);
 
     // When & Then
-    mockMvc.perform(post("/api/auth/logout")
+    mockMvc.perform(post("/auth/logout")
             .header("Authorization", "Bearer " + accessToken)
             .with(csrf()))
         .andExpect(status().isOk());
@@ -128,7 +128,7 @@ class AuthControllerTest {
         new IllegalArgumentException("Invalid Token"));
 
     // When & Then
-    mockMvc.perform(post("/api/auth/logout")
+    mockMvc.perform(post("/auth/logout")
             .header("Authorization", "Bearer " + invalidToken)
             .with(csrf()))
         .andExpect(status().isInternalServerError());

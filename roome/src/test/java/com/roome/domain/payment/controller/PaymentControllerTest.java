@@ -70,7 +70,7 @@ class PaymentControllerTest {
                 .thenReturn(responseDto);
 
         // when & then
-        mockMvc.perform(post("/api/payments/request")
+        mockMvc.perform(post("/payments/request")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto))
                         .header("Authorization", "Bearer test-token")
@@ -101,7 +101,7 @@ class PaymentControllerTest {
         when(paymentService.verifyPayment(any(Long.class), any(PaymentVerifyDto.class))).thenReturn(responseDto);
 
         // when & then
-        mockMvc.perform(post("/api/payments/verify")
+        mockMvc.perform(post("/payments/verify")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(verifyDto))
                         .header("Authorization", "Bearer test-token")
@@ -125,7 +125,7 @@ class PaymentControllerTest {
                 .thenThrow(new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
         // when & then
-        mockMvc.perform(post("/api/payments/verify")
+        mockMvc.perform(post("/payments/verify")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(verifyDto))
                         .header("Authorization", "Bearer test-token")
@@ -146,7 +146,7 @@ class PaymentControllerTest {
                 .when(paymentService).verifyPayment(any(Long.class), any(PaymentVerifyDto.class));
 
         // when & then
-        mockMvc.perform(post("/api/payments/verify")
+        mockMvc.perform(post("/payments/verify")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(verifyDto))
                         .header("Authorization", "Bearer test-token")
@@ -168,7 +168,7 @@ class PaymentControllerTest {
                 .when(paymentService).verifyPayment(any(Long.class), any(PaymentVerifyDto.class));
 
         // when & then
-        mockMvc.perform(post("/api/payments/verify")
+        mockMvc.perform(post("/payments/verify")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(verifyDto))
                         .header("Authorization", "Bearer test-token")
@@ -190,7 +190,7 @@ class PaymentControllerTest {
                 .when(paymentService).requestPayment(any(Long.class), any(PaymentRequestDto.class));
 
         // when & then
-        mockMvc.perform(post("/api/payments/request")
+        mockMvc.perform(post("/payments/request")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto))
                         .header("Authorization", "Bearer test-token")
@@ -212,7 +212,7 @@ class PaymentControllerTest {
                 .thenThrow(new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED));
 
         // when & then
-        mockMvc.perform(post("/api/payments/verify")
+        mockMvc.perform(post("/payments/verify")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(verifyDto))
                         .header("Authorization", "Bearer test-token")
@@ -232,7 +232,7 @@ class PaymentControllerTest {
         doNothing().when(paymentService).failPayment("order123");
 
         // when & then
-        mockMvc.perform(post("/api/payments/fail/order123")
+        mockMvc.perform(post("/payments/fail/order123")
                         .header("Authorization", "Bearer test-token")
                         .with(csrf()))
                 .andExpect(status().isNoContent());
@@ -249,7 +249,7 @@ class PaymentControllerTest {
         doThrow(new BusinessException(ErrorCode.PAYMENT_NOT_FOUND)).when(paymentService).failPayment("invalidOrder");
 
         // when & then
-        mockMvc.perform(post("/api/payments/fail/invalidOrder")
+        mockMvc.perform(post("/payments/fail/invalidOrder")
                         .header("Authorization", "Bearer test-token")
                         .with(csrf()))
                 .andExpect(status().isNotFound());

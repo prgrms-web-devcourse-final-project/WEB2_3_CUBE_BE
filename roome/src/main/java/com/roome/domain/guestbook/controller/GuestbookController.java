@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Guestbook API", description = "방명록 관련 API")
 @RestController
-@RequestMapping("/api/guestbooks")
+@RequestMapping("/guestbooks")
 @RequiredArgsConstructor
 public class GuestbookController {
 

@@ -60,7 +60,7 @@ class WithdrawControllerTest {
   @Test
   @DisplayName("회원 탈퇴 성공 테스트")
   void withdrawSuccess() throws Exception {
-    mockMvc.perform(delete("/api/auth/withdraw").header(AUTHORIZATION, "Bearer " + VALID_TOKEN)
+    mockMvc.perform(delete("/auth/withdraw").header(AUTHORIZATION, "Bearer " + VALID_TOKEN)
             .contentType(MediaType.APPLICATION_JSON)).andExpect(status().isOk())
         .andExpect(jsonPath("$.message").value("회원 탈퇴가 완료되었습니다."));
 
@@ -73,7 +73,7 @@ class WithdrawControllerTest {
     String invalidToken = "invalid.token";
     lenient().when(jwtTokenProvider.validateAccessToken(invalidToken)).thenReturn(false);
 
-    mockMvc.perform(delete("/api/auth/withdraw").header(AUTHORIZATION, "Bearer " + invalidToken)
+    mockMvc.perform(delete("/auth/withdraw").header(AUTHORIZATION, "Bearer " + invalidToken)
         .contentType(MediaType.APPLICATION_JSON)).andExpect(status().isUnauthorized());
 
     verify(userService, times(0)).deleteUser(any());
@@ -84,7 +84,7 @@ class WithdrawControllerTest {
   void withdrawFailsWhenUserServiceThrowsBusinessException() throws Exception {
     doThrow(new BusinessException(ErrorCode.USER_NOT_FOUND)).when(userService).deleteUser(USER_ID);
 
-    mockMvc.perform(delete("/api/auth/withdraw").header(AUTHORIZATION, "Bearer " + VALID_TOKEN)
+    mockMvc.perform(delete("/auth/withdraw").header(AUTHORIZATION, "Bearer " + VALID_TOKEN)
         .contentType(MediaType.APPLICATION_JSON)).andExpect(status().isBadRequest());
   }
 }

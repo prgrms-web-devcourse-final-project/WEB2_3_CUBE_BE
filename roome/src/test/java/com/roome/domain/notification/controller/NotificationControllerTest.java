@@ -109,7 +109,7 @@ class NotificationControllerTest {
         createTestNotification(NotificationType.GUESTBOOK, false);
 
         // when & then
-        performWithAuthenticatedUser(get("/api/notifications").param("limit", "10"))
+        performWithAuthenticatedUser(get("/notifications").param("limit", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.notifications").isArray())
                 .andExpect(jsonPath("$.notifications[0].type").value("GUESTBOOK"))
@@ -124,7 +124,7 @@ class NotificationControllerTest {
     @WithMockUser
     void getNotifications_InvalidCursor_Fail() throws Exception {
         // when & then
-        performWithAuthenticatedUser(get("/api/notifications")
+        performWithAuthenticatedUser(get("/notifications")
                 .param("cursor", "-1")
                 .param("limit", "10"))
                 .andExpect(status().isBadRequest())
@@ -138,7 +138,7 @@ class NotificationControllerTest {
     @WithMockUser
     void getNotifications_InvalidLimitLower_Fail() throws Exception {
         // when & then
-        performWithAuthenticatedUser(get("/api/notifications")
+        performWithAuthenticatedUser(get("/notifications")
                 .param("limit", "0"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("유효하지 않은 limit 값입니다. (1-100 사이의 값을 입력해주세요)"))
@@ -151,7 +151,7 @@ class NotificationControllerTest {
     @WithMockUser
     void getNotifications_InvalidLimitUpper_Fail() throws Exception {
         // when & then
-        performWithAuthenticatedUser(get("/api/notifications")
+        performWithAuthenticatedUser(get("/notifications")
                 .param("limit", "101"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("유효하지 않은 limit 값입니다. (1-100 사이의 값을 입력해주세요)"))
@@ -167,7 +167,7 @@ class NotificationControllerTest {
         Notification notification = createTestNotification(NotificationType.GUESTBOOK, false);
 
         // when & then
-        performWithAuthenticatedUser(patch("/api/notifications/{notificationId}/read", notification.getId()))
+        performWithAuthenticatedUser(patch("/notifications/{notificationId}/read", notification.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.type").value("GUESTBOOK"))
                 .andExpect(jsonPath("$.targetId").value(3))
@@ -183,7 +183,7 @@ class NotificationControllerTest {
         Long invalidNotificationId = -1L;
 
         // when & then
-        performWithAuthenticatedUser(patch("/api/notifications/{notificationId}/read", invalidNotificationId))
+        performWithAuthenticatedUser(patch("/notifications/{notificationId}/read", invalidNotificationId))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("유효하지 않은 cursor 값입니다."))
                 .andExpect(jsonPath("$.code").value(400))
@@ -198,7 +198,7 @@ class NotificationControllerTest {
         Notification notification = createTestNotification(NotificationType.GUESTBOOK);
 
         // when & then
-        performWithAuthenticatedUser(patch("/api/notifications/{notificationId}/read", notification.getId()))
+        performWithAuthenticatedUser(patch("/notifications/{notificationId}/read", notification.getId()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("이미 읽음 처리된 알림입니다."))
                 .andExpect(jsonPath("$.code").value(400))
@@ -213,7 +213,7 @@ class NotificationControllerTest {
         Long notificationId = 999L;
 
         // when & then
-        performWithAuthenticatedUser(patch("/api/notifications/{notificationId}/read", notificationId))
+        performWithAuthenticatedUser(patch("/notifications/{notificationId}/read", notificationId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value(ErrorCode.NOTIFICATION_NOT_FOUND.getMessage()))
                 .andExpect(jsonPath("$.code").value(ErrorCode.NOTIFICATION_NOT_FOUND.getStatus().value()))
@@ -248,7 +248,7 @@ class NotificationControllerTest {
         otherUserNotification = notificationRepository.save(otherUserNotification);
 
         // when & then
-        performWithAuthenticatedUser(patch("/api/notifications/{notificationId}/read", otherUserNotification.getId()))
+        performWithAuthenticatedUser(patch("/notifications/{notificationId}/read", otherUserNotification.getId()))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("해당 알림에 접근 권한이 없습니다."))
                 .andExpect(jsonPath("$.code").value(403))

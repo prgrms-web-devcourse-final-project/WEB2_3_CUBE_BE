@@ -26,7 +26,7 @@ import java.util.List;
 @Slf4j
 @Validated
 @RestController
-@RequestMapping("/api/users/image")
+@RequestMapping("/users/image")
 public class UserProfileImageController {
     // 허용할 이미지 확장자 목록
     private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png", "gif");

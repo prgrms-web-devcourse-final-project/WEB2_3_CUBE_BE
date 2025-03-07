@@ -19,7 +19,7 @@ import java.util.List;
 
 @Tag(name = "Room API", description = "방 조회/테마 업데이트/가구 활성화 및 비활성화")
 @RestController
-@RequestMapping("/api/rooms")
+@RequestMapping("/rooms")
 @RequiredArgsConstructor
 public class RoomController {
 

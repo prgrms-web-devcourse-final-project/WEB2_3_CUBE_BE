@@ -99,7 +99,7 @@ class HousemateControllerTest {
     void addHousemateTest() throws Exception {
         // 요청 생성
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                post("/api/mates/" + targetUser.getId())
+                post("/mates/" + targetUser.getId())
                         .contentType(MediaType.APPLICATION_JSON));
 
         // 결과 확인
@@ -117,7 +117,7 @@ class HousemateControllerTest {
 
         // 요청 수행
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                get("/api/mates/following")
+                get("/mates/following")
                         .param("limit", "20")
                         .contentType(MediaType.APPLICATION_JSON));
 
@@ -134,7 +134,7 @@ class HousemateControllerTest {
     void getFollowingWithInvalidCursorTest() throws Exception {
         // 음수 커서 값으로 요청
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                get("/api/mates/following")
+                get("/mates/following")
                         .param("cursor", "-1")
                         .param("limit", "20")
                         .contentType(MediaType.APPLICATION_JSON));
@@ -152,7 +152,7 @@ class HousemateControllerTest {
     void getFollowingWithInvalidLimitTest() throws Exception {
         // 범위를 벗어난 limit으로 요청
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                get("/api/mates/following")
+                get("/mates/following")
                         .param("limit", "101")
                         .contentType(MediaType.APPLICATION_JSON));
 
@@ -171,7 +171,7 @@ class HousemateControllerTest {
 
         // 닉네임으로 검색 요청
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                get("/api/mates/following")
+                get("/mates/following")
                         .param("nickname", "target")
                         .contentType(MediaType.APPLICATION_JSON));
 
@@ -191,7 +191,7 @@ class HousemateControllerTest {
 
         // 요청 수행
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                get("/api/mates/followers")
+                get("/mates/followers")
                         .param("limit", "20")
                         .contentType(MediaType.APPLICATION_JSON));
 
@@ -208,7 +208,7 @@ class HousemateControllerTest {
     void getFollowersWithInvalidCursorTest() throws Exception {
         // 음수 커서 값으로 요청
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                get("/api/mates/followers")
+                get("/mates/followers")
                         .param("cursor", "-1")
                         .param("limit", "20")
                         .contentType(MediaType.APPLICATION_JSON));
@@ -230,7 +230,7 @@ class HousemateControllerTest {
 
         // 닉네임으로 검색 요청
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                get("/api/mates/followers")
+                get("/mates/followers")
                         .param("nickname", "target")
                         .contentType(MediaType.APPLICATION_JSON));
 
@@ -250,7 +250,7 @@ class HousemateControllerTest {
 
         // 요청 수행
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                delete("/api/mates/" + targetUser.getId())
+                delete("/mates/" + targetUser.getId())
                         .contentType(MediaType.APPLICATION_JSON));
 
         // 결과 확인
@@ -265,7 +265,7 @@ class HousemateControllerTest {
     void removeNonExistentHousemateTest() throws Exception {
         // 하우스메이트로 추가되지 않은 상태에서 삭제 시도
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                delete("/api/mates/" + targetUser.getId())
+                delete("/mates/" + targetUser.getId())
                         .contentType(MediaType.APPLICATION_JSON));
 
         // 결과 확인
@@ -281,7 +281,7 @@ class HousemateControllerTest {
     void cannotAddSelfAsHousemate() throws Exception {
         // 자기 자신을 하우스메이트로 추가 시도
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                post("/api/mates/" + testUser.getId())
+                post("/mates/" + testUser.getId())
                         .contentType(MediaType.APPLICATION_JSON));
 
         // 결과 확인
@@ -297,7 +297,7 @@ class HousemateControllerTest {
     void cannotAddNonExistentUser() throws Exception {
         // 존재하지 않는 사용자를 하우스메이트로 추가 시도
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                post("/api/mates/999999")
+                post("/mates/999999")
                         .contentType(MediaType.APPLICATION_JSON));
 
         // 결과 확인
@@ -316,7 +316,7 @@ class HousemateControllerTest {
 
         // 이미 하우스메이트인 사용자를 다시 추가 시도
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                post("/api/mates/" + targetUser.getId())
+                post("/mates/" + targetUser.getId())
                         .contentType(MediaType.APPLICATION_JSON));
 
         // 결과 확인
@@ -332,7 +332,7 @@ class HousemateControllerTest {
     void cannotAddHousemateWithInvalidTargetId() throws Exception {
         // 유효하지 않은 targetId로 하우스메이트 추가 시도
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                post("/api/mates/-1")
+                post("/mates/-1")
                         .contentType(MediaType.APPLICATION_JSON));
 
         // 결과 확인
@@ -348,7 +348,7 @@ class HousemateControllerTest {
     void cannotRemoveHousemateWithInvalidTargetId() throws Exception {
         // 유효하지 않은 targetId로 하우스메이트 삭제 시도
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                delete("/api/mates/-1")
+                delete("/mates/-1")
                         .contentType(MediaType.APPLICATION_JSON));
 
         // 결과 확인
@@ -364,7 +364,7 @@ class HousemateControllerTest {
     void cannotRemoveSelfAsHousemate() throws Exception {
         // 자기 자신을 하우스메이트에서 삭제 시도
         ResultActions result = performWithAuthenticatedUser(mockMvc,
-                delete("/api/mates/" + testUser.getId())
+                delete("/mates/" + testUser.getId())
                         .contentType(MediaType.APPLICATION_JSON));
 
         // 결과 확인
