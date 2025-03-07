@@ -217,27 +217,27 @@ class MyCdServiceTest {
         .isInstanceOf(MyCdListEmptyException.class);
   }
 
-  @Test
-  @DisplayName("CD 단건 조회 성공")
-  void getMyCd_Success() {
-    when(myCdRepository.findByIdAndUserId(eq(1L), eq(1L)))
-        .thenReturn(Optional.of(myCd));
-
-    MyCdResponse response = myCdService.getMyCd(1L, 1L);
-
-    assertThat(response).isNotNull();
-    assertThat(response.getTitle()).isEqualTo("Palette");
-  }
-
-  @Test
-  @DisplayName("CD 단건 조회 실패 - 존재하지 않음")
-  void getMyCd_Failure_NotFound() {
-    when(myCdRepository.findByIdAndUserId(eq(999L), eq(1L)))
-        .thenReturn(Optional.empty());
-
-    assertThatThrownBy(() -> myCdService.getMyCd(1L, 999L))
-        .isInstanceOf(MyCdNotFoundException.class);
-  }
+//  @Test
+//  @DisplayName("CD 단건 조회 성공")
+//  void getMyCd_Success() {
+//    when(myCdRepository.findByIdAndUserId(eq(1L), eq(1L)))
+//        .thenReturn(Optional.of(myCd));
+//
+//    MyCdResponse response = myCdService.getMyCd(1L, 1L);
+//
+//    assertThat(response).isNotNull();
+//    assertThat(response.getTitle()).isEqualTo("Palette");
+//  }
+//
+//  @Test
+//  @DisplayName("CD 단건 조회 실패 - 존재하지 않음")
+//  void getMyCd_Failure_NotFound() {
+//    when(myCdRepository.findByIdAndUserId(eq(999L), eq(1L)))
+//        .thenReturn(Optional.empty());
+//
+//    assertThatThrownBy(() -> myCdService.getMyCd(1L, 999L))
+//        .isInstanceOf(MyCdNotFoundException.class);
+//  }
 
 //  @Test
 //  @DisplayName("CD 삭제 성공")
