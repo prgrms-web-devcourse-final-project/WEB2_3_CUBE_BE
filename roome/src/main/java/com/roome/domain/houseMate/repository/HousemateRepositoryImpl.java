@@ -24,6 +24,7 @@ public class HousemateRepositoryImpl implements HousemateRepositoryCustom {
 
         return queryFactory
                 .select(Projections.constructor(HousemateInfo.class,
+                                                addedHousemate.id,
                                                 addedUser.id,
                                                 addedUser.nickname,
                                                 addedUser.profileImage,
