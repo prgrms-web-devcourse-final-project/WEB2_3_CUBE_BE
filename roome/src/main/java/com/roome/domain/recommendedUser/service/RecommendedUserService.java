@@ -1,5 +1,6 @@
 package com.roome.domain.recommendedUser.service;
 
+import com.roome.domain.houseMate.repository.HousemateRepository;
 import com.roome.domain.recommendedUser.entity.RecommendedUser;
 import com.roome.domain.recommendedUser.repository.RecommendedUserRepository;
 import com.roome.domain.user.dto.RecommendedUserDto;
@@ -25,12 +26,11 @@ public class RecommendedUserService {
     private final UserRepository userRepository;
     private final RecommendedUserRepository recommendedUserRepository;
     private final GenrePreferenceService genrePreferenceService;
+    private final HousemateRepository housemateRepository;
 
-    /**
-     * 사용자 추천 목록 조회
-     * @param userId 사용자 ID
-     * @return 추천 사용자 DTO 리스트
-     */
+    /// 사용자 추천 목록 조회
+    /// @param userId 사용자 ID
+    /// @return 추천 사용자 DTO 리스트
     public List<RecommendedUserDto> getRecommendedUsers(Long userId) {
         List<RecommendedUser> recommendations = recommendedUserRepository.findTop5ByUserIdOrderBySimilarityScoreDesc(userId);
 
@@ -43,9 +43,7 @@ public class RecommendedUserService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 모든 사용자의 추천 목록 새로 계산하여 저장 (배치 작업용)
-     */
+    /// 모든 사용자의 추천 목록 새로 계산하여 저장 (배치 작업용)
     @Transactional
     public void updateAllRecommendations() {
         log.info("Starting batch job: updating all user recommendations");
@@ -66,10 +64,8 @@ public class RecommendedUserService {
         log.info("Batch job completed: all user recommendations updated");
     }
 
-    /**
-     * 특정 사용자의 추천 목록 새로 계산하여 저장
-     * @param userId 사용자 ID
-     */
+    /// 특정 사용자의 추천 목록 새로 계산하여 저장
+    /// @param userId 사용자 ID
     @Transactional
     public void updateUserRecommendations(Long userId) {
         // 기존 추천 목록 삭제
@@ -90,9 +86,8 @@ public class RecommendedUserService {
         }
     }
 
-    /**
-     * 유사 사용자 계산 로직 (기존 UserProfileService의 로직 재사용)
-     */
+    /// 유사 사용자 계산 로직 (기존 UserProfileService의 로직 재사용)
+    /// 이미 하우스메이트로 추가한 사용자는 제외
     private List<User> calculateSimilarUsers(Long userId) {
         // 1. 현재 사용자의 선호 장르 가져오기
         List<String> topCdGenres = genrePreferenceService.getTopCdGenres(userId);
@@ -103,10 +98,15 @@ public class RecommendedUserService {
             return Collections.emptyList();
         }
 
-        // 2. 다른 모든 사용자 가져오기
-        List<User> otherUsers = userRepository.findByIdNot(userId);
+        // 2. 이미 하우스메이트로 추가한 사용자 ID 목록 가져오기
+        List<Long> addedUserIds = getAddedHousemateIds(userId);
 
-        // 3. 각 사용자별 유사도 계산
+        // 3. 다른 모든 사용자 가져오기 (이미 하우스메이트로 추가한 사용자 제외)
+        List<User> otherUsers = userRepository.findByIdNot(userId).stream()
+                .filter(user -> !addedUserIds.contains(user.getId()))
+                .collect(Collectors.toList());
+
+        // 4. 각 사용자별 유사도 계산
         Map<User, Integer> similarityScores = new HashMap<>();
 
         for (User otherUser : otherUsers) {
@@ -118,7 +118,7 @@ public class RecommendedUserService {
             }
         }
 
-        // 4. 유사도 높은 순으로 정렬하여 상위 5명 반환
+        // 5. 유사도 높은 순으로 정렬하여 상위 5명 반환
         return similarityScores.entrySet().stream()
                 .sorted(Map.Entry.<User, Integer>comparingByValue().reversed())
                 .limit(5)
@@ -126,9 +126,15 @@ public class RecommendedUserService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 두 사용자 간의 유사도 점수 계산
-     */
+    /// 사용자가 이미 하우스메이트로 추가한 사용자 ID 목록 조회
+    /// @param userId 사용자 ID
+    /// @return 하우스메이트로 추가한 사용자 ID 목록
+    private List<Long> getAddedHousemateIds(Long userId) {
+        // 사용자가 추가한 하우스메이트의 ID 목록만 직접 조회
+        return housemateRepository.findAddedIdsByUserId(userId);
+    }
+
+    /// 두 사용자 간의 유사도 점수 계산
     private int calculateSimilarityScore(Long userId, Long otherUserId) {
         int score = 0;
 
