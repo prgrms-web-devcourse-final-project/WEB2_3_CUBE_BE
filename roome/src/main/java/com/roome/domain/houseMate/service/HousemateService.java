@@ -96,8 +96,7 @@ public class HousemateService {
       int limit) {
     boolean hasNext = housemates.size() > limit;
     List<HousemateInfo> content = hasNext ? housemates.subList(0, limit) : housemates;
-    String nextCursor =
-        hasNext ? String.valueOf(content.get(content.size() - 1).getUserId()) : null;
+    Long nextCursor = hasNext ? content.get(content.size() - 1).getId() : null;
 
     return HousemateListResponse.builder().housemates(content).nextCursor(nextCursor)
         .hasNext(hasNext).build();

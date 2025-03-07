@@ -66,9 +66,9 @@ public class MyCdService {
   private final FurnitureService furnitureService;
   private final FurnitureCapacity furnitureCapacity;
   private final ApplicationEventPublisher eventPublisher; // 이벤트 발행을 위해 추가
+  
   @Qualifier("myCdRedisTemplate")
   private final RedisTemplate<String, MyCdResponse> redisTemplate;
-
 
   @CacheEvict(value = "myCdList", allEntries = true)
   public MyCdResponse addCdToMyList(Long userId, MyCdCreateRequest request) {
