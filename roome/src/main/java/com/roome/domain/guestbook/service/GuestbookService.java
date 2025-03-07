@@ -161,7 +161,11 @@ public class GuestbookService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-    if (!guestbook.getUser().equals(user)) {
+    Long roomOwnerId = guestbook.getRoom().getUser().getId();
+    boolean isOwner = roomOwnerId.equals(userId);
+    boolean isWriter = guestbook.getUser().equals(user);
+
+    if (!isOwner && !isWriter) { // 둘 다 아니면 예외 발생
       throw new BusinessException(ErrorCode.GUESTBOOK_DELETE_FORBIDDEN);
     }
 
