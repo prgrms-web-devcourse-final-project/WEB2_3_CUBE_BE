@@ -11,9 +11,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @Tag(name = "CD 댓글", description = "CD 댓글 관련 API")
 @RestController
 @RequiredArgsConstructor
@@ -46,6 +48,8 @@ public class CdCommentController {
       @RequestParam(value = "size", required = false, defaultValue = "10") int size
   ) {
     CdCommentListResponse response = cdCommentService.getComments(myCdId, keyword, page, size);
+    log.info("Received keyword: {}", keyword == null ? "null" : "'" + keyword + "'");
+
     return ResponseEntity.ok(response);
   }
 
