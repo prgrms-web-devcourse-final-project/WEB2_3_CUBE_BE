@@ -15,7 +15,7 @@ import org.springframework.web.context.request.WebRequest;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-  // 비즈니스 관련 예러 처리
+  // 비즈니스 관련 예외 처리
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ErrorResponse> handleCustomException(BusinessException e) {
     ErrorCode error = e.getErrorCode();
@@ -30,6 +30,14 @@ public class GlobalExceptionHandler {
     return ResponseEntity
         .status(error.getStatus())
         .body(new ErrorResponse(error.getMessage(), error.getStatus().value()));
+  }
+
+  // ForbiddenException 처리 추가 (403 반환)
+  @ExceptionHandler(ForbiddenException.class)
+  public ResponseEntity<ErrorResponse> handleForbiddenException(ForbiddenException e) {
+    return ResponseEntity
+        .status(HttpStatus.FORBIDDEN)
+        .body(new ErrorResponse(e.getMessage(), HttpStatus.FORBIDDEN.value()));
   }
 
   // DB 관련 예외 처리
@@ -47,7 +55,7 @@ public class GlobalExceptionHandler {
     return new MessageResponse("인증 토큰이 필요합니다.");
   }
 
-  // 그 외 모든 예외를 처리하는 핸들러 추가
+  // 기타 모든 예외는 500으로 처리 (ForbiddenException보다 아래에 있어야 함)
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleAllExceptions(Exception e, WebRequest request) {
     log.error("처리되지 않은 예외 발생: {}", e.getMessage(), e);
