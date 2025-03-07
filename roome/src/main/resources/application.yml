@@ -21,7 +21,7 @@ spring:
             client-name: google
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
-            redirect-uri: http://ec2-3-39-182-150.ap-northeast-2.compute.amazonaws.com/oauth/callback/google
+            redirect-uri: "{baseUrl}/oauth/callback/{registrationId}"
             authorization-grant-type: authorization_code
             scope:
               - email

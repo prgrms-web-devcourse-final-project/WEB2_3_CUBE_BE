@@ -14,15 +14,14 @@ public interface CdCommentRepository extends JpaRepository<CdComment, Long> {
 
   Long countByUserId(Long userId);
 
-  Page<CdComment> findByMyCdId(Long myCdId, Pageable pageable);
+  @Query("SELECT c FROM CdComment c WHERE c.myCd.id = :myCdId")
+  Page<CdComment> findByMyCdId(@Param("myCdId") Long myCdId, Pageable pageable);
 
   List<CdComment> findByMyCdId(Long myCdId);
 
-  @Query("SELECT c FROM CdComment c " + "WHERE c.myCd.id = :myCdId "
-      + "AND (LOWER(c.content) LIKE LOWER(CONCAT('%', :keyword, '%')) "
-      + "OR LOWER(c.user.nickname) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-  Page<CdComment> findByMyCdIdAndKeyword(@Param("myCdId") Long myCdId,
-      @Param("keyword") String keyword, Pageable pageable);
+  @Query(value = "SELECT * FROM cd_comment c WHERE c.my_cd_id = :myCdId AND c.content COLLATE utf8mb4_general_ci LIKE CONCAT('%', :keyword, '%')", nativeQuery = true)
+  Page<CdComment> findByMyCdIdAndKeyword(@Param("myCdId") Long myCdId, @Param("keyword") String keyword, Pageable pageable);
+
 
   // 특정 사용자가 작성한 모든 CD 댓글 목록 조회
   List<CdComment> findAllByUserId(Long userId);
