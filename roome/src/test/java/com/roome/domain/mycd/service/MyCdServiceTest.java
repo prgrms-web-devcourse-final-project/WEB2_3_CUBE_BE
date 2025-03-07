@@ -1,19 +1,24 @@
-/*
 package com.roome.domain.mycd.service;
 
 import com.roome.domain.cd.entity.Cd;
 import com.roome.domain.cd.repository.CdGenreTypeRepository;
 import com.roome.domain.cd.repository.CdRepository;
+import com.roome.domain.furniture.entity.Furniture;
+import com.roome.domain.furniture.entity.FurnitureCapacity;
+import com.roome.domain.furniture.entity.FurnitureType;
+import com.roome.domain.furniture.repository.FurnitureRepository;
+import com.roome.domain.furniture.service.FurnitureService;
 import com.roome.domain.mycd.dto.MyCdCreateRequest;
 import com.roome.domain.mycd.dto.MyCdListResponse;
 import com.roome.domain.mycd.dto.MyCdResponse;
 import com.roome.domain.mycd.entity.MyCd;
 import com.roome.domain.mycd.entity.MyCdCount;
-import com.roome.domain.mycd.exception.MyCdAlreadyExistsException;
 import com.roome.domain.mycd.exception.MyCdListEmptyException;
 import com.roome.domain.mycd.exception.MyCdNotFoundException;
 import com.roome.domain.mycd.repository.MyCdCountRepository;
 import com.roome.domain.mycd.repository.MyCdRepository;
+import com.roome.domain.rank.entity.ActivityType;
+import com.roome.domain.rank.service.UserActivityService;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
@@ -22,312 +27,236 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.test.context.support.WithMockUser;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class MyCdServiceTest {
 
+  @Mock
   private MyCdRepository myCdRepository;
+  @Mock
   private CdRepository cdRepository;
-  private MyCdCountRepository myCdCountRepository;
+  @Mock
   private RoomRepository roomRepository;
+  @Mock
   private UserRepository userRepository;
+  @Mock
+  private FurnitureRepository furnitureRepository;
+  @Mock
+  private FurnitureCapacity furnitureCapacity;
+  @Mock
+  private FurnitureType furnitureType;
+  @Mock
   private CdGenreTypeRepository cdGenreTypeRepository;
+  @Mock
+  private MyCdCountRepository myCdCountRepository;
+  @Mock
+  private FurnitureService furnitureService;
+  @Mock
+  private UserActivityService userActivityService;
+  @Mock
+  private Room room;
+  @Mock
+  private Furniture furniture;
+
+  @InjectMocks
   private MyCdService myCdService;
+
+  private User user;
+  private Cd cd;
+  private MyCd myCd;
 
   @BeforeEach
   void setUp() {
-    myCdRepository = mock(MyCdRepository.class);
-    cdRepository = mock(CdRepository.class);
-    myCdCountRepository = mock(MyCdCountRepository.class);
-    roomRepository = mock(RoomRepository.class);
-    userRepository = mock(UserRepository.class);
-    cdGenreTypeRepository = mock(CdGenreTypeRepository.class);
-    myCdService = new MyCdService(myCdRepository, cdRepository, myCdCountRepository, roomRepository,
-        userRepository, cdGenreTypeRepository);
+    user = User.builder().id(1L).nickname("테스트 유저").build();
+    room = Room.builder().id(1L).user(user).build();
+    cd = Cd.builder().id(1L).title("Palette").artist("IU").build();
+    myCd = MyCd.builder().id(1L).user(user).room(room).cd(cd).build();
   }
 
-  @Test
-  @DisplayName("새로운 CD 추가 성공")
-  void addCdToMyList_Success_NewCd() {
-    Long userId = 1L;
-    MyCdCreateRequest request = new MyCdCreateRequest(
-        "New Album", "New Artist", "New Album",
-        LocalDate.of(2022, 1, 1),
-        List.of("Pop"), "https://example.com/new_cd.jpg",
-        "https://youtube.com/watch?v=newvideo", 200
-    );
-
-    User user = mock(User.class);
-    Room room = mock(Room.class);
-    Cd newCd = mock(Cd.class);
-    MyCd myCd = mock(MyCd.class);
-    MyCdCount myCdCount = mock(MyCdCount.class);
-
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(roomRepository.findByUserId(userId)).thenReturn(Optional.of(room));
-    when(cdRepository.findByTitleAndArtist(request.getTitle(), request.getArtist()))
-        .thenReturn(Optional.empty());
-    when(cdRepository.save(any(Cd.class))).thenReturn(newCd);
-    when(myCdRepository.save(any(MyCd.class))).thenReturn(myCd);
-    when(myCdCountRepository.findByRoom(room)).thenReturn(Optional.of(myCdCount));
-
-    when(myCd.getCd()).thenReturn(newCd);
-    when(newCd.getTitle()).thenReturn("New Album");
-    when(newCd.getArtist()).thenReturn("New Artist");
-
-    MyCdResponse response = myCdService.addCdToMyList(userId, request);
-
-    assertThat(response).isNotNull();
-    assertThat(response.getTitle()).isEqualTo("New Album");
-    assertThat(response.getArtist()).isEqualTo("New Artist");
-
-    verify(cdRepository, times(1)).save(any(Cd.class));
-  }
-
-  @Test
-  @DisplayName("CD 추가 실패 - 중복된 CD")
-  void addCdToMyList_Failure_AlreadyExists() {
-    Long userId = 1L;
-    MyCdCreateRequest request = new MyCdCreateRequest("Palette", "IU", "Palette",
-        LocalDate.of(2019, 11, 1),
-        List.of("K-Pop", "Ballad"), "https://example.com/image1.jpg",
-        "https://youtube.com/watch?v=asdf5678", 215);
-
-    Cd cd = mock(Cd.class);
-    User user = mock(User.class);
-    Room room = mock(Room.class);
-    MyCd myCd = mock(MyCd.class);
-    MyCdCount myCdCount = mock(MyCdCount.class);
-
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(roomRepository.findByUserId(userId)).thenReturn(Optional.of(room));
-    when(cdRepository.findByTitleAndArtist(request.getTitle(), request.getArtist()))
-        .thenReturn(Optional.of(cd));
-    when(myCdRepository.existsByUserIdAndCdId(userId, 1L)).thenReturn(true);
-    when(myCdCountRepository.findByRoom(room)).thenReturn(Optional.of(myCdCount));
-
-    when(myCdRepository.save(any(MyCd.class))).thenReturn(myCd);
-
-    when(myCd.getCd()).thenReturn(cd);
-    when(cd.getId()).thenReturn(1L);
-
-    assertThatThrownBy(() -> myCdService.addCdToMyList(userId, request))
-        .isInstanceOf(MyCdAlreadyExistsException.class);
-  }
+//  @Test
+//  @DisplayName("CD 추가 성공 - CD 랙 레벨 확인 및 저장")
+//  void addCdToMyList_Success() {
+//    // Given
+//    MyCdCreateRequest request = new MyCdCreateRequest(
+//        "Palette", "IU", "Palette",
+//        LocalDate.of(2019, 11, 1),
+//        List.of("K-Pop", "Ballad"),
+//        "https://example.com/image1.jpg",
+//        "https://youtube.com/watch?v=asdf5678",
+//        215
+//    );
+//
+//    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+//    when(roomRepository.findByUserId(1L)).thenReturn(Optional.of(room));
+//
+//    // 가구 서비스 Mock 설정
+//    Furniture furnitureMock = mock(Furniture.class); // Mock 객체 생성
+//    when(furnitureMock.getLevel()).thenReturn(2); // `getLevel()`을 Mocking
+//    when(furnitureRepository.findByRoomAndFurnitureType(any(Room.class), eq(FurnitureType.CD_RACK)))
+//        .thenReturn(Optional.of(furnitureMock)); // Mock 객체 반환 보장
+//
+//    when(furnitureCapacity.getMaxCdCapacity(2)).thenReturn(50); // 최대 수용량 Mock
+//
+//    // 현재 등록된 CD 개수 (현재 10개로 설정)
+//    when(myCdRepository.countByUserId(1L)).thenReturn(10L);
+//
+//    // CD 존재 여부 Mock 설정 (새로 생성해야 하는 경우)
+//    when(cdRepository.findByTitleAndArtist(request.getTitle(), request.getArtist()))
+//        .thenReturn(Optional.empty());
+//
+//    Cd newCd = mock(Cd.class);
+//    when(newCd.getId()).thenReturn(99L); // 새 CD ID
+//    when(cdRepository.save(any(Cd.class))).thenReturn(newCd);
+//
+//    // 중복 추가 방지 Mock 설정 (중복이 없도록 설정)
+//    when(myCdRepository.findByUserIdAndCdId(1L, newCd.getId())).thenReturn(Optional.empty());
+//
+//    // MyCd 저장 Mock 설정
+//    MyCd myCd = mock(MyCd.class);
+//    when(myCd.getCd()).thenReturn(newCd);
+//    when(myCdRepository.save(any(MyCd.class))).thenReturn(myCd);
+//
+//    // MyCdCount Mock 설정
+//    MyCdCount myCdCount = mock(MyCdCount.class);
+//    when(myCdCountRepository.findByRoom(room)).thenReturn(Optional.of(myCdCount));
+//    doNothing().when(myCdCount).increment();
+//
+//    // 유저 활동 기록 Mock 설정
+//    doNothing().when(userActivityService).recordUserActivity(1L, ActivityType.MUSIC_REGISTRATION, newCd.getId());
+//
+//    // When
+//    MyCdResponse response = myCdService.addCdToMyList(1L, request);
+//
+//    // Then
+//    assertThat(response).isNotNull();
+//    assertThat(response.getTitle()).isEqualTo("Palette");
+//    assertThat(response.getArtist()).isEqualTo("IU");
+//
+//    // 저장 메서드들이 제대로 호출되었는지 검증
+//    verify(cdRepository, times(1)).save(any(Cd.class));
+//    verify(myCdRepository, times(1)).save(any(MyCd.class));
+//    verify(myCdCount, times(1)).increment();
+//    verify(userActivityService, times(1)).recordUserActivity(1L, ActivityType.MUSIC_REGISTRATION, newCd.getId());
+//  }
 
   @Test
-  @DisplayName("내 CD 목록 조회 - 커서 기반 페이징 성공")
-  void getMyCdList_WithCursor_Success() {
-    Long userId = 1L;
-    Long cursor = 5L;
+  @DisplayName("내 CD 목록 조회 성공 - 키워드 없음, 커서 없음")
+  @WithMockUser(username = "1")
+  void getMyCdList_Success_NoKeywordNoCursor() throws Exception {
     PageRequest pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "id"));
 
-    User user = mock(User.class);
-    Cd cd = mock(Cd.class);
-    MyCd myCd = mock(MyCd.class);
-
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-
-    when(myCdRepository.findByUserIdOrderByIdAsc(userId, pageRequest))
+    when(myCdRepository.findByUserIdOrderByIdAsc(eq(1L), any(PageRequest.class)))
         .thenReturn(new PageImpl<>(List.of(myCd), pageRequest, 1));
 
-    when(myCdRepository.findByUserIdAndIdGreaterThanOrderByIdAsc(userId, cursor, pageRequest))
-        .thenReturn(new PageImpl<>(List.of(myCd), pageRequest, 1));
+    // 첫 번째 & 마지막 CD ID 조회 Mock 추가
+    when(myCdRepository.findFirstByUserIdOrderByIdAsc(1L)).thenReturn(Optional.of(myCd));
+    when(myCdRepository.findFirstByUserIdOrderByIdDesc(1L)).thenReturn(Optional.of(myCd));
 
-    when(myCd.getCd()).thenReturn(cd);
-    when(myCd.getId()).thenReturn(1L);
-    when(cd.getId()).thenReturn(1L);
-    when(cd.getTitle()).thenReturn("Palette");
-    when(cd.getArtist()).thenReturn("IU");
-
-    MyCdListResponse response = myCdService.getMyCdList(userId, null, cursor, 10);
+    MyCdListResponse response = myCdService.getMyCdList(1L, null, null, 10);
 
     assertThat(response).isNotNull();
     assertThat(response.getData()).hasSize(1);
   }
 
+//  @Test
+//  @DisplayName("내 CD 목록 조회 성공 - 키워드 검색 포함 (캐싱 적용)")
+//  @WithMockUser(username = "1")
+//  void getMyCdList_Success_WithKeyword_Cache() throws Exception {
+//    PageRequest pageRequest = PageRequest.of(0, 10);
+//    List<MyCd> myCdList = List.of(myCd);
+//
+//    when(myCdRepository.searchMyCd(eq(1L), eq("IU"), any(), eq(10)))
+//        .thenReturn(new PageImpl<>(myCdList, pageRequest, 1));
+//
+//    when(myCdRepository.countByUserId(1L)).thenReturn(1L);
+//    when(myCdRepository.findFirstByUserIdOrderByIdAsc(1L)).thenReturn(Optional.of(myCd));
+//    when(myCdRepository.findFirstByUserIdOrderByIdDesc(1L)).thenReturn(Optional.of(myCd));
+//
+//    // 첫 번째 요청 (DB 조회 발생)
+//    MyCdListResponse firstResponse = myCdService.getMyCdList(1L, "IU", null, 10);
+//    assertThat(firstResponse).isNotNull();
+//    assertThat(firstResponse.getData()).hasSize(1);
+//
+//    // 첫 번째 요청 후 DB 조회 검증
+//    verify(myCdRepository, times(1)).searchMyCd(anyLong(), anyString(), any(), anyInt());
+//
+//    // 캐시에서 가져오는 경우 myCdRepository가 다시 호출되지 않아야 함
+//    MyCdListResponse cachedResponse = myCdService.getMyCdList(1L, "IU", null, 10);
+//    assertThat(cachedResponse).isNotNull();
+//    assertThat(cachedResponse.getData()).hasSize(1);
+//
+//    // 두 번째 요청에서는 DB 조회가 발생하지 않아야 함
+//    verify(myCdRepository, times(1)).searchMyCd(anyLong(), anyString(), any(), anyInt());
+//  }
 
   @Test
-  @DisplayName("내 CD 목록 조회 - 키워드 검색 성공")
-  void getMyCdList_WithKeyword_Success() {
-    Long userId = 1L;
-    String keyword = "IU";
+  @DisplayName("내 CD 목록 조회 실패 - 결과 없음 (캐싱 적용)")
+  void getMyCdList_Failure_Empty_Cache() {
     PageRequest pageRequest = PageRequest.of(0, 10);
 
-    User user = mock(User.class);
-    Cd cd = mock(Cd.class);
-    MyCd myCd = mock(MyCd.class);
-
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-
-    when(myCdRepository.searchByUserIdAndKeyword(eq(userId), eq(keyword), any(PageRequest.class)))
-        .thenReturn(new PageImpl<>(List.of(myCd), pageRequest, 1));
-
-    when(myCdRepository.countByUserIdAndKeyword(eq(userId), eq(keyword)))
-        .thenReturn(1L);
-
-    when(myCd.getCd()).thenReturn(cd);
-    when(myCd.getId()).thenReturn(1L);
-    when(cd.getId()).thenReturn(1L);
-    when(cd.getTitle()).thenReturn("Palette");
-    when(cd.getArtist()).thenReturn("IU");
-
-    MyCdListResponse response = myCdService.getMyCdList(userId, keyword, null, 10);
-
-    assertThat(response).isNotNull();
-    assertThat(response.getData()).hasSize(1);
-  }
-
-  @Test
-  @DisplayName("내 CD 목록 조회 - cursor가 0일 때 성공")
-  void getMyCdList_WithZeroCursor_Success() {
-    Long userId = 1L;
-    Long cursor = 0L;
-    PageRequest pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "id"));
-    MyCd myCd = mock(MyCd.class);
-    Cd cd = mock(Cd.class);
-
-    when(userRepository.findById(userId)).thenReturn(Optional.of(mock(User.class)));
-
-    when(myCdRepository.findByUserIdOrderByIdAsc(userId, pageRequest))
-        .thenReturn(new PageImpl<>(List.of(myCd), pageRequest, 1));
-
-    when(myCd.getCd()).thenReturn(cd);
-    when(myCd.getId()).thenReturn(1L);
-    when(cd.getId()).thenReturn(1L);
-    when(cd.getTitle()).thenReturn("Palette");
-    when(cd.getArtist()).thenReturn("IU");
-
-    MyCdListResponse response = myCdService.getMyCdList(userId, null, cursor, 10);
-
-    assertThat(response).isNotNull();
-    assertThat(response.getData()).hasSize(1);
-  }
-
-  @Test
-  @DisplayName("내 CD 목록 조회 - 키워드 검색 실패 (결과 없음)")
-  void getMyCdList_WithKeyword_Failure() {
-    Long userId = 1L;
-    String keyword = "Unknown Artist";
-    PageRequest pageRequest = PageRequest.of(0, 10); // 추가된 부분
-
-    when(userRepository.findById(userId)).thenReturn(Optional.of(mock(User.class)));
-
-    when(myCdRepository.searchByUserIdAndKeyword(eq(userId), eq(keyword), any(PageRequest.class)))
-        .thenReturn(new PageImpl<>(List.of(), pageRequest, 0)); // 빈 리스트 반환
-
-    when(myCdRepository.countByUserIdAndKeyword(eq(userId), eq(keyword))).thenReturn(0L);
-
-    assertThatThrownBy(() -> myCdService.getMyCdList(userId, keyword, null, 10))
-        .isInstanceOf(MyCdListEmptyException.class);
-  }
-
-  @Test
-  @DisplayName("내 CD 목록 조회 실패 - 보유한 CD 없음")
-  void getMyCdList_Failure_Empty() {
-    Long userId = 1L;
-    PageRequest pageRequest = PageRequest.of(0, 10);
-
-    when(userRepository.findById(userId)).thenReturn(Optional.of(mock(User.class)));
-    when(myCdRepository.findByUserIdOrderByIdAsc(userId, pageRequest))
+    when(myCdRepository.searchMyCd(eq(1L), anyString(), any(), eq(10)))
         .thenReturn(new PageImpl<>(List.of(), pageRequest, 0));
 
-    assertThatThrownBy(() -> myCdService.getMyCdList(userId, null, null, 10))
+    assertThatThrownBy(() -> myCdService.getMyCdList(1L, "IU", null, 10))
         .isInstanceOf(MyCdListEmptyException.class);
   }
 
+//  @Test
+//  @DisplayName("CD 단건 조회 성공")
+//  void getMyCd_Success() {
+//    when(myCdRepository.findByIdAndUserId(eq(1L), eq(1L)))
+//        .thenReturn(Optional.of(myCd));
+//
+//    MyCdResponse response = myCdService.getMyCd(1L, 1L);
+//
+//    assertThat(response).isNotNull();
+//    assertThat(response.getTitle()).isEqualTo("Palette");
+//  }
+//
+//  @Test
+//  @DisplayName("CD 단건 조회 실패 - 존재하지 않음")
+//  void getMyCd_Failure_NotFound() {
+//    when(myCdRepository.findByIdAndUserId(eq(999L), eq(1L)))
+//        .thenReturn(Optional.empty());
+//
+//    assertThatThrownBy(() -> myCdService.getMyCd(1L, 999L))
+//        .isInstanceOf(MyCdNotFoundException.class);
+//  }
 
-  @Test
-  @DisplayName("내 CD 목록 조회 - cursor 없음")
-  void getMyCdList_Success_NoCursor() {
-    Long userId = 1L;
-    PageRequest pageRequest = PageRequest.of(0, 10);
-    MyCd myCd = mock(MyCd.class);
-    Cd cd = mock(Cd.class);
-
-    when(userRepository.findById(userId)).thenReturn(Optional.of(mock(User.class)));
-    when(myCdRepository.findByUserIdOrderByIdAsc(userId, pageRequest))
-        .thenReturn(new PageImpl<>(List.of(myCd), pageRequest, 1));
-
-    when(myCd.getCd()).thenReturn(cd);
-    when(myCd.getId()).thenReturn(1L);
-
-    assertThatThrownBy(() -> myCdService.getMyCdList(userId, null, null, 10))
-        .isInstanceOf(MyCdListEmptyException.class);
-
-  }
-
-  @Test
-  @DisplayName("CD 단건 조회 - 존재하는 CD 조회 성공")
-  void getMyCd_Success() {
-    Long userId = 1L;
-    Long myCdId = 1L;
-
-    User user = mock(User.class);
-    Cd cd = mock(Cd.class);
-    MyCd myCd = mock(MyCd.class);
-
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(myCdRepository.findByIdAndUserId(myCdId, userId)).thenReturn(Optional.of(myCd));
-
-    when(myCd.getCd()).thenReturn(cd);
-    when(myCd.getId()).thenReturn(1L);
-    when(cd.getId()).thenReturn(1L);
-    when(cd.getTitle()).thenReturn("Palette");
-    when(cd.getArtist()).thenReturn("IU");
-
-    MyCdResponse response = myCdService.getMyCd(userId, myCdId);
-
-    assertThat(response).isNotNull();
-    assertThat(response.getTitle()).isEqualTo("Palette");
-  }
-
-
-  @Test
-  @DisplayName("CD 단건 조회 실패 - 존재하지 않음")
-  void getMyCd_Failure_NotFound() {
-    Long userId = 1L;
-    Long myCdId = 999L;
-    when(userRepository.findById(userId)).thenReturn(Optional.of(mock(User.class)));
-    when(myCdRepository.findByIdAndUserId(myCdId, userId)).thenReturn(Optional.empty());
-
-    assertThatThrownBy(() -> myCdService.getMyCd(userId, myCdId))
-        .isInstanceOf(MyCdNotFoundException.class);
-  }
-
-  @Test
-  @DisplayName("CD 삭제 성공")
-  void delete_Success() {
-    Long userId = 1L;
-    List<Long> ids = List.of(1L, 2L, 3L);
-
-    when(userRepository.findById(userId)).thenReturn(Optional.of(mock(User.class)));
-    when(myCdRepository.findAllById(ids)).thenReturn(List.of(mock(MyCd.class), mock(MyCd.class)));
-
-    myCdService.delete(userId, ids);
-
-    verify(myCdRepository, times(1)).deleteByUserIdAndIds(userId, ids);
-  }
+//  @Test
+//  @DisplayName("CD 삭제 성공")
+//  void delete_Success() {
+//    List<Long> ids = List.of(1L, 2L, 3L);
+//    when(myCdRepository.findAllById(ids)).thenReturn(List.of(myCd, myCd));
+//
+//    myCdService.delete(1L, ids);
+//
+//    verify(myCdRepository, times(1)).deleteByUserIdAndIds(1L, ids);
+//  }
 
   @Test
   @DisplayName("CD 삭제 실패 - 존재하지 않음")
   void delete_Failure_NotFound() {
-    Long userId = 1L;
     List<Long> ids = List.of(1L, 2L, 3L);
-
-    when(userRepository.findById(userId)).thenReturn(Optional.of(mock(User.class)));
     when(myCdRepository.findAllById(ids)).thenReturn(List.of());
 
-    assertThatThrownBy(() -> myCdService.delete(userId, ids))
+    assertThatThrownBy(() -> myCdService.delete(1L, ids))
         .isInstanceOf(MyCdNotFoundException.class);
   }
-}*/
+}

@@ -2,7 +2,7 @@ name: Deploy to EC2
 
 on:
   push:
-    branches: [ dev ]  # dev 브랜치에 push가 발생하면 실행
+    branches: [ dev ]
 
 jobs:
   deploy:
@@ -37,7 +37,7 @@ jobs:
           echo "DATASOURCE_URL=${{ secrets.DATASOURCE_URL }}" >> .env
           echo "DATASOURCE_USERNAME=${{ secrets.DATASOURCE_USERNAME }}" >> .env
           echo "DATASOURCE_PASSWORD=${{ secrets.DATASOURCE_PASSWORD }}" >> .env
-
+          echo "SPRING_PROFILES_ACTIVE=dev" >> .env
 
       - name: Grant execute permission for gradlew
         run: |

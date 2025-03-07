@@ -25,14 +25,15 @@ import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -185,13 +186,40 @@ public class RoomService {
   }
 
 
+
+
+  @Transactional
+  public int purchaseRoomTheme(Long userId, Long roomId, String themeName) {
+    Room room = roomRepository.findById(roomId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+
+    if (!room.getUser().getId().equals(userId)) {
+      throw new BusinessException(ErrorCode.ROOM_ACCESS_DENIED);
+    }
+
+    RoomTheme theme = RoomTheme.fromString(themeName);
+
+    boolean isUnlocked = roomThemeUnlockRepository.existsByUserAndTheme(room.getUser(), theme);
+    if (isUnlocked) {
+      throw new BusinessException(ErrorCode.THEME_ALREADY_UNLOCKED);
+    }
+
+    pointService.usePoints(room.getUser(), PointReason.THEME_PURCHASE);
+    roomThemeUnlockRepository.save(RoomThemeUnlock.create(room.getUser(), theme));
+
+    log.info("테마 구매 완료: 사용자(userId={}), 테마({})", userId, themeName);
+
+    return room.getUser().getPoint().getBalance(); // 남은 포인트 반환
+  }
+
+
   @Transactional
   public String updateRoomTheme(Long userId, Long roomId, String newTheme) {
     Room room = roomRepository.findById(roomId)
-        .orElseThrow(() -> {
-          log.error("방 테마 변경 실패: 존재하지 않는 방 (roomId={})", roomId);
-          return new BusinessException(ErrorCode.ROOM_NOT_FOUND);
-        });
+            .orElseThrow(() -> {
+              log.error("방 테마 변경 실패: 존재하지 않는 방 (roomId={})", roomId);
+              return new BusinessException(ErrorCode.ROOM_NOT_FOUND);
+            });
 
     if (!room.getUser().getId().equals(userId)) {
       log.error("방 테마 변경 실패: 사용자(userId={})가 방(roomId={})의 소유자가 아님", userId, roomId);
@@ -200,16 +228,11 @@ public class RoomService {
 
     RoomTheme theme = RoomTheme.fromString(newTheme);
 
-    // 기본 테마(basic)는 무료
-    if (!theme.equals(RoomTheme.BASIC)) {
-      boolean isUnlocked = roomThemeUnlockRepository.existsByUserAndTheme(room.getUser(), theme);
+    boolean isUnlocked = roomThemeUnlockRepository.existsByUserAndTheme(room.getUser(), theme);
 
-      if (!isUnlocked) {
-        pointService.usePoints(room.getUser(), PointReason.THEME_PURCHASE);
-        roomThemeUnlockRepository.save(RoomThemeUnlock.create(room.getUser(), theme));
-
-        log.info("테마 잠금 해제 완료: 사용자(userId={}), 테마({})", userId, newTheme);
-      }
+    if (!isUnlocked && !theme.equals(RoomTheme.BASIC)) {
+      log.error("방 테마 변경 실패: 잠금 해제되지 않은 테마 (userId={}, theme={})", userId, newTheme);
+      throw new BusinessException(ErrorCode.THEME_NOT_UNLOCKED);
     }
 
     room.updateTheme(theme);
@@ -217,6 +240,7 @@ public class RoomService {
 
     return theme.name();
   }
+
 
   @Transactional
   public FurnitureResponseDto toggleFurnitureVisibility(Long userId, Long roomId,

@@ -47,7 +47,7 @@ public class HousemateController {
   @GetMapping("/followers")
   public ResponseEntity<HousemateListResponse> getFollowers(
       @AuthenticatedUser Long userId,
-      @Parameter(description = "페이지네이션 커서 (마지막으로 받은 userId)", example = "10")
+      @Parameter(description = "페이지네이션 커서 (마지막으로 받은 하우스메이트 관계의 ID)", example = "10")
       @RequestParam(required = false) Long cursor,
       @Parameter(description = "한 페이지당 조회할 메이트 수(1-100)", example = "20")
       @RequestParam(defaultValue = "20") int limit,
@@ -75,7 +75,7 @@ public class HousemateController {
   @GetMapping("/following")
   public ResponseEntity<HousemateListResponse> getFollowing(
       @AuthenticatedUser Long userId,
-      @Parameter(description = "페이지네이션 커서 (마지막으로 받은 userId)", example = "10")
+      @Parameter(description = "페이지네이션 커서 (마지막으로 받은 하우스메이트 관계의 ID)", example = "10")
       @RequestParam(required = false) Long cursor,
       @Parameter(description = "한 페이지당 조회할 메이트 수(1-100)", example = "20")
       @RequestParam(defaultValue = "20") int limit,

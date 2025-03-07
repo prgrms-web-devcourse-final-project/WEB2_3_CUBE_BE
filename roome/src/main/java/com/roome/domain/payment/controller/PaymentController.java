@@ -1,5 +1,6 @@
 package com.roome.domain.payment.controller;
 
+import com.roome.domain.payment.dto.PaymentLogResponseDto;
 import com.roome.domain.payment.dto.PaymentRequestDto;
 import com.roome.domain.payment.dto.PaymentResponseDto;
 import com.roome.domain.payment.dto.PaymentVerifyDto;
@@ -12,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -61,18 +64,29 @@ public class PaymentController {
     }
 
     // 결제 취소 (환불) API
-    @PostMapping("/cancel/{orderId}")
+    @PostMapping("/cancel")
     @Operation(summary = "결제 취소 (환불)", description = "결제 취소 요청을 처리하고 환불을 진행한다.")
     public ResponseEntity<PaymentResponseDto> cancelPayment(
             @AuthenticationPrincipal Long userId,
-            @PathVariable String orderId,
+            @RequestParam String paymentKey,
             @RequestParam(required = false, defaultValue = "전액 취소") String cancelReason,
             @RequestParam(required = false) Integer cancelAmount) {
 
-        log.info("결제 취소 요청: userId={}, orderId={}, cancelAmount={}", userId, orderId, cancelAmount);
+        log.info("결제 취소 요청: userId={}, paymentKey={}, cancelAmount={}", userId, paymentKey, cancelAmount);
 
-        PaymentResponseDto response = paymentService.cancelPayment(userId, orderId, cancelReason, cancelAmount);
+        PaymentResponseDto response = paymentService.cancelPayment(userId, paymentKey, cancelReason, cancelAmount);
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "결제 내역 조회", description = "사용자의 결제 내역을 최신순으로 조회합니다.")
+    @GetMapping("/history")
+    public ResponseEntity<List<PaymentLogResponseDto>> getPaymentHistory(
+            @AuthenticationPrincipal Long userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        List<PaymentLogResponseDto> paymentLogs = paymentService.getPaymentHistory(userId, page, size);
+        return ResponseEntity.ok(paymentLogs);
     }
 
 }

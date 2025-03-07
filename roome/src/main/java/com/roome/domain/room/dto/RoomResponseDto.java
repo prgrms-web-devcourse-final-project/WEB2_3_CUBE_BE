@@ -2,8 +2,10 @@ package com.roome.domain.room.dto;
 
 import com.roome.domain.furniture.dto.FurnitureResponseDto;
 import com.roome.domain.room.entity.Room;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -12,6 +14,8 @@ import java.util.stream.Collectors;
 
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class RoomResponseDto {
 
     private Long roomId;

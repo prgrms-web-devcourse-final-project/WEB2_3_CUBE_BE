@@ -13,9 +13,12 @@ import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
 import com.roome.domain.mycd.entity.MyCdCount;
 import com.roome.domain.mycd.repository.MyCdCountRepository;
 import com.roome.domain.point.entity.Point;
+import com.roome.domain.point.service.PointService;
+import com.roome.domain.rank.service.UserActivityService;
 import com.roome.domain.room.dto.RoomResponseDto;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.entity.RoomTheme;
+import com.roome.domain.room.entity.RoomThemeUnlock;
 import com.roome.domain.room.exception.RoomAuthorizationException;
 import com.roome.domain.room.exception.RoomNoFoundException;
 import com.roome.domain.room.repository.RoomRepository;
@@ -68,6 +71,10 @@ public class RoomServiceTest {
     private CdGenreTypeRepository cdGenreTypeRepository;
     @Mock
     private RoomThemeUnlockRepository roomThemeUnlockRepository;
+    @Mock
+    private PointService pointService;
+    @Mock
+    private UserActivityService userActivityService;
 
 
 
@@ -403,17 +410,95 @@ public class RoomServiceTest {
 
 
 
+    @Test
+    @DisplayName("사용자가 잠금 해제한 방 테마를 정상적으로 조회할 수 있다")
+    void testGetUnlockedThemes_Success() {
+        // Given
+        Long userId = user.getId();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        List<RoomThemeUnlock> unlockedThemes = List.of(
+                RoomThemeUnlock.create(user, RoomTheme.MARINE),
+                RoomThemeUnlock.create(user, RoomTheme.FOREST)
+        );
+
+        when(roomThemeUnlockRepository.findByUser(user)).thenReturn(unlockedThemes);
+
+        // When
+        List<String> result = roomService.getUnlockedThemes(userId);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.contains("BASIC")); // 기본 테마 포함 확인
+        assertTrue(result.contains("MARINE"));
+        assertTrue(result.contains("FOREST"));
+        assertEquals(3, result.size());
+
+        verify(userRepository, times(1)).findById(userId);
+        verify(roomThemeUnlockRepository, times(1)).findByUser(user);
+    }
 
 
     @Test
-    @DisplayName("가구를 토글할 수 있다")
-    void testToggleFurniture_Success() {
+    @DisplayName("사용자가 잠금 해제한 테마가 없으면 기본 테마만 반환한다")
+    void testGetUnlockedThemes_OnlyBasicTheme() {
+        // Given
+        Long userId = user.getId();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(roomThemeUnlockRepository.findByUser(user)).thenReturn(List.of());
+
+        // When
+        List<String> result = roomService.getUnlockedThemes(userId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertTrue(result.contains("BASIC"));
+
+        verify(userRepository, times(1)).findById(userId);
+        verify(roomThemeUnlockRepository, times(1)).findByUser(user);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자의 방 테마를 조회하면 예외가 발생한다")
+    void testGetUnlockedThemes_UserNotFound() {
+        // Given
+        Long userId = 999L;
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        // When & Then
+        BusinessException exception = assertThrows(BusinessException.class, () -> roomService.getUnlockedThemes(userId));
+        assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
+
+        verify(userRepository, times(1)).findById(userId);
+        verify(roomThemeUnlockRepository, never()).findByUser(any());
+    }
+
+
+
+
+
+    @Test
+    @DisplayName("책꽂이를 토글할 수 있다")
+    void testToggleBookshelf_Success() {
         when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
 
         FurnitureResponseDto updatedFurniture = roomService.toggleFurnitureVisibility(user.getId(), room.getId(), "BOOKSHELF");
 
         assertNotNull(updatedFurniture);
         assertEquals("BOOKSHELF", updatedFurniture.getFurnitureType());
+        assertTrue(updatedFurniture.getIsVisible());
+    }
+
+    @Test
+    @DisplayName("CD랙을 토글할 수 있다")
+    void testToggleCDRACK_Success() {
+        when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
+
+        FurnitureResponseDto updatedFurniture = roomService.toggleFurnitureVisibility(user.getId(), room.getId(), "CD_RACK");
+
+        assertNotNull(updatedFurniture);
+        assertEquals("CD_RACK", updatedFurniture.getFurnitureType());
         assertTrue(updatedFurniture.getIsVisible());
     }
 
@@ -505,4 +590,82 @@ public class RoomServiceTest {
 
         assertEquals(0L, result);
     }
+
+
+
+
+    @Test
+    @DisplayName("방 ID로 방을 방문하면 정상적으로 조회된다")
+    void testVisitRoomByRoomId_Success() {
+        Long visitorId = 2L;
+        Long roomId = room.getId();
+
+        when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
+        when(userActivityService.recordVisit(visitorId, user.getId())).thenReturn(true);
+
+        RoomResponseDto response = roomService.visitRoomByRoomId(visitorId, roomId);
+
+        assertNotNull(response);
+        assertEquals(roomId, response.getRoomId());
+        assertEquals(user.getId(), response.getUserId());
+
+        verify(roomRepository, times(1)).findById(roomId);
+        verify(userActivityService, times(1)).recordVisit(visitorId, user.getId());
+    }
+
+    @Test
+    @DisplayName("방 호스트 ID로 방을 방문하면 정상적으로 조회된다")
+    void testVisitRoomByHostId_Success() {
+        Long visitorId = 2L;
+        Long hostId = user.getId();
+
+        when(roomRepository.findByUserId(hostId)).thenReturn(Optional.of(room));
+        when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
+        when(userActivityService.recordVisit(visitorId, hostId)).thenReturn(true);
+
+        RoomResponseDto response = roomService.visitRoomByHostId(visitorId, hostId);
+
+        assertNotNull(response);
+        assertEquals(room.getId(), response.getRoomId());
+        assertEquals(hostId, response.getUserId());
+
+        verify(roomRepository, times(1)).findByUserId(hostId);
+        verify(roomRepository, times(1)).findById(room.getId());
+        verify(userActivityService, times(1)).recordVisit(visitorId, hostId);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 방을 방문하려 하면 예외가 발생한다")
+    void testVisitRoomByRoomId_RoomNotFound() {
+        // Given
+        Long visitorId = 2L;
+        Long roomId = 999L;
+
+        when(roomRepository.findById(roomId)).thenReturn(Optional.empty());
+
+        // When & Then
+        BusinessException exception = assertThrows(BusinessException.class, () -> roomService.visitRoomByRoomId(visitorId, roomId));
+        assertEquals(ErrorCode.ROOM_NOT_FOUND, exception.getErrorCode());
+
+        verify(roomRepository, times(1)).findById(roomId);
+        verify(userActivityService, never()).recordVisit(anyLong(), anyLong());
+    }
+
+    @Test
+    @DisplayName("호스트 ID에 해당하는 방이 없으면 예외가 발생한다")
+    void testVisitRoomByHostId_RoomNotFound() {
+        // Given
+        Long visitorId = 2L;
+        Long hostId = 999L;
+
+        when(roomRepository.findByUserId(hostId)).thenReturn(Optional.empty());
+
+        // When & Then
+        BusinessException exception = assertThrows(BusinessException.class, () -> roomService.visitRoomByHostId(visitorId, hostId));
+        assertEquals(ErrorCode.ROOM_NOT_FOUND, exception.getErrorCode());
+
+        verify(roomRepository, times(1)).findByUserId(hostId);
+        verify(userActivityService, never()).recordVisit(anyLong(), anyLong());
+    }
+
 }

@@ -9,6 +9,6 @@ import java.util.List;
 @Builder
 public class HousemateListResponse {
     private List<HousemateInfo> housemates;
-    private String nextCursor;
+    private Long nextCursor;
     private boolean hasNext;
 }

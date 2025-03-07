@@ -2,6 +2,7 @@ package com.roome.domain.payment.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.roome.domain.payment.dto.PaymentLogResponseDto;
 import com.roome.domain.payment.dto.PaymentRequestDto;
 import com.roome.domain.payment.dto.PaymentResponseDto;
 import com.roome.domain.payment.dto.PaymentVerifyDto;
@@ -11,7 +12,9 @@ import com.roome.domain.payment.entity.PaymentStatus;
 import com.roome.domain.payment.repository.PaymentLogRepository;
 import com.roome.domain.payment.repository.PaymentRepository;
 import com.roome.domain.point.entity.Point;
+import com.roome.domain.point.entity.PointHistory;
 import com.roome.domain.point.entity.PointReason;
+import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.point.service.PointService;
 import com.roome.domain.user.entity.User;
@@ -20,6 +23,10 @@ import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +36,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -41,7 +51,7 @@ public class PaymentService {
   private final PointRepository pointRepository;
   private final TossPaymentClient tossPaymentClient;
   private final PointService pointService;
-
+  private final PointHistoryRepository pointHistoryRepository;
 
   // 사용자가 포인트 결제를 요청하면 DB에 저장해 줌
   // 결제 진행 중인 상태
@@ -173,19 +183,50 @@ public class PaymentService {
 
   // 결제 취소 (환불)
   @Transactional
-  public PaymentResponseDto cancelPayment(Long userId, String orderId, String cancelReason,
+  public PaymentResponseDto cancelPayment(Long userId, String paymentKey, String cancelReason,
       Integer cancelAmount) {
-    Payment payment = paymentRepository.findByOrderId(orderId)
+    Payment payment = paymentRepository.findByPaymentKey(paymentKey)
         .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
     if (!payment.getUser().getId().equals(userId)) {
       throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
     }
 
+    List<PointReason> purchaseReasons = List.of(
+            PointReason.POINT_PURCHASE_100,
+            PointReason.POINT_PURCHASE_550,
+            PointReason.POINT_PURCHASE_1200,
+            PointReason.POINT_PURCHASE_4000
+    );
+    PageRequest pageRequest = PageRequest.of(0, 1); // 최신 1개만 조회
+
+    List<PointHistory> latestPurchases = pointHistoryRepository.findLatestPurchase(userId, purchaseReasons, pageRequest);
+
+    Optional<PointHistory> latestPurchase = latestPurchases.isEmpty() ? Optional.empty() : Optional.of(latestPurchases.get(0));
+
+    if (latestPurchase.isEmpty()) {
+      throw new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
+    }
+
+    PointHistory lastPurchase = latestPurchase.get();
+
+    // 환불 가능 기간 체크
+    if (lastPurchase.getCreatedAt().isBefore(LocalDateTime.now().minusDays(7))) {
+      throw new BusinessException(ErrorCode.PAYMENT_REFUND_PERIOD_EXCEEDED);
+    }
+
+    // 포인트 사용 여부 체크
+    boolean hasUsedPoints = pointHistoryRepository.hasUsedPointsAfterLastPurchase(userId);
+    if (hasUsedPoints) {
+      throw new BusinessException(ErrorCode.PAYMENT_ALREADY_USED);
+    }
+
     // 결제 상태가 SUCCESS가 아닐 경우, 취소 불가능
     if (!payment.getStatus().equals(PaymentStatus.SUCCESS)) {
       throw new BusinessException(ErrorCode.PAYMENT_NOT_CANCELABLE);
     }
+
+    int refundPoints = getRefundPointsForAmount(cancelAmount);
 
     // Toss API에 결제 취소 요청
     boolean isCanceled = tossPaymentClient.cancelPayment(payment.getPaymentKey(), cancelReason,
@@ -199,10 +240,12 @@ public class PaymentService {
     paymentRepository.save(payment);
 
     // 사용자 포인트 차감
-    int refundAmount = (cancelAmount != null) ? cancelAmount : payment.getPurchasedPoints();
-    pointService.usePoints(payment.getUser(), getRefundReasonForAmount(refundAmount));
+    pointService.usePoints(payment.getUser(), getRefundReasonForAmount(refundPoints));
 
-    log.info("결제 취소 완료: orderId={}, userId={}, refundAmount={}", orderId, userId, refundAmount);
+    saveRefundLog(payment, cancelAmount, paymentKey);
+
+    log.info("결제 취소 완료: paymentKey={}, userId={}, refundPoints={}, refundAmount={}",
+            paymentKey, userId, refundPoints, cancelAmount);
 
     return PaymentResponseDto.builder()
         .orderId(payment.getOrderId())
@@ -213,6 +256,25 @@ public class PaymentService {
         .build();
   }
 
+  @Transactional(readOnly = true)
+  public List<PaymentLogResponseDto> getPaymentHistory(Long userId, int page, int size) {
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+    PageRequest pageRequest = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+    Page<PaymentLog> paymentLogs = paymentLogRepository.findByUser(user, pageRequest);
+
+    return paymentLogs.stream()
+            .map(log -> {
+              // 환불 내역이면 CANCELED, 기존 결제면 SUCCESS 유지
+              PaymentStatus status = log.isRefund() ? PaymentStatus.CANCELED : PaymentStatus.SUCCESS;
+              return PaymentLogResponseDto.from(log, status);
+            })
+            .toList();
+  }
+
+
+
   private void savePaymentLog(Payment payment, String paymentKey) {
     PaymentLog paymentLog = PaymentLog.builder()
             .user(payment.getUser())
@@ -222,6 +284,18 @@ public class PaymentService {
             .build();
     paymentLogRepository.save(paymentLog);
   }
+
+  private void saveRefundLog(Payment payment, int refundAmount, String paymentKey) {
+    PaymentLog refundLog = PaymentLog.builder()
+            .user(payment.getUser())
+            .amount(-refundAmount)
+            .earnedPoints(-payment.getPurchasedPoints())
+            .paymentKey(paymentKey + "-REFUND")
+            .isRefund(true) // 환불 내역임을 표시
+            .build();
+    paymentLogRepository.save(refundLog);
+  }
+
 
   private PointReason getPointReasonForAmount(int purchasedPoints) {
     return switch (purchasedPoints) {
@@ -239,6 +313,16 @@ public class PaymentService {
       case 550 -> PointReason.POINT_REFUND_550;
       case 1200 -> PointReason.POINT_REFUND_1200;
       case 4000 -> PointReason.POINT_REFUND_4000;
+      default -> throw new BusinessException(ErrorCode.INVALID_REFUND_POINT_AMOUNT);
+    };
+  }
+
+  private int getRefundPointsForAmount(int cancelAmount) {
+    return switch (cancelAmount) {
+      case 1000 -> 100;
+      case 5000 -> 550;
+      case 10000 -> 1200;
+      case 30000 -> 4000;
       default -> throw new BusinessException(ErrorCode.INVALID_REFUND_AMOUNT);
     };
   }

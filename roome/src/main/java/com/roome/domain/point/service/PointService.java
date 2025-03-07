@@ -49,16 +49,22 @@ public class PointService {
       PointReason.BOOK_UNLOCK_LV2, 500,
       PointReason.BOOK_UNLOCK_LV3, 1500,
       PointReason.CD_UNLOCK_LV2, 500,
-      PointReason.CD_UNLOCK_LV3, 1500
+      PointReason.CD_UNLOCK_LV3, 1500,
+          PointReason.POINT_REFUND_100, 100,
+          PointReason.POINT_REFUND_550, 550,
+          PointReason.POINT_REFUND_1200, 1200,
+          PointReason.POINT_REFUND_4000, 4000
   );
 
   public void earnPoints(User user, PointReason reason) {
     int amount = POINT_EARN_MAP.getOrDefault(reason, 0);
     log.info("earnPoints - User: {}, Reason: {}, Amount: {}", user.getId(), reason, amount);
 
-    if (pointHistoryRepository.existsRecentEarned(user.getId(), reason)) {
-      log.warn("earnPoints - 중복 적립 시도! User: {}, Reason: {}", user.getId(), reason);
-      throw new DuplicatePointEarnException();
+    if(!reason.name().startsWith("POINT_PURCHASE")){
+      if (pointHistoryRepository.existsRecentEarned(user.getId(), reason)) {
+        log.warn("earnPoints - 중복 적립 시도! User: {}, Reason: {}", user.getId(), reason);
+        throw new DuplicatePointEarnException();
+      }
     }
 
     // 포인트가 없으면 자동 생성하도록 수정
