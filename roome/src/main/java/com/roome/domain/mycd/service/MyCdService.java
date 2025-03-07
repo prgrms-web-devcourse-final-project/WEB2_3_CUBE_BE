@@ -34,16 +34,20 @@ import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.jwt.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -62,6 +66,9 @@ public class MyCdService {
   private final FurnitureService furnitureService;
   private final FurnitureCapacity furnitureCapacity;
   private final ApplicationEventPublisher eventPublisher; // 이벤트 발행을 위해 추가
+  @Qualifier("myCdRedisTemplate")
+  private final RedisTemplate<String, MyCdResponse> redisTemplate;
+
 
   @CacheEvict(value = "myCdList", allEntries = true)
   public MyCdResponse addCdToMyList(Long userId, MyCdCreateRequest request) {
@@ -185,10 +192,25 @@ public class MyCdService {
   }
 
   public MyCdResponse getMyCd(Long targetUserId, Long myCdId) {
-    MyCd myCd = myCdRepository.findByIdAndUserId(myCdId, targetUserId)
+    String cacheKey = "mycd:" + myCdId + ":" + targetUserId;
+    ValueOperations<String, MyCdResponse> valueOps = redisTemplate.opsForValue();
+
+    // 1. Redis 캐시에서 조회 (Cache Hit)
+    MyCdResponse cachedResponse = valueOps.get(cacheKey);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
+    // 2. DB에서 조회 (Cache Miss)
+    MyCd myCd = myCdRepository.findByIdAndUserIdOptimized(myCdId, targetUserId)
         .orElseThrow(MyCdNotFoundException::new);
 
-    return MyCdResponse.fromEntity(myCd);
+    MyCdResponse response = MyCdResponse.fromEntity(myCd);
+
+    // 3. 캐싱 (TTL 30분 설정)
+    valueOps.set(cacheKey, response, Duration.ofMinutes(30));
+
+    return response;
   }
 
   @CacheEvict(value = "myCdList", allEntries = true)

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.roome.domain.mycd.dto.MyCdListResponse;
+import com.roome.domain.mycd.dto.MyCdResponse;
 import jakarta.annotation.PreDestroy;
 import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
@@ -81,6 +82,28 @@ public class RedisConfig {
     // Jackson 기반 JSON 직렬화 설정
     GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(
         redisObjectMapper);
+
+    template.setKeySerializer(new StringRedisSerializer()); // Key: String
+    template.setValueSerializer(serializer); // Value: JSON 직렬화
+    template.setHashKeySerializer(new StringRedisSerializer());
+    template.setHashValueSerializer(serializer);
+
+    template.afterPropertiesSet();
+    return template;
+  }
+
+  @Bean
+  public RedisTemplate<String, MyCdResponse> myCdRedisTemplate(RedisConnectionFactory connectionFactory) {
+    RedisTemplate<String, MyCdResponse> template = new RedisTemplate<>();
+    template.setConnectionFactory(connectionFactory);
+
+    // ObjectMapper 생성 및 JavaTimeModule 등록 (LocalDate 직렬화 문제 해결)
+    ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.registerModule(new JavaTimeModule()); // LocalDate 지원
+    objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+    // ObjectMapper를 적용한 Jackson2JsonRedisSerializer 생성
+    Jackson2JsonRedisSerializer<MyCdResponse> serializer = new Jackson2JsonRedisSerializer<>(objectMapper, MyCdResponse.class);
 
     template.setKeySerializer(new StringRedisSerializer()); // Key: String
     template.setValueSerializer(serializer); // Value: JSON 직렬화

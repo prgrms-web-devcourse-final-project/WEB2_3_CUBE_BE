@@ -16,7 +16,9 @@ public interface MyCdRepository extends JpaRepository<MyCd, Long>, MyCdQueryRepo
 
   List<MyCd> findByUserId(Long userId);
 
-  Optional<MyCd> findByIdAndUserId(Long myCdId, Long userId);
+  @Query("SELECT mc FROM MyCd mc WHERE mc.id = :myCdId AND mc.user.id = :userId")
+  Optional<MyCd> findByIdAndUserIdOptimized(@Param("myCdId") Long myCdId,
+      @Param("userId") Long userId);
 
   Page<MyCd> findByUserIdOrderByIdAsc(Long userId, Pageable pageable);
 
