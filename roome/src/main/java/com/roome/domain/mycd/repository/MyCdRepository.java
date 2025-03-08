@@ -10,15 +10,15 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface MyCdRepository extends JpaRepository<MyCd, Long> {
+public interface MyCdRepository extends JpaRepository<MyCd, Long>, MyCdQueryRepository {
 
   boolean existsById(Long id);
 
-  boolean existsByUserIdAndCdId(Long userId, Long cdId);
-
   List<MyCd> findByUserId(Long userId);
 
-  Optional<MyCd> findByIdAndUserId(Long myCdId, Long userId);
+  @Query("SELECT mc FROM MyCd mc WHERE mc.id = :myCdId AND mc.user.id = :userId")
+  Optional<MyCd> findByIdAndUserIdOptimized(@Param("myCdId") Long myCdId,
+      @Param("userId") Long userId);
 
   Page<MyCd> findByUserIdOrderByIdAsc(Long userId, Pageable pageable);
 
@@ -31,19 +31,6 @@ public interface MyCdRepository extends JpaRepository<MyCd, Long> {
   Optional<MyCd> findFirstByUserIdOrderByIdAsc(Long userId);
 
   Optional<MyCd> findFirstByUserIdOrderByIdDesc(Long userId);
-
-  // 키워드 기반 검색 (CD 제목 또는 가수명)
-  @Query("SELECT mc FROM MyCd mc JOIN mc.cd c " + "WHERE mc.user.id = :userId "
-      + "AND (LOWER(c.title) LIKE LOWER(CONCAT('%', :keyword, '%')) "
-      + "OR LOWER(c.artist) LIKE LOWER(CONCAT('%', :keyword, '%'))) " + "ORDER BY mc.id ASC")
-  Page<MyCd> searchByUserIdAndKeyword(@Param("userId") Long userId,
-      @Param("keyword") String keyword, Pageable pageable);
-
-  // 검색된 결과의 전체 개수 반환
-  @Query("SELECT COUNT(mc) FROM MyCd mc JOIN mc.cd c " + "WHERE mc.user.id = :userId "
-      + "AND (LOWER(c.title) LIKE LOWER(CONCAT('%', :keyword, '%')) "
-      + "OR LOWER(c.artist) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-  long countByUserIdAndKeyword(@Param("userId") Long userId, @Param("keyword") String keyword);
 
   @Modifying
   @Query("DELETE FROM MyCd mc WHERE mc.user.id = :userId AND mc.id IN (:ids)")

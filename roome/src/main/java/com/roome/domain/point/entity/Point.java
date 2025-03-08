@@ -7,6 +7,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+@Setter
 @Getter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

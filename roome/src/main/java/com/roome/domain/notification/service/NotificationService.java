@@ -8,12 +8,14 @@ import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class NotificationService {
@@ -24,11 +26,16 @@ public class NotificationService {
     // 알림 생성 서비스
     @Transactional
     public Long createNotification(CreateNotificationRequest request) {
-        // 발신자와 수신자 존재 확인
-        userRepository.findById(request.getSenderId())
-                      .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-        userRepository.findById(request.getReceiverId())
-                      .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        if(request.getSenderId() == 0L){
+            log.info("시스템 알림이므로 발신자 및 수신자 ID를 검증하지 않습니다.");
+        } else {
+            // 발신자와 수신자 존재 확인
+            userRepository.findById(request.getSenderId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+            userRepository.findById(request.getReceiverId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+            log.info("발신자 및 수신자 ID가 존재합니다. snederId: {}, receiverId: {}", request.getSenderId(), request.getReceiverId());
+        }
 
         Notification notification = Notification.builder()
                                                 .type(request.getType())
@@ -96,16 +103,29 @@ public class NotificationService {
     }
 
     private NotificationInfo convertToNotificationInfo(Notification notification) {
-        User sender = userRepository.getById(notification.getSenderId());  // 가정: Notification 엔티티에 sender 관계가 매핑되어 있음
+        String senderNickName;
+        String senderProfileImage;
+
+        // 시스템 알림(senderId = 0L)인 경우 특별 처리
+        if (notification.getSenderId() == 0L) {
+            senderNickName = "시스템";
+            senderProfileImage = null; // 또는 시스템 기본 프로필 이미지 경로
+        } else {
+            // 일반 사용자 알림인 경우
+            User sender = userRepository.findById(notification.getSenderId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+            senderNickName = sender.getNickname();
+            senderProfileImage = sender.getProfileImage();
+        }
 
         return NotificationInfo.builder()
-                               .notificationId(notification.getId())
-                               .type(notification.getType())
-                               .senderId(notification.getSenderId())
-                               .senderNickName(sender.getName())
-                               .senderProfileImage(sender.getProfileImage())
-                               .targetId(notification.getTargetId())
-                               .createdAt(notification.getCreatedAt())
-                               .build();
+                .notificationId(notification.getId())
+                .type(notification.getType())
+                .senderId(notification.getSenderId())
+                .senderNickName(senderNickName)
+                .senderProfileImage(senderProfileImage)
+                .targetId(notification.getTargetId())
+                .createdAt(notification.getCreatedAt())
+                .build();
     }
 }

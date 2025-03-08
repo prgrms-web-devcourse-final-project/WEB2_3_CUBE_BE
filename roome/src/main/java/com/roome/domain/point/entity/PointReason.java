@@ -8,6 +8,9 @@ public enum PointReason {
   GUESTBOOK_REWARD,  // 방명록 작성 보상 (+10P, 1일 1회)
   FIRST_COME_EVENT,  // 선착순 이벤트 보상 (랜덤 지급)
   DAILY_ATTENDANCE,  // 출석 체크 보상 (하루 1회 랜덤 지급)
+  RANK_1,            // 주간 랭킹 1등 (100P)
+  RANK_2,            // 주간 랭킹 2등 (70P)
+  RANK_3,            // 주간 랭킹 3등 (50P)
 
   // 포인트 사용
   THEME_PURCHASE,    // 테마 구매
@@ -20,7 +23,12 @@ public enum PointReason {
   POINT_PURCHASE_100,
   POINT_PURCHASE_550,
   POINT_PURCHASE_1200,
-  POINT_PURCHASE_4000;
+  POINT_PURCHASE_4000,
+
+  POINT_REFUND_100,
+  POINT_REFUND_550,
+  POINT_REFUND_1200,
+  POINT_REFUND_4000;
 
   public static PointReason getBookShelfUpgradeReason(int level) {
     if (level == 1) {
@@ -41,4 +49,5 @@ public enum PointReason {
     }
     throw new CdRackMaxLevelException();
   }
+
 }

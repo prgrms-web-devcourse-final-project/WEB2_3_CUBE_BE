@@ -2,7 +2,7 @@ name: Deploy to EC2
 
 on:
   push:
-    branches: [ dev ]  # dev 브랜치에 push가 발생하면 실행
+    branches: [ dev ]
 
 jobs:
   deploy:
@@ -37,7 +37,8 @@ jobs:
           echo "DATASOURCE_URL=${{ secrets.DATASOURCE_URL }}" >> .env
           echo "DATASOURCE_USERNAME=${{ secrets.DATASOURCE_USERNAME }}" >> .env
           echo "DATASOURCE_PASSWORD=${{ secrets.DATASOURCE_PASSWORD }}" >> .env
-
+          echo "ALADIN_SECRET_DEV=${{ secrets.ALADIN_SECRET_DEV }}" >> .env
+          echo "SPRING_PROFILES_ACTIVE=dev" >> .env
 
       - name: Grant execute permission for gradlew
         run: |
@@ -78,11 +79,6 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            docker-compose -f docker-compose.yml -p roome down
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/roome:latest
-            docker stop roome || true
-            docker rm roome || true
-            docker stop my-redis || true
-            docker rm my-redis || true
-            docker-compose down || true
-            docker system prune -f
-            docker-compose up -d
+            docker-compose -f docker-compose.yml -p roome up -d

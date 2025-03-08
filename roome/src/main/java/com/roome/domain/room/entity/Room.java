@@ -6,16 +6,11 @@ import com.roome.domain.furniture.exception.BookshelfFullException;
 import com.roome.domain.room.exception.RoomAuthorizationException;
 import com.roome.domain.user.entity.User;
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Getter
@@ -97,7 +92,6 @@ public class Room {
 
   public static Room createRoom(User user, RoomTheme theme) {
     Room room = new Room();
-    room.id = user.getId();  // userId와 동일한 값 설정
     room.user = user;
     room.theme = theme;
     room.furnitures = new ArrayList<>();

@@ -6,6 +6,7 @@ import com.roome.domain.cdcomment.notificationEvent.CdCommentCreatedEvent;
 import com.roome.domain.cdcomment.repository.CdCommentRepository;
 import com.roome.domain.mycd.entity.MyCd;
 import com.roome.domain.mycd.repository.MyCdRepository;
+import com.roome.domain.rank.service.UserActivityService;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.entity.Provider;
 import com.roome.domain.user.entity.Status;
@@ -41,6 +42,9 @@ public class CdCommentServiceEventTest {
 
   @InjectMocks
   private CdCommentService cdCommentService;
+
+  @Mock
+  private UserActivityService userActivityService;
 
   @Test
   void addComment_ShouldPublishEvent_WhenUserIsNotOwner() {

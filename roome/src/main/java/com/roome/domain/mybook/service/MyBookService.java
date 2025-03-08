@@ -11,6 +11,9 @@ import com.roome.domain.mybook.entity.MyBook;
 import com.roome.domain.mybook.entity.MyBookCount;
 import com.roome.domain.mybook.entity.MyBookQueryModel;
 import com.roome.domain.mybook.entity.repository.*;
+import com.roome.domain.mybook.entity.repository.MyBookCountRepository;
+import com.roome.domain.mybook.entity.repository.MyBookRepository;
+import com.roome.domain.mybook.event.BookCollectionEvent;
 import com.roome.domain.mybook.exception.MyBookDuplicateException;
 import com.roome.domain.mybook.exception.MyBookNotFoundException;
 import com.roome.domain.mybook.service.request.MyBookCreateRequest;
@@ -30,11 +33,15 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.List;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -54,6 +61,7 @@ public class MyBookService {
     private final GenreRepository genreRepository;
     private final UserActivityService userActivityService;
     private final RankingService rankingService;
+    private final ApplicationEventPublisher eventPublisher; // 이벤트 발행을 위해 추가
 
     @Transactional
     public MyBookResponse create(Long loginUserId, Long roomOwnerId, MyBookCreateRequest request) {
@@ -70,7 +78,9 @@ public class MyBookService {
                 });
 
         myBookRepository.findByRoomIdAndBookId(room.getId(), book.getId())
-                .ifPresent(exist -> { throw new MyBookDuplicateException(); });
+                .ifPresent(exist -> {
+                    throw new MyBookDuplicateException();
+                });
 
         MyBook myBook = myBookRepository.save(MyBook.create(loginUser, room, book));
         int result = myBookCountRepository.increase(roomOwnerId);
@@ -87,6 +97,10 @@ public class MyBookService {
         // 도서 등록 활동 기록 추가
         userActivityService.recordUserActivity(loginUserId, ActivityType.BOOK_REGISTRATION, book.getId());
 
+        // 이벤트 발행
+        eventPublisher.publishEvent(new BookCollectionEvent.BookAddedEvent(this, loginUserId));
+        log.debug("북 추가 완료 후 이벤트 발행 user: {}", loginUserId);
+      
         return MyBookResponse.from(MyBookQueryModel.create(myBook));
     }
 
@@ -123,6 +137,10 @@ public class MyBookService {
         myBookReviewRepository.deleteAllByMyBookIds(ids);
         myBookRepository.deleteAllIn(ids);
         myBookCountRepository.decrease(roomOwnerId, ids.size());
+      
+        //이벤트 발행
+        eventPublisher.publishEvent(new BookCollectionEvent.BookRemovedEvent(this, loginUserId));
+        log.debug("북 삭제 완료 후 이벤트 발행 user: {}", loginUserId);
 
         if (rankingService.isRanker(roomOwnerId)) {
             myBookIdsRedisRepository.delete(roomOwnerId, ids);

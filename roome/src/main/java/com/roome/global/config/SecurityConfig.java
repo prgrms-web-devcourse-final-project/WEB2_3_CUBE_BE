@@ -70,13 +70,15 @@ public class SecurityConfig {
                 "/oauth/callback/**",        // OAuth 콜백 엔드포인트
                 "/api/auth/user",            // 사용자 정보 조회만 허용
                 "/api/auth/reissue-token", // 토큰 재발급
+                "/api/auth/**",
                 "/error",
                 "/v3/api-docs/**",
                 "/swagger-ui/**",
                 "/swagger-ui.html",
                 "/mock/**",
                 "/ws/**",
-                "/docs/**"
+                "/docs/**",
+                "/"
             ).permitAll()
             .anyRequest().authenticated()
         )

@@ -9,6 +9,8 @@ import com.roome.domain.guestbook.entity.RelationType;
 import com.roome.domain.guestbook.notificationEvent.GuestBookCreatedEvent;
 import com.roome.domain.guestbook.repository.GuestbookRepository;
 import com.roome.domain.houseMate.repository.HousemateRepository;
+import com.roome.domain.point.entity.PointReason;
+import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.point.service.PointService;
 import com.roome.domain.rank.entity.ActivityType;
 import com.roome.domain.rank.service.UserActivityService;
@@ -40,6 +42,7 @@ public class GuestbookService {
   private final RoomRepository roomRepository;
   private final UserRepository userRepository;
   private final HousemateRepository housemateRepository;
+  private final PointHistoryRepository pointHistoryRepository;
   private final PointService pointService;
   private final ApplicationEventPublisher eventPublisher; // 이벤트 발행자
   private final UserActivityService userActivityService;
@@ -62,7 +65,7 @@ public class GuestbookService {
     Map<Long, Boolean> housemateStatusMap = userIds.stream()
         .collect(Collectors.toMap(
             userId -> userId,
-            userId -> housemateRepository.existsByUserIdAndAddedId(userId, roomOwnerId)
+            userId -> housemateRepository.existsByUserIdAndAddedId(roomOwnerId, userId)
         ));
 
     List<GuestbookResponseDto> guestbooks = guestbookPage.stream()
@@ -94,7 +97,7 @@ public class GuestbookService {
     Long roomOwnerId = room.getUser().getId();
     boolean isSelfRoom = userId.equals(roomOwnerId); // 본인 방인지 확인
 
-    boolean isHousemate = housemateRepository.existsByUserIdAndAddedId(userId, roomOwnerId);
+    boolean isHousemate = housemateRepository.existsByUserIdAndAddedId(roomOwnerId, userId);
 
     Guestbook guestbook = Guestbook.builder()
         .room(room)
@@ -114,6 +117,13 @@ public class GuestbookService {
       // 방명록 작성 활동 기록 - 길이 체크
       userActivityService.recordUserActivity(userId, ActivityType.GUESTBOOK, roomId,
           requestDto.getMessage().length());
+
+      boolean hasEarnedToday = pointHistoryRepository.existsRecentEarned(user.getId(), PointReason.GUESTBOOK_REWARD);
+      if (!hasEarnedToday) {
+        pointService.earnPoints(user, PointReason.GUESTBOOK_REWARD);
+        log.info("방명록 포인트 적립 완료 (중복 체크 없이) - User={}, Points=10", userId);
+      }
+
     }
 
     if (!isSelfRoom) {
@@ -151,7 +161,11 @@ public class GuestbookService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-    if (!guestbook.getUser().equals(user)) {
+    Long roomOwnerId = guestbook.getRoom().getUser().getId();
+    boolean isOwner = roomOwnerId.equals(userId);
+    boolean isWriter = guestbook.getUser().equals(user);
+
+    if (!isOwner && !isWriter) { // 둘 다 아니면 예외 발생
       throw new BusinessException(ErrorCode.GUESTBOOK_DELETE_FORBIDDEN);
     }
 
