@@ -121,6 +121,12 @@ spring:
           useUnicode: true
         format_sql: true
         dialect: org.hibernate.dialect.MariaDBDialect
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: http://ec2-3-39-182-150.ap-northeast-2.compute.amazonaws.com/oauth/callback/google
 
 # 로컬 환경용 OAuth2 리디렉션 설정
 app:
@@ -150,6 +156,12 @@ spring:
           useUnicode: true
         format_sql: false
         dialect: org.hibernate.dialect.MariaDBDialect
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: http://ec2-3-39-182-150.ap-northeast-2.compute.amazonaws.com/oauth/callback/google
 
 # 개발 서버용 OAuth2 리디렉션 설정
 app:
@@ -179,6 +191,12 @@ spring:
           useUnicode: true
         format_sql: false
         dialect: org.hibernate.dialect.MariaDBDialect
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: http://ec2-52-79-113-1.ap-northeast-2.compute.amazonaws.com/oauth2/authorization/google
 
 # 프로덕션 서버용 OAuth2 리디렉션 설정
 app:
