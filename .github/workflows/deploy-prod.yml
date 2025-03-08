@@ -37,6 +37,7 @@ jobs:
           echo "DATASOURCE_URL=${{ secrets.DATASOURCE_URL }}" >> .env
           echo "DATASOURCE_USERNAME=${{ secrets.DATASOURCE_USERNAME }}" >> .env
           echo "DATASOURCE_PASSWORD=${{ secrets.DATASOURCE_PASSWORD }}" >> .env
+          echo "ALADIN_SECRET_PROD=${{ secrets.ALADIN_SECRET_PROD }}" >> .env
           echo "SPRING_PROFILES_ACTIVE=prod" >> .env
 
       - name: Grant execute permission for gradlew
