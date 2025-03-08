@@ -97,7 +97,10 @@ cloud:
     region:
       static: ap-northeast-2  # 서울 리전
 
-
+# 알라딘 API 키
+aladin:
+  api:
+    key: ${ALADIN_SECRET_LOCAL}
 ---
 spring:
   config:
@@ -132,6 +135,10 @@ spring:
 app:
   oauth2:
     redirectUri: http://localhost:5173/oauth/callback
+# 알라딘 API 키
+aladin:
+  api:
+    key: ${ALADIN_SECRET_LOCAL}
 
 ---
 spring:
@@ -167,7 +174,10 @@ spring:
 app:
   oauth2:
     redirectUri: http://localhost:5173/oauth/callback
-
+# 알라딘 API 키
+aladin:
+  api:
+    key: ${ALADIN_SECRET_DEV}
 ---
 spring:
   config:
@@ -203,6 +213,10 @@ app:
   oauth2:
     redirectUri: https://desqb38rc2v50.cloudfront.net/oauth/callback
 
+# 알라딘 API 키
+aladin:
+  api:
+    key:${ALADIN_SECRET_PROD}
 ---
 spring:
   config:
