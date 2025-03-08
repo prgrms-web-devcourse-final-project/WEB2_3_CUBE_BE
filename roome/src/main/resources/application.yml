@@ -206,7 +206,7 @@ spring:
       client:
         registration:
           google:
-            redirect-uri: http://ec2-52-79-113-1.ap-northeast-2.compute.amazonaws.com/oauth2/authorization/google
+            redirect-uri: http://ec2-52-79-113-1.ap-northeast-2.compute.amazonaws.com/oauth/callback/google
 
 # 프로덕션 서버용 OAuth2 리디렉션 설정
 app:
