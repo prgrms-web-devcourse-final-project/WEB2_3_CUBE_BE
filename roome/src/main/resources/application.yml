@@ -216,7 +216,7 @@ app:
 # 알라딘 API 키
 aladin:
   api:
-    key:${ALADIN_SECRET_PROD}
+    key: ${ALADIN_SECRET_PROD}
 ---
 spring:
   config:
