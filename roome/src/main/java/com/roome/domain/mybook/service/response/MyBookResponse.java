@@ -1,8 +1,6 @@
 package com.roome.domain.mybook.service.response;
 
-import com.roome.domain.book.entity.BookGenre;
-import com.roome.domain.book.entity.Genre;
-import com.roome.domain.mybook.entity.MyBook;
+import com.roome.domain.mybook.entity.MyBookQueryModel;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -18,19 +16,16 @@ public record MyBookResponse(
         Long page
 ) {
 
-    public static MyBookResponse from(MyBook myBook) {
+    public static MyBookResponse from(MyBookQueryModel myBookQueryModel) {
         return new MyBookResponse(
-                myBook.getId(),
-                myBook.getBook().getTitle(),
-                myBook.getBook().getAuthor(),
-                myBook.getBook().getPublisher(),
-                myBook.getBook().getPublishedDate(),
-                myBook.getBook().getImageUrl(),
-                myBook.getBook().getBookGenres().stream()
-                        .map(BookGenre::getGenre)
-                        .map(Genre::getName)
-                        .toList(),
-                myBook.getBook().getPage()
+                myBookQueryModel.getId(),
+                myBookQueryModel.getTitle(),
+                myBookQueryModel.getAuthor(),
+                myBookQueryModel.getPublisher(),
+                myBookQueryModel.getPublishedDate(),
+                myBookQueryModel.getImageUrl(),
+                myBookQueryModel.getGenreNames(),
+                myBookQueryModel.getPage()
         );
     }
 }

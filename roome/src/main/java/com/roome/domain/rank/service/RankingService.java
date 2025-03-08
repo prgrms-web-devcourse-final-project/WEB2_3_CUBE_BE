@@ -83,4 +83,12 @@ public class RankingService {
 
     return result;
   }
+
+  public boolean isRanker(Long userId) {
+    Set<ZSetOperations.TypedTuple<Object>> rankers = redisTemplate.opsForZSet().reverseRangeWithScores(RANKING_KEY, 0, 9);
+    if (rankers == null || rankers.isEmpty()) {
+      return false;
+    }
+    return rankers.stream().anyMatch(ranker -> String.valueOf(userId).equals(ranker.getValue()));
+  }
 }
