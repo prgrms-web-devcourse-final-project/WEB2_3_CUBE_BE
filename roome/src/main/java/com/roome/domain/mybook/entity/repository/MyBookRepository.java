@@ -17,6 +17,9 @@ public interface MyBookRepository extends JpaRepository<MyBook, Long> {
                 .orElseThrow(MyBookNotFoundException::new);
     }
 
+    @Query("select distinct mb from MyBook mb join fetch mb.book b join fetch b.bookGenres bg join fetch bg.genre where mb.id = :id")
+    Optional<MyBook> findFetchById(Long id);
+
     Optional<MyBook> findByRoomIdAndBookId(Long roomId, Long bookId);
 
     @Query(

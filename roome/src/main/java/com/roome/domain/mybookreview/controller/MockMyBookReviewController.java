@@ -1,6 +1,5 @@
 package com.roome.domain.mybookreview.controller;
 
-import com.roome.domain.mybookreview.entity.CoverColor;
 import com.roome.domain.mybookreview.service.request.MyBookReviewCreateRequest;
 import com.roome.domain.mybookreview.service.request.MyBookReviewUpdateRequest;
 import com.roome.domain.mybookreview.service.response.MyBookReviewResponse;
@@ -63,7 +62,7 @@ public class MockMyBookReviewController {
                 "motivate",
                 "topic",
                 "freeFormText",
-                CoverColor.BLUE,
+                "BLUE",
                 LocalDateTime.of(2025, 1, 1, 1, 1, 1).format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 a h시 mm분", Locale.KOREAN))
         );
     }
