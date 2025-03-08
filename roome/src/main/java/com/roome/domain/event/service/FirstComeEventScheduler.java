@@ -18,7 +18,7 @@ public class FirstComeEventScheduler {
   private final FirstComeEventRepository firstComeEventRepository;
 
   // 테스트 환경: 5분마다 이벤트 자동 생성
-  @Scheduled(cron = "0 0/15 16 * * FRI")
+  @Scheduled(cron = "0 */5 * * * *")
   public void createTestEvent() {
     log.info("🔹 [테스트] 주간 선착순 이벤트 자동 생성 시작");
 
