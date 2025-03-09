@@ -33,12 +33,12 @@ public class PointController {
     return ResponseEntity.ok(response);
   }
 
-  @Operation(summary = "내 포인트 잔액 조회", description = "사용자의 현재 보유 포인트를 조회합니다.")
+  @Operation(summary = "포인트 잔액 조회", description = "특정 사용자의 현재 보유 포인트를 조회합니다.")
   @GetMapping("/balance")
-  public ResponseEntity<PointBalanceResponse> getMyPointBalance(
-      @AuthenticatedUser Long userId) {
+  public ResponseEntity<PointBalanceResponse> getUserPointBalance(
+      @RequestParam @Parameter(description = "조회할 사용자 ID") Long userId) {
 
-    PointBalanceResponse balanceResponse = pointService.getMyPointBalance(userId);
+    PointBalanceResponse balanceResponse = pointService.getUserPointBalance(userId);
     return ResponseEntity.ok(balanceResponse);
   }
 }
