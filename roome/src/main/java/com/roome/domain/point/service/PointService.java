@@ -12,7 +12,8 @@ import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.jwt.exception.UserNotFoundException;
-import com.roome.domain.point.exception.DuplicatePointEarnException;
+import com.roome.global.service.RedisLockService;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -21,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +35,13 @@ public class PointService {
   private final PointRepository pointRepository;
   private final PointHistoryRepository pointHistoryRepository;
   private final UserRepository userRepository;
+  private final RedisTemplate<String, Object> redisTemplate;
+  private final RedisLockService redisLockService; // 추가
+
+
+  private static final String BALANCE_CACHE_PREFIX = "point_balance:";
+
+  private static final Duration CACHE_DURATION = Duration.ofMinutes(10); // 캐싱 유지 시간
 
   private static final Map<PointReason, Integer> POINT_EARN_MAP = Map.of(
       PointReason.GUESTBOOK_REWARD, 10,
@@ -50,42 +59,38 @@ public class PointService {
       PointReason.BOOK_UNLOCK_LV3, 1500,
       PointReason.CD_UNLOCK_LV2, 500,
       PointReason.CD_UNLOCK_LV3, 1500,
-          PointReason.POINT_REFUND_100, 100,
-          PointReason.POINT_REFUND_550, 550,
-          PointReason.POINT_REFUND_1200, 1200,
-          PointReason.POINT_REFUND_4000, 4000
+      PointReason.POINT_REFUND_100, 100,
+      PointReason.POINT_REFUND_550, 550,
+      PointReason.POINT_REFUND_1200, 1200,
+      PointReason.POINT_REFUND_4000, 4000
   );
 
   public void earnPoints(User user, PointReason reason) {
-    int amount = POINT_EARN_MAP.getOrDefault(reason, 0);
-    log.info("earnPoints - User: {}, Reason: {}, Amount: {}", user.getId(), reason, amount);
+    String lockKey = "lock:point:user:" + user.getId();
 
-    if(!reason.name().startsWith("POINT_PURCHASE")){
-      if (pointHistoryRepository.existsRecentEarned(user.getId(), reason)) {
-        log.warn("earnPoints - 중복 적립 시도! User: {}, Reason: {}", user.getId(), reason);
-        throw new DuplicatePointEarnException();
-      }
-    }
-
-    // 포인트가 없으면 자동 생성하도록 수정
-    Point point = pointRepository.findByUserId(user.getId())
-        .orElseGet(() -> {
-          log.info("earnPoints - 포인트 계정 없음, 새로 생성! User: {}", user.getId());
-          return pointRepository.save(new Point(user, 0, 0, 0));
-        });
-
-    point.addPoints(amount);
-    log.info("earnPoints - 포인트 적립 완료! User: {}, New Balance: {}", user.getId(), point.getBalance());
-
-    savePointHistory(user, amount, reason);
+    redisLockService.executeWithLock(lockKey, 5, 2, () -> {
+      earnPointsInternal(user, reason);
+      return null;
+    });
   }
 
+  @Transactional
+  public void earnPointsInternal(User user, PointReason reason) {
+    Point point = pointRepository.findByUserId(user.getId())
+        .orElseGet(() -> pointRepository.save(new Point(user, 0, 0, 0)));
 
-  public void usePoints(User user, PointReason reason) {
+    int amount = POINT_EARN_MAP.getOrDefault(reason, 0);
+    point.addPoints(amount);
+    savePointHistory(user, amount, reason);
+
+    redisTemplate.delete(BALANCE_CACHE_PREFIX + user.getId()); // 캐시 삭제 추가
+  }
+
+  @Transactional
+  protected void usePointsInternal(User user, PointReason reason) {
     int amount = POINT_USAGE_MAP.getOrDefault(reason, 0);
     log.info("usePoints - User: {}, Reason: {}, Amount: {}", user.getId(), reason, amount);
 
-    // 포인트가 없으면 자동 생성하도록 수정
     Point point = pointRepository.findByUserId(user.getId())
         .orElseGet(() -> {
           log.info("usePoints - 포인트 계정 없음, 새로 생성! User: {}", user.getId());
@@ -102,6 +107,16 @@ public class PointService {
     log.info("usePoints - 포인트 사용 완료! User: {}, New Balance: {}", user.getId(), point.getBalance());
 
     savePointHistory(user, -amount, reason);
+    redisTemplate.delete(BALANCE_CACHE_PREFIX + user.getId());
+  }
+
+  public void usePoints(User user, PointReason reason) {
+    String lockKey = "lock:point:user:" + user.getId();
+
+    redisLockService.executeWithLock(lockKey, 5, 2, () -> {
+      usePointsInternal(user, reason);
+      return null;
+    });
   }
 
   private void savePointHistory(User user, int amount, PointReason reason) {
@@ -143,19 +158,34 @@ public class PointService {
         historySlice.hasNext() ? historyItems.get(historyItems.size() - 1).getId() : null);
   }
 
+  public PointBalanceResponse getUserPointBalance(Long userId) {
+    log.info("getUserPointBalance - User: {}", userId);
+    String cacheKey = BALANCE_CACHE_PREFIX + userId;
 
-  @Transactional(readOnly = true)
-  public PointBalanceResponse getMyPointBalance(Long userId) {
-    log.info("getMyPointBalance - User: {}", userId);
+    // 1. Redis에서 캐싱된 포인트 조회
+    Integer cachedBalance = (Integer) redisTemplate.opsForValue().get(cacheKey);
+    if (cachedBalance != null) {
+      log.info("getUserPointBalance - 캐싱된 데이터 반환, User: {}, Balance: {}", userId, cachedBalance);
+      return new PointBalanceResponse(cachedBalance);
+    }
 
-    User user = userRepository.findById(userId).orElseThrow(() -> {
-      log.warn("getMyPointBalance - 사용자 없음! UserId: {}", userId);
-      return new UserNotFoundException();
-    });
+    // 2. 캐싱된 값이 없으면 DB 조회
+    int balance = pointRepository.findByUserId(userId)
+        .map(Point::getBalance)
+        .orElse(0);
 
-    int balance = pointRepository.findByUserId(user.getId()).map(Point::getBalance).orElse(0);
+    log.info("getUserPointBalance - DB 조회 후 캐싱, User: {}, Balance: {}", userId, balance);
 
-    log.info("getMyPointBalance - User: {}, Balance: {}", userId, balance);
+    // 3. Redis 캐시 비동기 업데이트
+    updateCache(userId, balance);
+
     return new PointBalanceResponse(balance);
   }
+
+  public void updateCache(Long userId, int balance) {
+    log.info("updateCache - Redis 캐싱 업데이트 시작, User: {}", userId);
+    redisTemplate.opsForValue().set(BALANCE_CACHE_PREFIX + userId, balance, CACHE_DURATION);
+    log.info("updateCache - Redis 캐싱 업데이트 완료, User: {}", userId);
+  }
+
 }
