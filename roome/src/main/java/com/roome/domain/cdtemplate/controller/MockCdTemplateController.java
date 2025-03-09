@@ -2,14 +2,23 @@ package com.roome.domain.cdtemplate.controller;
 
 import com.roome.domain.cdtemplate.dto.CdTemplateRequest;
 import com.roome.domain.cdtemplate.dto.CdTemplateResponse;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.concurrent.atomic.AtomicLong;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+@Hidden
 @Tag(name = "Mock - CD Template", description = "CD 템플릿 작성/조회/수정/삭제")
 @RestController
 @RequestMapping("/mock/my-cd/{myCdId}/template")
