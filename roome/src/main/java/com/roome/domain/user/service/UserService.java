@@ -14,6 +14,8 @@ import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
 import com.roome.domain.mycd.entity.MyCd;
 import com.roome.domain.mycd.repository.MyCdCountRepository;
 import com.roome.domain.mycd.repository.MyCdRepository;
+import com.roome.domain.payment.repository.PaymentLogRepository;
+import com.roome.domain.payment.repository.PaymentRepository;
 import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.room.entity.Room;
@@ -48,6 +50,8 @@ public class UserService {
   private final MyBookCountRepository myBookCountRepository;
   private final PointRepository pointRepository;
   private final PointHistoryRepository pointHistoryRepository;
+  private final PaymentRepository paymentRepository;
+  private final PaymentLogRepository paymentLogRepository;
   private final RedisService redisService;
 
   @Transactional(rollbackFor = Exception.class, noRollbackFor = BusinessException.class)
@@ -69,19 +73,22 @@ public class UserService {
     // 4. 포인트 및 포인트 내역 삭제
     deletePointData(userId);
 
-    // 5. Room 관련 데이터 삭제
+    // 5. 결제 기록 삭제
+    deletePaymentData(userId);
+
+    // 6. Room 관련 데이터 삭제
     Optional<Room> roomOpt = roomRepository.findByUserId(userId);
     if (roomOpt.isPresent()) {
       Room room = roomOpt.get();
 
-      // 5-1. 방명록 삭제
+      // 6-1. 방명록 삭제
       List<Guestbook> guestbooks = guestbookRepository.findAllByRoomOrUserId(room, userId);
       if (!guestbooks.isEmpty()) {
         guestbookRepository.deleteAll(guestbooks);
         log.debug("[회원탈퇴] 방명록 삭제 완료: {}개", guestbooks.size());
       }
 
-      // 5-2. 가구 삭제
+      // 6-2. 가구 삭제
       List<Furniture> furnitures = furnitureRepository.findByRoomId(room.getId());
       if (!furnitures.isEmpty()) {
         for (Furniture furniture : furnitures) {
@@ -94,15 +101,15 @@ public class UserService {
       user.setRoom(null);
       userRepository.saveAndFlush(user);
 
-      // 5-3. Room 삭제
+      // 6-3. Room 삭제
       roomRepository.delete(room);
       log.debug("[회원탈퇴] 방 삭제 완료: roomId={}", room.getId());
     }
 
-    // 6. Redis에서 랭킹 데이터 삭제
+    // 7. Redis에서 랭킹 데이터 삭제
     deleteRedisRankingData(userId);
 
-    // 7. 사용자 삭제
+    // 8. 사용자 삭제
     userRepository.delete(user);
     log.info("[회원탈퇴] 사용자 삭제 완료: {}", userId);
   }
@@ -179,5 +186,15 @@ public class UserService {
       pointRepository.delete(point);
       log.debug("[회원탈퇴] 포인트 삭제 완료: pointId={}", point.getId());
     });
+  }
+
+  private void deletePaymentData(Long userId) {
+    // 결제 로그 삭제
+    paymentLogRepository.deleteByUserId(userId);
+    log.debug("[회원탈퇴] 결제 로그 삭제 완료: userId={}", userId);
+
+    // 결제 정보 삭제
+    paymentRepository.deleteByUserId(userId);
+    log.debug("[회원탈퇴] 결제 정보 삭제 완료: userId={}", userId);
   }
 }
