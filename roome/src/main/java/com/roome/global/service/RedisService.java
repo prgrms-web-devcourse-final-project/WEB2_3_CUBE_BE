@@ -94,7 +94,9 @@ public class RedisService {
     String lockKey = "lock:user:ranking:" + userId;
     try {
       executeWithLock(lockKey, 200, 2000, () -> {
-        redisTemplate.opsForZSet().incrementScore(RANKING_KEY, String.valueOf(userId), score);
+        // userId를 문자열로 명시적으로 변환하여 저장
+        String userIdStr = userId.toString();
+        redisTemplate.opsForZSet().incrementScore(RANKING_KEY, userIdStr, score);
         log.debug("점수 업데이트 완료 - UserId: {}, Score: {}", userId, score);
         return null;
       });
@@ -185,7 +187,7 @@ public class RedisService {
   public boolean deleteUserRankingData(String userId) {
     try {
       // 랭킹 Sorted Set에서 사용자 제거
-      Long removed = redisTemplate.opsForZSet().remove(RANKING_KEY, String.valueOf(userId));
+      Long removed = redisTemplate.opsForZSet().remove(RANKING_KEY, userId);
       boolean result = removed != null && removed > 0;
 
       // 사용자 총점 데이터 삭제
