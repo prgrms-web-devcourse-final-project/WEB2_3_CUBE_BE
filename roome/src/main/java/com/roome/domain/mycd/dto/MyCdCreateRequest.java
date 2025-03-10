@@ -3,6 +3,7 @@ package com.roome.domain.mycd.dto;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,8 +27,7 @@ public class MyCdCreateRequest {
   @NotNull
   private LocalDate releaseDate;
 
-  @NotEmpty
-  private List<String> genres;
+  private List<String> genres = new ArrayList<>();
 
   @NotEmpty
   private String coverUrl;
