@@ -37,9 +37,4 @@ public class MyCd {
         .build();
   }
 
-  public void validateOwner(Long userId) {
-    if (user == null || !user.getId().equals(userId)) {
-      throw new IllegalArgumentException("해당 CD의 소유자가 아닙니다. userId: " + userId);
-    }
-  }
 }
