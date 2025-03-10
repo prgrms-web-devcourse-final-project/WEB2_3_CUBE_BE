@@ -18,10 +18,12 @@ import com.roome.domain.payment.repository.PaymentLogRepository;
 import com.roome.domain.payment.repository.PaymentRepository;
 import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.point.repository.PointRepository;
+import com.roome.domain.recommendedUser.repository.RecommendedUserRepository;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
+import com.roome.domain.userGenrePreference.repository.UserGenrePreferenceRepository;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import com.roome.global.service.RedisService;
@@ -52,6 +54,8 @@ public class UserService {
   private final PointHistoryRepository pointHistoryRepository;
   private final PaymentRepository paymentRepository;
   private final PaymentLogRepository paymentLogRepository;
+  private final UserGenrePreferenceRepository userGenrePreferenceRepository;
+  private final RecommendedUserRepository recommendedUserRepository;
   private final RedisService redisService;
 
   @Transactional(rollbackFor = Exception.class, noRollbackFor = BusinessException.class)
@@ -61,34 +65,41 @@ public class UserService {
 
     log.info("[회원탈퇴] 시작: userId={}", userId);
 
-    // 1. 하우스메이트 관계 삭제
+    // 1. 추천 사용자 데이터 삭제
+    deleteRecommendedUsers(userId);
+
+    // 2. 사용자 장르 선호도 삭제
+    deleteUserGenrePreferences(userId);
+
+    // 3. 하우스메이트 관계 삭제
     deleteHousemateRelations(userId);
 
-    // 2. 도서 관련 데이터 삭제
+    // 4. 도서 관련 데이터 삭제
     deleteBookRelatedData(userId);
 
-    // 3. CD 관련 데이터 삭제
+    // 5. CD 관련 데이터 삭제
     deleteCdRelatedData(userId);
 
-    // 4. 포인트 및 포인트 내역 삭제
+    // 6. 포인트 및 포인트 내역 삭제
     deletePointData(userId);
 
-    // 5. 결제 기록 삭제
+    // 7. 결제 기록 삭제
     deletePaymentData(userId);
 
-    // 6. Room 관련 데이터 삭제
+    // 8. Room 관련 데이터 삭제
+    
     Optional<Room> roomOpt = roomRepository.findByUserId(userId);
     if (roomOpt.isPresent()) {
       Room room = roomOpt.get();
 
-      // 6-1. 방명록 삭제
+      // 8-1. 방명록 삭제
       List<Guestbook> guestbooks = guestbookRepository.findAllByRoomOrUserId(room, userId);
       if (!guestbooks.isEmpty()) {
         guestbookRepository.deleteAll(guestbooks);
         log.debug("[회원탈퇴] 방명록 삭제 완료: {}개", guestbooks.size());
       }
 
-      // 6-2. 가구 삭제
+      // 8-2. 가구 삭제
       List<Furniture> furnitures = furnitureRepository.findByRoomId(room.getId());
       if (!furnitures.isEmpty()) {
         for (Furniture furniture : furnitures) {
@@ -101,15 +112,15 @@ public class UserService {
       user.setRoom(null);
       userRepository.saveAndFlush(user);
 
-      // 6-3. Room 삭제
+      // 8-3. Room 삭제
       roomRepository.delete(room);
       log.debug("[회원탈퇴] 방 삭제 완료: roomId={}", room.getId());
     }
 
-    // 7. Redis에서 랭킹 데이터 삭제
+    // 9. Redis에서 랭킹 데이터 삭제
     deleteRedisRankingData(userId);
 
-    // 8. 사용자 삭제
+    // 10. 사용자 삭제
     userRepository.delete(user);
     log.info("[회원탈퇴] 사용자 삭제 완료: {}", userId);
   }
@@ -125,6 +136,21 @@ public class UserService {
       log.warn("[회원탈퇴] Redis 랭킹 데이터 삭제 실패 (계속 진행): userId={}, 사유={}",
           userId, e.getMessage());
     }
+  }
+
+  private void deleteRecommendedUsers(Long userId) {
+    // 내가 추천한 사용자 데이터 삭제
+    recommendedUserRepository.deleteAllByUserId(userId);
+    log.debug("[회원탈퇴] 추천 사용자 데이터 삭제 완료 (내가 추천한 사용자): userId={}", userId);
+
+    // 다른 사용자가 나를 추천한 데이터 삭제
+    recommendedUserRepository.deleteAllByRecommendedUserId(userId);
+    log.debug("[회원탈퇴] 추천 사용자 데이터 삭제 완료 (다른 사용자가 추천한 나): userId={}", userId);
+  }
+
+  private void deleteUserGenrePreferences(Long userId) {
+    userGenrePreferenceRepository.deleteAllByUserId(userId);
+    log.debug("[회원탈퇴] 사용자 장르 선호도 삭제 완료: userId={}", userId);
   }
 
   private void deleteHousemateRelations(Long userId) {
