@@ -7,6 +7,7 @@ import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.repository.RoomRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
+import com.roome.global.service.RedisService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class UserActivityService {
 
+  private final RedisService redisService;
   private final RedisTemplate<String, Object> redisTemplate;
   private final UserActivityRepository userActivityRepository;
   private final UserRepository userRepository;
@@ -43,33 +45,36 @@ public class UserActivityService {
       }
     }
 
-    // 제한 조건 체크
-    if (!checkDailyLimit(userId, activityType, relatedEntityId)) {
-      log.info("일일 한도 초과: 유저={}, 활동={}", userId, activityType);
-      return false;
-    }
+    String lockKey = "lock:user:activity:" + userId;
+    return redisService.executeWithLock(lockKey, 200, 2000, () -> {
+      // 제한 조건 체크
+      if (!checkDailyLimit(userId, activityType, relatedEntityId)) {
+        log.info("일일 한도 초과: 유저={}, 활동={}", userId, activityType);
+        return false;
+      }
 
-    // 사용자 정보 조회
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+      // 사용자 정보 조회
+      User user = userRepository.findById(userId)
+          .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
 
-    // 활동 기록 및 점수 부여
-    UserActivity activity = new UserActivity();
-    activity.setUser(user);
-    activity.setActivityType(activityType);
-    activity.setCreatedAt(LocalDateTime.now());
-    activity.setScore(activityType.getScore());
-    activity.setRelatedEntityId(relatedEntityId);
-    userActivityRepository.save(activity);
+      // 활동 기록 및 점수 부여
+      UserActivity activity = new UserActivity();
+      activity.setUser(user);
+      activity.setActivityType(activityType);
+      activity.setCreatedAt(LocalDateTime.now());
+      activity.setScore(activityType.getScore());
+      activity.setRelatedEntityId(relatedEntityId);
+      userActivityRepository.save(activity);
 
-    // Redis에 점수 업데이트
-    updateRedisScore(userId, activityType.getScore());
+      // Redis에 점수 업데이트
+      updateRedisScore(userId, activityType.getScore());
 
-    // 일일 활동 카운트 증가
-    incrementDailyActivityCount(userId, activityType);
+      // 일일 활동 카운트 증가
+      incrementDailyActivityCount(userId, activityType);
 
-    log.info("활동 기록 완료: 유저={}, 활동={}, 점수={}", userId, activityType, activityType.getScore());
-    return true;
+      log.info("활동 기록 완료: 유저={}, 활동={}, 점수={}", userId, activityType, activityType.getScore());
+      return true;
+    });
   }
 
   // 콘텐츠 길이가 필요 없는 활동
@@ -97,12 +102,9 @@ public class UserActivityService {
           .orElseThrow(() -> new IllegalArgumentException("팔로워 사용자를 찾을 수 없습니다: " + followerId));
 
       // 팔로잉 받은 사람에게 점수 부여 (+5)
-      recordUserActivity(followingId, ActivityType.FOLLOWER_INCREASE, followerId);
+      return recordUserActivity(followingId, ActivityType.FOLLOWER_INCREASE, followerId);
 
-      log.info("팔로우 기록 완료: 팔로워={}, 팔로잉={}", followerId, followingId);
-      return true;
     } catch (DataAccessException e) {
-      // 데이터 접근 관련 예외 (DB, Redis 등)
       log.error("팔로우 활동 점수 부여 중 데이터 접근 오류: followerId={}, followingId={}, 오류={}",
           followerId, followingId, e.getMessage());
       return false;
@@ -153,10 +155,8 @@ public class UserActivityService {
     String key = "user:total:" + userId;
     redisTemplate.opsForValue().increment(key, score);
 
-    // Redis Sorted Set에 랭킹 업데이트
-    redisTemplate.opsForZSet().incrementScore("user:ranking", userId.toString(), score);
-
-    log.debug("Redis 점수 업데이트: 유저={}, 점수={}", userId, score);
+    // 랭킹 점수 업데이트
+    redisService.updateUserScoreAsync(userId, score);
   }
 
   // 일일 활동 제한 체크
@@ -165,10 +165,8 @@ public class UserActivityService {
     String key = "user:daily:" + activityType + ":" + userId + ":" + today;
 
     Long count = redisTemplate.opsForValue().increment(key, 0);
-    if (count == null) {
-      // 키가 없는 경우 (첫 활동인 경우)
-      count = 0L;
-    }
+    // 키가 없는 경우 (첫 활동인 경우)
+    count = (count == null) ? 0L : count;
 
     // 방명록은 방마다 하루에 하나만 허용
     if (activityType == ActivityType.GUESTBOOK && relatedEntityId != null) {
