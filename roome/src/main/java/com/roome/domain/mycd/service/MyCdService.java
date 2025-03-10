@@ -92,12 +92,15 @@ public class MyCdService {
               request.getReleaseDate(), request.getCoverUrl(), request.getYoutubeUrl(),
               request.getDuration());
 
-          for (String genreName : request.getGenres()) {
-            CdGenreType genreType = cdGenreTypeRepository.findByName(genreName)
-                .orElseGet(() -> cdGenreTypeRepository.save(new CdGenreType(genreName)));
+          // 장르가 있을 경우만 추가
+          if (request.getGenres() != null && !request.getGenres().isEmpty()) {
+            for (String genreName : request.getGenres()) {
+              CdGenreType genreType = cdGenreTypeRepository.findByName(genreName)
+                  .orElseGet(() -> cdGenreTypeRepository.save(new CdGenreType(genreName)));
 
-            CdGenre cdGenre = new CdGenre(newCd, genreType);
-            newCd.addGenre(cdGenre);
+              CdGenre cdGenre = new CdGenre(newCd, genreType);
+              newCd.addGenre(cdGenre);
+            }
           }
 
           return cdRepository.save(newCd);
@@ -119,11 +122,14 @@ public class MyCdService {
 
     // 음악 등록 활동 기록 추가
     userActivityService.recordUserActivity(userId, ActivityType.MUSIC_REGISTRATION, cd.getId());
+
     // 이벤트 발행
     eventPublisher.publishEvent(new CdCollectionEvent.CdAddedEvent(this, userId));
     log.debug("Published CD added event for user: {}", userId);
+
     return MyCdResponse.fromEntity(myCd);
   }
+
 
   @Cacheable(value = "myCdList", key = "#userId + '_' + #keyword + '_' + #cursor + '_' + #size", unless = "#result == null")
   public MyCdListResponse getMyCdList(Long userId, String keyword, Long cursor, int size) {

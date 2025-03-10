@@ -4,6 +4,7 @@ import com.roome.domain.cdtemplate.dto.CdTemplateRequest;
 import com.roome.domain.cdtemplate.dto.CdTemplateResponse;
 import com.roome.domain.cdtemplate.entity.CdTemplate;
 import com.roome.domain.cdtemplate.exception.CdTemplateNotFoundException;
+import com.roome.domain.cdtemplate.exception.DuplicateCdTemplateException;
 import com.roome.domain.cdtemplate.exception.UnauthorizedCdTemplateAccessException;
 import com.roome.domain.cdtemplate.repository.CdTemplateRepository;
 import com.roome.domain.mycd.entity.MyCd;
@@ -28,16 +29,21 @@ public class CdTemplateService {
       throw new UnauthorizedCdTemplateAccessException();
     }
 
-    CdTemplate cdTemplate = CdTemplate.builder()
-        .myCd(myCd)
-        .comment1(request.getComment1())
-        .comment2(request.getComment2())
-        .comment3(request.getComment3())
-        .comment4(request.getComment4())
-        .build();
+    // 중복 체크 후 저장
+    if (!cdTemplateRepository.existsByMyCdId(myCdId)) {
+      CdTemplate cdTemplate = CdTemplate.builder()
+          .myCd(myCd)
+          .comment1(request.getComment1())
+          .comment2(request.getComment2())
+          .comment3(request.getComment3())
+          .comment4(request.getComment4())
+          .build();
 
-    cdTemplateRepository.save(cdTemplate);
-    return CdTemplateResponse.from(cdTemplate);
+      cdTemplateRepository.save(cdTemplate);
+      return CdTemplateResponse.from(cdTemplate);
+    }
+
+    throw new DuplicateCdTemplateException("이미 존재하는 템플릿입니다.");
   }
 
   public CdTemplateResponse getTemplate(Long myCdId) {

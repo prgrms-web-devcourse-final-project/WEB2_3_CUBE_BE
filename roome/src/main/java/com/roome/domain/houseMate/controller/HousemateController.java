@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 
-@Tag(name = "Housemate", description = "하우스메이트 관리를 위한 API - 서로의 방을 방문하고 소통할 수 있는 친구 시스템")
+@Tag(name = "하우스메이트 API", description = "하우스메이트 관리를 위한 API - 서로의 방을 방문하고 소통할 수 있는 친구 시스템")
 @Slf4j
 @Validated
 @RestController

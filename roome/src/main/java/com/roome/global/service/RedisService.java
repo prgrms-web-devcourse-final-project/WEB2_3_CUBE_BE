@@ -1,12 +1,20 @@
 package com.roome.global.service;
 
+import com.roome.domain.rank.entity.ScoreUpdateTask;
+import com.roome.domain.rank.entity.TaskStatus;
+import com.roome.domain.rank.repository.ScoreUpdateTaskRepository;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -15,9 +23,92 @@ import org.springframework.stereotype.Service;
 public class RedisService {
 
   private final StringRedisTemplate redisTemplate;
+  private final RedissonClient redissonClient;
+  private final ScoreUpdateTaskRepository scoreUpdateTaskRepository;
   private static final String REFRESH_TOKEN_PREFIX = "RT:";
   private static final String BLACKLIST_PREFIX = "BL:";
   private static final String RANKING_KEY = "user:ranking";
+
+  // 분산 락 사용
+  public <T> T executeWithLock(String lockKey, long waitTime, long leaseTime,
+      Supplier<T> operation) {
+    RLock lock = redissonClient.getLock(lockKey);
+    int retryCount = 3;
+    long retryDelay = 100; // 초기 재시도 대기 시간
+
+    while (retryCount-- > 0) {
+      boolean isLockAcquired = false;
+      try {
+        isLockAcquired = lock.tryLock(waitTime, leaseTime, TimeUnit.MILLISECONDS);
+        if (isLockAcquired) {
+          return operation.get();
+        } else {
+          log.warn("락 획득 실패 - Key: {}, 재시도 중...", lockKey);
+          Thread.sleep(retryDelay);
+          retryDelay *= 2; // 지수 백오프 적용
+        }
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new RuntimeException("락 획득 중단 - Key: " + lockKey, e);
+      } finally {
+        if (isLockAcquired && lock.isHeldByCurrentThread()) {
+          lock.unlock();
+          log.debug("락 해제 - Key: {}", lockKey);
+        }
+      }
+    }
+    throw new RuntimeException("락 획득 실패 - Key: " + lockKey);
+  }
+
+  // 사용자 점수 업데이트
+  @Async("rankingTaskExecutor")
+  public CompletableFuture<Boolean> updateUserScoreAsync(Long userId, int score) {
+    try {
+      incrementUserScoreWithLock(userId, score);
+      return CompletableFuture.completedFuture(true);
+    } catch (Exception e) {
+      log.error("비동기 점수 업데이트 실패: userId={}, score={}, error={}", userId, score, e.getMessage());
+
+      try {
+        // 중복 저장 방지를 위한 조건 확인
+        ScoreUpdateTask existingTask = scoreUpdateTaskRepository.findByUserIdAndScoreAndStatus(
+            userId, score, TaskStatus.FAILED);
+
+        if (existingTask == null) {
+          ScoreUpdateTask task = new ScoreUpdateTask(userId, score);
+          task.setStatus(TaskStatus.FAILED);
+          scoreUpdateTaskRepository.save(task);
+          log.info("실패한 점수 업데이트 작업 저장: userId={}, score={}", userId, score);
+        }
+      } catch (Exception saveEx) {
+        log.error("실패 작업 저장 중 오류: userId={}, score={}, error={}",
+            userId, score, saveEx.getMessage());
+      }
+
+      return CompletableFuture.completedFuture(false);
+    }
+  }
+
+  // 사용자 랭킹 점수 증가
+  public void incrementUserScoreWithLock(Long userId, int score) {
+    String lockKey = "lock:user:ranking:" + userId;
+    try {
+      executeWithLock(lockKey, 200, 2000, () -> {
+        // userId를 문자열로 명시적으로 변환
+        String userIdStr = String.valueOf(userId);
+        redisTemplate.opsForZSet().incrementScore(RANKING_KEY, userIdStr, score);
+        log.debug("점수 업데이트 완료 - UserId: {}, Score: {}", userId, score);
+        return null;
+      });
+    } catch (Exception e) {
+      log.error("점수 업데이트 실패, 복구 대기열에 추가: userId={}, score={}", userId, score, e);
+      // 실패한 작업 저장
+      ScoreUpdateTask task = new ScoreUpdateTask(userId, score);
+      task.setStatus(TaskStatus.FAILED);
+      scoreUpdateTaskRepository.save(task);
+      throw e;
+    }
+  }
 
   // Refresh Token 저장
   @Retryable(value = {

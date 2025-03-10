@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@Tag(name = "토큰", description = "토큰 관련 API")
+@Tag(name = "토큰 재발급 API", description = "토큰 재발급 관련 API")
 public class ReissueController {
 
   private final TokenService tokenService;

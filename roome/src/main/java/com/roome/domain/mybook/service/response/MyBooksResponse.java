@@ -1,6 +1,6 @@
 package com.roome.domain.mybook.service.response;
 
-import com.roome.domain.mybook.entity.MyBook;
+import com.roome.domain.mybook.entity.MyBookQueryModel;
 
 import java.util.List;
 
@@ -9,8 +9,8 @@ public record MyBooksResponse(
         Long count
 ) {
 
-    public static MyBooksResponse of(List<MyBook> myBooks, Long count) {
-        List<MyBookResponse> myBookResponses = myBooks.stream()
+    public static MyBooksResponse of(List<MyBookQueryModel> myBookQueryModels, Long count) {
+        List<MyBookResponse> myBookResponses = myBookQueryModels.stream()
                 .map(MyBookResponse::from)
                 .toList();
         return new MyBooksResponse(

@@ -124,6 +124,7 @@ spring:
           useUnicode: true
         format_sql: true
         dialect: org.hibernate.dialect.MariaDBDialect
+        default_batch_fetch_size: 100
   security:
     oauth2:
       client:
