@@ -2,6 +2,8 @@ package com.roome.domain.mybookreview.service.response;
 
 import com.roome.domain.mybookreview.entity.MyBookReviewQueryModel;
 
+import java.time.LocalDateTime;
+
 public record MyBookReviewResponse(
         Long id,
         String title,
@@ -11,7 +13,7 @@ public record MyBookReviewResponse(
         String topic,
         String freeFormText,
         String coverColor,
-        String writeDateTime
+        LocalDateTime writeDateTime
 ) {
 
     public static MyBookReviewResponse from(MyBookReviewQueryModel myBookReviewQueryModel) {

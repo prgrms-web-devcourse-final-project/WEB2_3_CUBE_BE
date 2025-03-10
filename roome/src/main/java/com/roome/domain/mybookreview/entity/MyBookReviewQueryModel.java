@@ -2,8 +2,7 @@ package com.roome.domain.mybookreview.entity;
 
 import lombok.Getter;
 
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
+import java.time.LocalDateTime;
 
 @Getter
 public class MyBookReviewQueryModel {
@@ -16,7 +15,7 @@ public class MyBookReviewQueryModel {
     String topic;
     String freeFormText;
     String coverColor;
-    String writeDateTime;
+    LocalDateTime writeDateTime;
 
     public static MyBookReviewQueryModel create(MyBookReview myBookReview) {
         MyBookReviewQueryModel myBookReviewQueryModel = new MyBookReviewQueryModel();
@@ -28,7 +27,7 @@ public class MyBookReviewQueryModel {
         myBookReviewQueryModel.topic = myBookReview.getTopic();
         myBookReviewQueryModel.freeFormText = myBookReview.getFreeFormText();
         myBookReviewQueryModel.coverColor = myBookReview.getCoverColor().name();
-        myBookReviewQueryModel.writeDateTime = myBookReview.getWriteDateTime().format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 a h시 mm분", Locale.KOREAN));
+        myBookReviewQueryModel.writeDateTime = myBookReview.getWriteDateTime();
         return myBookReviewQueryModel;
     }
 
@@ -41,6 +40,6 @@ public class MyBookReviewQueryModel {
         this.topic = myBookReview.getTopic();
         this.freeFormText = myBookReview.getFreeFormText();
         this.coverColor = myBookReview.getCoverColor().name();
-        this.writeDateTime = myBookReview.getWriteDateTime().format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 a h시 mm분", Locale.KOREAN));
+        this.writeDateTime = myBookReview.getWriteDateTime();
     }
 }
