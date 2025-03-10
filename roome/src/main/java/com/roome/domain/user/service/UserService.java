@@ -87,6 +87,7 @@ public class UserService {
     deletePaymentData(userId);
 
     // 8. Room 관련 데이터 삭제
+    
     Optional<Room> roomOpt = roomRepository.findByUserId(userId);
     if (roomOpt.isPresent()) {
       Room room = roomOpt.get();
