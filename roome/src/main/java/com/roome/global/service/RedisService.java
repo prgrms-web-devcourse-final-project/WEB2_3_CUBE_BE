@@ -94,8 +94,8 @@ public class RedisService {
     String lockKey = "lock:user:ranking:" + userId;
     try {
       executeWithLock(lockKey, 200, 2000, () -> {
-        // userId를 문자열로 명시적으로 변환하여 저장
-        String userIdStr = userId.toString();
+        // userId를 문자열로 명시적으로 변환
+        String userIdStr = String.valueOf(userId);
         redisTemplate.opsForZSet().incrementScore(RANKING_KEY, userIdStr, score);
         log.debug("점수 업데이트 완료 - UserId: {}, Score: {}", userId, score);
         return null;
