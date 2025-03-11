@@ -66,7 +66,7 @@ public class MyCdService {
   private final FurnitureService furnitureService;
   private final FurnitureCapacity furnitureCapacity;
   private final ApplicationEventPublisher eventPublisher; // 이벤트 발행을 위해 추가
-  
+
   @Qualifier("myCdRedisTemplate")
   private final RedisTemplate<String, MyCdResponse> redisTemplate;
 
@@ -85,14 +85,14 @@ public class MyCdService {
       throw new CdRackCapacityExceededException();
     }
 
-    // CD 존재 여부 확인 후 저장 (없으면 새로 생성)
+    // CD 존재 여부 확인 후 저장
     Cd cd = cdRepository.findByTitleAndArtist(request.getTitle(), request.getArtist())
         .orElseGet(() -> {
           Cd newCd = Cd.create(request.getTitle(), request.getArtist(), request.getAlbum(),
               request.getReleaseDate(), request.getCoverUrl(), request.getYoutubeUrl(),
               request.getDuration());
 
-          // 장르가 있을 경우만 추가
+          // 장르 추가
           if (request.getGenres() != null && !request.getGenres().isEmpty()) {
             for (String genreName : request.getGenres()) {
               CdGenreType genreType = cdGenreTypeRepository.findByName(genreName)
@@ -102,7 +102,6 @@ public class MyCdService {
               newCd.addGenre(cdGenre);
             }
           }
-
           return cdRepository.save(newCd);
         });
 
@@ -115,21 +114,28 @@ public class MyCdService {
     // MyCd 저장
     MyCd myCd = myCdRepository.save(MyCd.create(user, room, cd));
 
-    // MyCdCount 업데이트
+    // MyCdCount 업데이트 (중복 생성 방지)
     MyCdCount myCdCount = myCdCountRepository.findByRoom(room)
-        .orElseGet(() -> myCdCountRepository.save(MyCdCount.init(room)));
+        .orElseGet(() -> {
+          log.info("No existing MyCdCount found for Room={}, creating new one...", room.getId());
+          MyCdCount newCount = MyCdCount.init(room);
+          return myCdCountRepository.save(newCount);
+        });
+
+    log.info("Before Increment: Room={}, Count={}", room.getId(), myCdCount.getCount());
     myCdCount.increment();
+    log.info("After Increment: Room={}, Count={}", room.getId(), myCdCount.getCount());
 
     // 음악 등록 활동 기록 추가
     userActivityService.recordUserActivity(userId, ActivityType.MUSIC_REGISTRATION, cd.getId());
 
     // 이벤트 발행
     eventPublisher.publishEvent(new CdCollectionEvent.CdAddedEvent(this, userId));
-    log.debug("Published CD added event for user: {}", userId);
+    log.info("Published CD added event for user: {}", userId);
 
     return MyCdResponse.fromEntity(myCd);
-  }
 
+  }
 
   @Cacheable(value = "myCdList", key = "#userId + '_' + #keyword + '_' + #cursor + '_' + #size", unless = "#result == null")
   public MyCdListResponse getMyCdList(Long userId, String keyword, Long cursor, int size) {
@@ -221,15 +227,13 @@ public class MyCdService {
 
   @CacheEvict(value = "myCdList", allEntries = true)
   public void delete(Long userId, List<Long> myCdIds) {
-    // 삭제할 CD 목록을 가져오기
+    // 삭제할 CD 목록 가져오기
     List<MyCd> myCds = myCdRepository.findAllById(myCdIds);
-
-    // 존재하지 않는 경우 예외 처리
     if (myCds.isEmpty()) {
       throw new MyCdNotFoundException();
     }
 
-    // 로그인한 사용자가 소유한 CD인지 검증
+    // 사용자 검증
     for (MyCd myCd : myCds) {
       if (!myCd.getUser().getId().equals(userId)) {
         throw new MyCdUnauthorizedException();
@@ -244,12 +248,12 @@ public class MyCdService {
     MyCdCount myCdCount = myCdCountRepository.findByRoom(room)
         .orElseThrow(() -> new MyCdDatabaseException("MyCdCount를 찾을 수 없습니다."));
 
-    myCdCount.decrement();  // CD 개수 감소
+    log.info("Before Decrement: Room={}, Count={}", room.getId(), myCdCount.getCount());
+    myCdCount.decrement();
+    log.info("After Decrement: Room={}, Count={}", room.getId(), myCdCount.getCount());
 
     // CD 삭제 후 이벤트 발행
     eventPublisher.publishEvent(new CdCollectionEvent.CdRemovedEvent(this, userId));
-    log.debug("Published CD removed event for user: {}", userId);
+    log.info("Published CD removed event for user: {}", userId);
   }
-
-
 }
