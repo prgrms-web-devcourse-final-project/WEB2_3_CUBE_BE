@@ -178,21 +178,25 @@ public class UserService {
   }
 
   private void deleteCdRelatedData(Long userId) {
-    // CD 댓글 삭제
-    List<CdComment> comments = cdCommentRepository.findAllByUserId(userId);
-    if (!comments.isEmpty()) {
-      cdCommentRepository.deleteAll(comments);
-      log.debug("[회원탈퇴] CD 댓글 삭제 완료: {}개", comments.size());
-    }
-
-    // CD 데이터 삭제
+    // 1. 사용자 소유의 CD 조회
     List<MyCd> myCds = myCdRepository.findByUserId(userId);
+
     if (!myCds.isEmpty()) {
+      List<Long> myCdIds = myCds.stream().map(MyCd::getId).toList();
+
+      // 2. myCd에 종속된 모든 댓글 삭제 (다른 사용자가 작성한 댓글도 포함)
+      List<CdComment> cdComments = cdCommentRepository.findByMyCdIdIn(myCdIds);
+      if (!cdComments.isEmpty()) {
+        cdCommentRepository.deleteAll(cdComments);
+        log.debug("[회원탈퇴] CD 댓글 삭제 완료 (myCdId 기준): {}개", cdComments.size());
+      }
+
+      // 3. CD 데이터 삭제
       myCdRepository.deleteAll(myCds);
       log.debug("[회원탈퇴] CD 데이터 삭제 완료: {}개", myCds.size());
     }
 
-    // CD 카운트 삭제
+    // 4. CD 카운트 삭제
     roomRepository.findByUserId(userId).ifPresent(room -> {
       myCdCountRepository.findByRoom(room).ifPresent(count -> {
         myCdCountRepository.delete(count);
