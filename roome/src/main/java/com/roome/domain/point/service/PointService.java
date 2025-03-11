@@ -46,7 +46,7 @@ public class PointService {
   private static final Map<PointReason, Integer> POINT_EARN_MAP = Map.of(
       PointReason.GUESTBOOK_REWARD, 10,
       PointReason.FIRST_COME_EVENT, 200,
-      PointReason.DAILY_ATTENDANCE, 50,
+      PointReason.DAILY_ATTENDANCE, 400,
       PointReason.POINT_PURCHASE_100, 100,
       PointReason.POINT_PURCHASE_550, 550,
       PointReason.POINT_PURCHASE_1200, 1200,
