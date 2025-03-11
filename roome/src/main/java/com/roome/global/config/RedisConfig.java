@@ -69,6 +69,23 @@ public class RedisConfig {
     return new StringRedisTemplate(redisConnectionFactory);
   }
 
+  // 랭킹 시스템 전용 RedisTemplate (String 직렬화)
+  @Bean("rankingRedisTemplate")
+  public RedisTemplate<String, String> rankingRedisTemplate(
+      RedisConnectionFactory connectionFactory) {
+    RedisTemplate<String, String> template = new RedisTemplate<>();
+    template.setConnectionFactory(connectionFactory);
+
+    // String 직렬화 설정
+    template.setKeySerializer(new StringRedisSerializer());
+    template.setValueSerializer(new StringRedisSerializer());
+    template.setHashKeySerializer(new StringRedisSerializer());
+    template.setHashValueSerializer(new StringRedisSerializer());
+
+    template.afterPropertiesSet();
+    return template;
+  }
+
   @Bean
   public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
     RedisTemplate<String, Object> template = new RedisTemplate<>();
@@ -93,7 +110,8 @@ public class RedisConfig {
   }
 
   @Bean
-  public RedisTemplate<String, MyCdResponse> myCdRedisTemplate(RedisConnectionFactory connectionFactory) {
+  public RedisTemplate<String, MyCdResponse> myCdRedisTemplate(
+      RedisConnectionFactory connectionFactory) {
     RedisTemplate<String, MyCdResponse> template = new RedisTemplate<>();
     template.setConnectionFactory(connectionFactory);
 
@@ -103,7 +121,8 @@ public class RedisConfig {
     objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     // ObjectMapper를 적용한 Jackson2JsonRedisSerializer 생성
-    Jackson2JsonRedisSerializer<MyCdResponse> serializer = new Jackson2JsonRedisSerializer<>(objectMapper, MyCdResponse.class);
+    Jackson2JsonRedisSerializer<MyCdResponse> serializer = new Jackson2JsonRedisSerializer<>(
+        objectMapper, MyCdResponse.class);
 
     template.setKeySerializer(new StringRedisSerializer()); // Key: String
     template.setValueSerializer(serializer); // Value: JSON 직렬화
