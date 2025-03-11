@@ -1,5 +1,21 @@
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/c7e9f361-0ae1-4d06-a747-573d74c97140", height="200px" width="500px">
+</p>
+
+
+<div align="center">
+  
+  RoomE는 **"나만의 공간"을 통해 감정을 탐색**하고, <br> 
+  **취향을 자유롭게 표현**할 수 있는 플랫폼을 제공합니다. <br> 
+  <br>
+  
+  단순한 취향 공유를 넘어, **자신을 이해하고 마음의 안정을 찾으며**, <br>
+  같은 관심사를 가진 사람들과 자연스럽게 연결될 수 있는 **디지털 힐링 공간**을 경험해보세요.
+  
+</div>
+
 # Skill
-![image](https://github.com/user-attachments/assets/ad376cef-92e5-4b0f-907a-db2b4f8dca99)
+![image](https://github.com/user-attachments/assets/8d553034-ce41-41cd-9a6e-d4bf7e2b234a)
 
 
 # Infra Structure
