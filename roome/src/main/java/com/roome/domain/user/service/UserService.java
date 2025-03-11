@@ -20,7 +20,9 @@ import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.recommendedUser.repository.RecommendedUserRepository;
 import com.roome.domain.room.entity.Room;
+import com.roome.domain.room.entity.RoomThemeUnlock;
 import com.roome.domain.room.repository.RoomRepository;
+import com.roome.domain.room.repository.RoomThemeUnlockRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.domain.userGenrePreference.repository.UserGenrePreferenceRepository;
@@ -56,6 +58,7 @@ public class UserService {
   private final PaymentLogRepository paymentLogRepository;
   private final UserGenrePreferenceRepository userGenrePreferenceRepository;
   private final RecommendedUserRepository recommendedUserRepository;
+  private final RoomThemeUnlockRepository roomThemeUnlockRepository;
   private final RedisService redisService;
 
   @Transactional(rollbackFor = Exception.class, noRollbackFor = BusinessException.class)
@@ -74,31 +77,34 @@ public class UserService {
     // 3. 하우스메이트 관계 삭제
     deleteHousemateRelations(userId);
 
-    // 4. 도서 관련 데이터 삭제
+    // 4, 방 테마 잠금 해제 데이터 삭제
+    deleteRoomThemeUnlocks(user);
+
+    // 5. 도서 관련 데이터 삭제
     deleteBookRelatedData(userId);
 
-    // 5. CD 관련 데이터 삭제
+    // 6. CD 관련 데이터 삭제
     deleteCdRelatedData(userId);
 
-    // 6. 포인트 및 포인트 내역 삭제
+    // 7. 포인트 및 포인트 내역 삭제
     deletePointData(userId);
 
-    // 7. 결제 기록 삭제
+    // 8. 결제 기록 삭제
     deletePaymentData(userId);
 
-    // 8. Room 관련 데이터 삭제
+    // 9. Room 관련 데이터 삭제
     Optional<Room> roomOpt = roomRepository.findByUserId(userId);
     if (roomOpt.isPresent()) {
       Room room = roomOpt.get();
 
-      // 8-1. 방명록 삭제
+      // 9-1. 방명록 삭제
       List<Guestbook> guestbooks = guestbookRepository.findAllByRoomOrUserId(room, userId);
       if (!guestbooks.isEmpty()) {
         guestbookRepository.deleteAll(guestbooks);
         log.debug("[회원탈퇴] 방명록 삭제 완료: {}개", guestbooks.size());
       }
 
-      // 8-2. 가구 삭제
+      // 9-2. 가구 삭제
       List<Furniture> furnitures = furnitureRepository.findByRoomId(room.getId());
       if (!furnitures.isEmpty()) {
         for (Furniture furniture : furnitures) {
@@ -111,15 +117,15 @@ public class UserService {
       user.setRoom(null);
       userRepository.saveAndFlush(user);
 
-      // 8-3. Room 삭제
+      // 9-3. Room 삭제
       roomRepository.delete(room);
       log.debug("[회원탈퇴] 방 삭제 완료: roomId={}", room.getId());
     }
 
-    // 9. Redis에서 랭킹 데이터 삭제
+    // 10. Redis에서 랭킹 데이터 삭제
     deleteRedisRankingData(userId);
 
-    // 10. 사용자 삭제
+    // 11. 사용자 삭제
     userRepository.delete(user);
     log.info("[회원탈퇴] 사용자 삭제 완료: {}", userId);
   }
@@ -156,6 +162,15 @@ public class UserService {
     // 양방향 관계 모두 삭제 (내가 추가한 것 + 나를 추가한 것)
     int count = housemateRepository.deleteByUserIdOrAddedId(userId, userId);
     log.debug("[회원탈퇴] 하우스메이트 관계 삭제 수: {}", count);
+  }
+
+  // 방 테마 잠금 해제 데이터 삭제 메서드
+  private void deleteRoomThemeUnlocks(User user) {
+    List<RoomThemeUnlock> themeUnlocks = roomThemeUnlockRepository.findByUser(user);
+    if (!themeUnlocks.isEmpty()) {
+      roomThemeUnlockRepository.deleteAll(themeUnlocks);
+      log.debug("[회원탈퇴] 방 테마 잠금 해제 데이터 삭제 완료: {}개", themeUnlocks.size());
+    }
   }
 
   private void deleteBookRelatedData(Long userId) {
