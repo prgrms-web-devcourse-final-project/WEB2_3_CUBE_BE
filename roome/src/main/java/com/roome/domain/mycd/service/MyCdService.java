@@ -232,15 +232,24 @@ public class MyCdService {
     // 로그인한 사용자가 소유한 CD인지 검증
     for (MyCd myCd : myCds) {
       if (!myCd.getUser().getId().equals(userId)) {
-        throw new MyCdUnauthorizedException(); // 새 예외 적용
+        throw new MyCdUnauthorizedException();
       }
     }
 
     // 실제 삭제 수행
     myCdRepository.deleteByUserIdAndIds(userId, myCdIds);
-    //cd 삭제 후 이벤트 발행
+
+    // MyCdCount 업데이트 (삭제 시 감소)
+    Room room = roomRepository.findByUserId(userId).orElseThrow(RoomNoFoundException::new);
+    MyCdCount myCdCount = myCdCountRepository.findByRoom(room)
+        .orElseThrow(() -> new MyCdDatabaseException("MyCdCount를 찾을 수 없습니다."));
+
+    myCdCount.decrement();  // CD 개수 감소
+
+    // CD 삭제 후 이벤트 발행
     eventPublisher.publishEvent(new CdCollectionEvent.CdRemovedEvent(this, userId));
     log.debug("Published CD removed event for user: {}", userId);
   }
+
 
 }

@@ -36,7 +36,8 @@ public class RankingService {
 
     // 유효한 사용자 정보만 수집
     for (ZSetOperations.TypedTuple<Object> tuple : rankSet) {
-      String userIdStr = (String) tuple.getValue();
+      Object userIdObj = tuple.getValue();
+      String userIdStr = String.valueOf(userIdObj);
       Double score = tuple.getScore();
 
       if (userIdStr == null || score == null) {
@@ -85,10 +86,12 @@ public class RankingService {
   }
 
   public boolean isRanker(Long userId) {
-    Set<ZSetOperations.TypedTuple<Object>> rankers = redisTemplate.opsForZSet().reverseRangeWithScores(RANKING_KEY, 0, 9);
+    Set<ZSetOperations.TypedTuple<Object>> rankers = redisTemplate.opsForZSet()
+        .reverseRangeWithScores(RANKING_KEY, 0, 9);
     if (rankers == null || rankers.isEmpty()) {
       return false;
     }
-    return rankers.stream().anyMatch(ranker -> String.valueOf(userId).equals(ranker.getValue()));
+    return rankers.stream()
+        .anyMatch(ranker -> String.valueOf(userId).equals(String.valueOf(ranker.getValue())));
   }
 }

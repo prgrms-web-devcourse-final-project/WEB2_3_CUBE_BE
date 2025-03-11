@@ -23,8 +23,8 @@ public class RedissonConfig {
   public RedissonClient redissonClient() {
     Config config = new Config();
     config.useSingleServer()
-            .setAddress("redis://" + redisHost + ":" + redisPort)
-            .setPassword(redisPassword);  // 비밀번호 설정 추가
+        .setAddress("redis://" + redisHost + ":" + redisPort)
+        .setPassword(redisPassword);  // 비밀번호 설정 추가
     return Redisson.create(config);
   }
 }

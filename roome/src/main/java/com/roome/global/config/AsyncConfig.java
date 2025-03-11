@@ -46,4 +46,15 @@ public class AsyncConfig {
     executor.initialize();
     return executor;
   }
+
+  @Bean(name = "statusUpdateTaskExecutor")
+  public Executor statusUpdateTaskExecutor() {
+    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+    executor.setCorePoolSize(5);
+    executor.setMaxPoolSize(10);
+    executor.setQueueCapacity(100);
+    executor.setThreadNamePrefix("StatusUpdate-");
+    executor.initialize();
+    return executor;
+  }
 }
