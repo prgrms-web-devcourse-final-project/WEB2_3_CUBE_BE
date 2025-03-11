@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
@@ -29,7 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class RankingScheduler {
 
-  private final RedisTemplate<String, Object> redisTemplate;
+  @Qualifier("rankingRedisTemplate")
+  private final RedisTemplate<String, String> rankingRedisTemplate;
   private final UserActivityRepository userActivityRepository;
   private final UserRepository userRepository;
   private final PointRepository pointRepository;
@@ -44,7 +46,7 @@ public class RankingScheduler {
     log.info("랭킹 갱신 작업 시작: {}", LocalDateTime.now());
 
     // 기존 랭킹 데이터 삭제
-    redisTemplate.delete(RANKING_KEY);
+    rankingRedisTemplate.delete(RANKING_KEY);
 
     // 최근 7일간 활동 데이터 집계
     LocalDateTime startDate = LocalDateTime.now().minusDays(7);
@@ -62,7 +64,7 @@ public class RankingScheduler {
     for (Map.Entry<Long, Integer> entry : userScores.entrySet()) {
       // userId를 문자열로 명시적으로 변환
       String userIdStr = String.valueOf(entry.getKey());
-      redisTemplate.opsForZSet().add(RANKING_KEY, userIdStr, entry.getValue());
+      rankingRedisTemplate.opsForZSet().add(RANKING_KEY, userIdStr, entry.getValue());
     }
 
     log.info("랭킹 갱신 완료: 사용자 {}명의 점수 업데이트", userScores.size());
@@ -77,8 +79,8 @@ public class RankingScheduler {
     log.info("주간 랭킹 보상 지급 시작: {}", LocalDateTime.now());
 
     // 상위 랭킹 조회
-    Set<ZSetOperations.TypedTuple<Object>> topRankers =
-        redisTemplate.opsForZSet().reverseRangeWithScores(RANKING_KEY, 0, 2);
+    Set<ZSetOperations.TypedTuple<String>> topRankers =
+        rankingRedisTemplate.opsForZSet().reverseRangeWithScores(RANKING_KEY, 0, 2);
 
     if (topRankers == null || topRankers.isEmpty()) {
       log.info("랭킹 데이터가 없습니다.");
@@ -88,17 +90,16 @@ public class RankingScheduler {
     // 전체 트랜잭션
     try {
       int rank = 0;
-      for (ZSetOperations.TypedTuple<Object> ranker : topRankers) {
-        Object userIdObj = ranker.getValue();
+      for (ZSetOperations.TypedTuple<String> ranker : topRankers) {
+        String userIdStr = ranker.getValue();
         Double score = ranker.getScore();
         rank++;
 
-        if (userIdObj == null) {
+        if (userIdStr == null) {
           continue;
         }
 
         try {
-          String userIdStr = userIdObj.toString();
           Long userId = Long.valueOf(userIdStr);
 
           // 사용자 정보 조회
@@ -152,7 +153,7 @@ public class RankingScheduler {
       userActivityRepository.deleteAllByCreatedAtBefore(oneWeekAgo);
 
       // 기존 랭킹 데이터 리셋
-      redisTemplate.delete(RANKING_KEY);
+      rankingRedisTemplate.delete(RANKING_KEY);
       log.info("주간 랭킹 보상 지급 완료 및 랭킹 리셋");
 
       // 새로운 랭킹 갱신
