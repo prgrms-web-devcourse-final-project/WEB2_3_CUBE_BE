@@ -24,7 +24,7 @@ public class MyCdCount {
 
   public static MyCdCount init(Room room) {
     return MyCdCount.builder()
-        .count(1L)
+        .count(0L)
         .room(room)
         .build();
   }
