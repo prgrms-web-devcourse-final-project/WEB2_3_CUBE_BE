@@ -79,6 +79,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME_PROD }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            docker system prune -af --volumes
             docker-compose -f docker-compose-prod.yml -p roome-prod down
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/roome-prod:latest
             docker-compose -f docker-compose-prod.yml -p roome-prod up -d
