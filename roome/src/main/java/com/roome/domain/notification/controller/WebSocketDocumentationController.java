@@ -1,6 +1,6 @@
 package com.roome.domain.notification.controller;
 
-import com.roome.domain.notification.dto.NotificationType;
+import com.roome.domain.notification.entity.NotificationType;
 import com.roome.domain.notification.dto.NotificationWebSocketMessageDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;

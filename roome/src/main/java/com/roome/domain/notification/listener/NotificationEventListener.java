@@ -7,6 +7,7 @@ import com.roome.domain.houseMate.notificationEvent.HouseMateCreatedEvent;
 import com.roome.domain.notification.dto.CreateNotificationRequest;
 import com.roome.domain.notification.service.NotificationService;
 import com.roome.domain.notification.service.NotificationWebSocketService;
+import com.roome.domain.point.event.PointEvent;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import com.roome.global.notificationEvent.NotificationEvent;
@@ -148,6 +149,27 @@ public class NotificationEventListener {
             handleNotificationEvent(event);
         } catch (Exception e) {
             log.error("이벤트 알림 처리 중 오류 발생: {}", e.getMessage(), e);
+            throw new BusinessException(ErrorCode.NOTIFICATION_EVENT_PROCESSING_FAILED);
+        }
+    }
+
+    /// 포인트 적립 이벤트 핸들러
+    @Async
+    @TransactionalEventListener(fallbackExecution = true)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void handlePointEarned(PointEvent event) {
+        log.info("포인트 적립 이벤트 수신: 발신자={}, 수신자={}, 포인트 ID={}, 금액={}, 사유={}",
+                event.getSenderId(), event.getReceiverId(), event.getTargetId(),
+                event.getAmount(), event.getReason());
+
+        try {
+            // 포인트 특화 로직이 필요한 경우 여기에 추가
+            // 예: 특정 액수 이상의 포인트만 알림 보내기, 특정 사유에 따른 알림 메시지 차별화 등
+
+            // 일반 알림 처리로 위임
+            handleNotificationEvent(event);
+        } catch (Exception e) {
+            log.error("포인트 적립 알림 처리 중 오류 발생: {}", e.getMessage(), e);
             throw new BusinessException(ErrorCode.NOTIFICATION_EVENT_PROCESSING_FAILED);
         }
     }

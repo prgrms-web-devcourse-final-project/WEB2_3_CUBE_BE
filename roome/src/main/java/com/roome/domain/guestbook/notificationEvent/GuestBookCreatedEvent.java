@@ -1,6 +1,6 @@
 package com.roome.domain.guestbook.notificationEvent;
 
-import com.roome.domain.notification.dto.NotificationType;
+import com.roome.domain.notification.entity.NotificationType;
 import com.roome.global.notificationEvent.NotificationEvent;
 
 public class GuestBookCreatedEvent extends NotificationEvent {

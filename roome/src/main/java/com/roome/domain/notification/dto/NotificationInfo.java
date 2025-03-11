@@ -1,5 +1,6 @@
 package com.roome.domain.notification.dto;
 
+import com.roome.domain.notification.entity.NotificationType;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;

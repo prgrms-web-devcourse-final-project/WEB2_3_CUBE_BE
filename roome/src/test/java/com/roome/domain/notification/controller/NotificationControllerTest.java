@@ -1,6 +1,6 @@
 package com.roome.domain.notification.controller;
 
-import com.roome.domain.notification.dto.NotificationType;
+import com.roome.domain.notification.entity.NotificationType;
 import com.roome.domain.notification.entity.Notification;
 import com.roome.domain.notification.repository.NotificationRepository;
 import com.roome.domain.user.entity.Provider;
