@@ -10,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -22,6 +24,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class RedisService {
 
+  @Qualifier("rankingRedisTemplate")
+  private final RedisTemplate<String, String> rankingRedisTemplate;
   private final StringRedisTemplate redisTemplate;
   private final RedissonClient redissonClient;
   private final ScoreUpdateTaskRepository scoreUpdateTaskRepository;
@@ -96,7 +100,7 @@ public class RedisService {
       executeWithLock(lockKey, 200, 2000, () -> {
         // userId를 문자열로 명시적으로 변환
         String userIdStr = String.valueOf(userId);
-        redisTemplate.opsForZSet().incrementScore(RANKING_KEY, userIdStr, score);
+        rankingRedisTemplate.opsForZSet().incrementScore(RANKING_KEY, userIdStr, score);
         log.debug("점수 업데이트 완료 - UserId: {}, Score: {}", userId, score);
         return null;
       });
@@ -187,7 +191,7 @@ public class RedisService {
   public boolean deleteUserRankingData(String userId) {
     try {
       // 랭킹 Sorted Set에서 사용자 제거
-      Long removed = redisTemplate.opsForZSet().remove(RANKING_KEY, userId);
+      Long removed = rankingRedisTemplate.opsForZSet().remove(RANKING_KEY, userId);
       boolean result = removed != null && removed > 0;
 
       // 사용자 총점 데이터 삭제
