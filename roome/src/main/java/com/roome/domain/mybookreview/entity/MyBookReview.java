@@ -21,14 +21,19 @@ public class MyBookReview {
 
     private String title;
 
+    @Column(columnDefinition = "TEXT")
     private String quote;
 
+    @Column(columnDefinition = "TEXT")
     private String takeaway;
 
+    @Column(columnDefinition = "TEXT")
     private String motivate;
 
+    @Column(columnDefinition = "TEXT")
     private String topic;
 
+    @Column(columnDefinition = "TEXT")
     private String freeFormText;
 
     @Enumerated(EnumType.STRING)

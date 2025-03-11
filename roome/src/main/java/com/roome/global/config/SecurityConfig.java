@@ -71,13 +71,15 @@ public class SecurityConfig {
                 "/api/auth/user",            // 사용자 정보 조회만 허용
                 "/api/auth/reissue-token", // 토큰 재발급
                 "/api/auth/**",
+                "/api/points/balance/**",
                 "/error",
                 "/v3/api-docs/**",
                 "/swagger-ui/**",
                 "/swagger-ui.html",
                 "/mock/**",
                 "/ws/**",
-                "/docs/**"
+                "/docs/**",
+                "/"
             ).permitAll()
             .anyRequest().authenticated()
         )

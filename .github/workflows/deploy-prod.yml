@@ -37,7 +37,8 @@ jobs:
           echo "DATASOURCE_URL=${{ secrets.DATASOURCE_URL }}" >> .env
           echo "DATASOURCE_USERNAME=${{ secrets.DATASOURCE_USERNAME }}" >> .env
           echo "DATASOURCE_PASSWORD=${{ secrets.DATASOURCE_PASSWORD }}" >> .env
-
+          echo "ALADIN_SECRET_PROD=${{ secrets.ALADIN_SECRET_PROD }}" >> .env
+          echo "SPRING_PROFILES_ACTIVE=prod" >> .env
 
       - name: Grant execute permission for gradlew
         run: |
@@ -65,8 +66,8 @@ jobs:
       - name: Copy files to EC2
         uses: appleboy/scp-action@master
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
+          host: ${{ secrets.EC2_HOST_PROD }}
+          username: ${{ secrets.EC2_USERNAME_PROD }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "docker-compose-prod.yml,.env"
           target: "~/"
@@ -74,8 +75,8 @@ jobs:
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
+          host: ${{ secrets.EC2_HOST_PROD}}
+          username: ${{ secrets.EC2_USERNAME_PROD }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             docker-compose -f docker-compose-prod.yml -p roome-prod down

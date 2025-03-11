@@ -69,6 +69,23 @@ public class RedisConfig {
     return new StringRedisTemplate(redisConnectionFactory);
   }
 
+  // 랭킹 시스템 전용 RedisTemplate (String 직렬화)
+  @Bean("rankingRedisTemplate")
+  public RedisTemplate<String, String> rankingRedisTemplate(
+      RedisConnectionFactory connectionFactory) {
+    RedisTemplate<String, String> template = new RedisTemplate<>();
+    template.setConnectionFactory(connectionFactory);
+
+    // String 직렬화 설정
+    template.setKeySerializer(new StringRedisSerializer());
+    template.setValueSerializer(new StringRedisSerializer());
+    template.setHashKeySerializer(new StringRedisSerializer());
+    template.setHashValueSerializer(new StringRedisSerializer());
+
+    template.afterPropertiesSet();
+    return template;
+  }
+
   @Bean
   public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
     RedisTemplate<String, Object> template = new RedisTemplate<>();

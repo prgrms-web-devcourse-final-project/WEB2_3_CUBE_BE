@@ -26,7 +26,7 @@ public class EventNotificationScheduler {
     // 시스템 사용자 ID (알림 발신자로 사용)
     private static final Long SYSTEM_USER_ID = 0L;
     // 모든 사용자에게 이벤트 알림 발송
-    @Scheduled(cron = "0 */30 * * * *")
+    @Scheduled(cron = "0 0 18 ? * SAT")
     public  void sendEventNotifications() {
         log.info("이벤트 알림 발송 시작: 이벤트 ID={}, 이벤트명={}", "0", "선찬순 이벤트");
         int page = 0;

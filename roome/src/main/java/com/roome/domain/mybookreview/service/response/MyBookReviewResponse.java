@@ -1,10 +1,8 @@
 package com.roome.domain.mybookreview.service.response;
 
-import com.roome.domain.mybookreview.entity.CoverColor;
-import com.roome.domain.mybookreview.entity.MyBookReview;
+import com.roome.domain.mybookreview.entity.MyBookReviewQueryModel;
 
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
+import java.time.LocalDateTime;
 
 public record MyBookReviewResponse(
         Long id,
@@ -14,21 +12,21 @@ public record MyBookReviewResponse(
         String motivate,
         String topic,
         String freeFormText,
-        CoverColor coverColor,
-        String writeDateTime
+        String coverColor,
+        LocalDateTime writeDateTime
 ) {
 
-    public static MyBookReviewResponse from(MyBookReview myBookReview) {
+    public static MyBookReviewResponse from(MyBookReviewQueryModel myBookReviewQueryModel) {
         return new MyBookReviewResponse(
-                myBookReview.getId(),
-                myBookReview.getTitle(),
-                myBookReview.getQuote(),
-                myBookReview.getTakeaway(),
-                myBookReview.getMotivate(),
-                myBookReview.getTopic(),
-                myBookReview.getFreeFormText(),
-                myBookReview.getCoverColor(),
-                myBookReview.getWriteDateTime().format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 a h시 mm분", Locale.KOREAN))
+                myBookReviewQueryModel.getId(),
+                myBookReviewQueryModel.getTitle(),
+                myBookReviewQueryModel.getQuote(),
+                myBookReviewQueryModel.getTakeaway(),
+                myBookReviewQueryModel.getMotivate(),
+                myBookReviewQueryModel.getTopic(),
+                myBookReviewQueryModel.getFreeFormText(),
+                myBookReviewQueryModel.getCoverColor(),
+                myBookReviewQueryModel.getWriteDateTime()
         );
     }
 }

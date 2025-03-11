@@ -17,7 +17,7 @@ import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.ForbiddenException;
 import com.roome.global.jwt.exception.UserNotFoundException;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +37,7 @@ public class CdCommentService {
   private final CdCommentRepository cdCommentRepository;
   private final MyCdRepository myCdRepository;
   private final UserRepository userRepository;
-  private final ApplicationEventPublisher eventPublisher;// 이벤트 발행자
+  private final ApplicationEventPublisher eventPublisher; // 이벤트 발행자
   private final UserActivityService userActivityService;
 
   public CdCommentResponse addComment(Long userId, Long myCdId, CdCommentCreateRequest request) {
@@ -51,12 +51,11 @@ public class CdCommentService {
         .myCd(myCd)
         .user(user)
         .timestamp(request.getTimestamp())
-        .content(request.getContent())
+        .content(request.getContent().trim()) // 공백 제거
         .build();
 
     CdComment savedComment = cdCommentRepository.save(comment);
 
-    // CD 소유자가 댓글 작성자와 다른 경우에만 알림 발생
     Long cdOwnerId = myCd.getUser().getId();
     if (!userId.equals(cdOwnerId)) {
       log.info("CD 코멘트 알림 이벤트 발행: 발신자={}, 수신자={}, CD={}, 코멘트={}",
@@ -64,18 +63,12 @@ public class CdCommentService {
 
       try {
         eventPublisher.publishEvent(new CdCommentCreatedEvent(
-            this,
-            userId,         // 발신자 (댓글 작성자)
-            cdOwnerId,      // 수신자 (CD 소유자)
-            myCdId,         // CD ID
-            savedComment.getId() // 코멘트 ID
+            this, userId, cdOwnerId, myCdId, savedComment.getId()
         ));
       } catch (Exception e) {
         log.error("CD 코멘트 알림 이벤트 발행 중 오류 발생: {}", e.getMessage(), e);
-        // 알림 발행 실패가 비즈니스 로직에 영향을 주지 않도록 예외를 잡아서 처리
       }
 
-      // 음악 댓글 작성 활동 기록 추가
       userActivityService.recordUserActivity(userId, ActivityType.MUSIC_COMMENT, myCdId);
     }
 
@@ -90,42 +83,47 @@ public class CdCommentService {
     );
   }
 
+  @Transactional(readOnly = true)
   public CdCommentListResponse getComments(Long myCdId, String keyword, int page, int size) {
-    int adjustedPage = Math.max(page, 0);
-    Pageable pageable = PageRequest.of(adjustedPage, size);
-    Page<CdComment> commentPage;
+    log.info("getComments() - keyword: '{}'", keyword);
 
-    if (keyword == null || keyword.trim().isEmpty()) {
-      commentPage = cdCommentRepository.findByMyCdId(myCdId, pageable);
-    } else {
-      commentPage = cdCommentRepository.findByMyCdIdAndKeyword(myCdId, keyword, pageable);
-    }
+    int adjustedPage = Math.max(page - 1, 0);
+    Pageable pageable = PageRequest.of(adjustedPage, size);
+
+    String processedKeyword =
+        (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
+
+    Page<CdComment> commentPage = (processedKeyword == null)
+        ? cdCommentRepository.findByMyCdId(myCdId, pageable)
+        : cdCommentRepository.findByMyCdIdAndKeyword(myCdId, processedKeyword, pageable);
 
     if (commentPage.isEmpty()) {
       throw new CdCommentListEmptyException();
     }
 
     return new CdCommentListResponse(
-        commentPage.map(comment -> new CdCommentResponse(
-            comment.getId(),
-            comment.getMyCd().getId(),
-            comment.getUser().getId(),
-            comment.getUser().getNickname(),
-            comment.getTimestamp(),
-            comment.getContent(),
-            comment.getCreatedAt()
-        )).toList(),
-        adjustedPage,
+        commentPage.stream()
+            .map(comment -> new CdCommentResponse(
+                comment.getId(),
+                comment.getMyCd().getId(),
+                comment.getUser().getId(),
+                comment.getUser().getNickname(),
+                comment.getTimestamp(),
+                comment.getContent(),
+                comment.getCreatedAt()
+            ))
+            .toList(),
+        page,
         size,
         commentPage.getTotalElements(),
         commentPage.getTotalPages()
     );
   }
 
+  @Transactional(readOnly = true)
   public List<CdCommentResponse> getAllComments(Long myCdId) {
     List<CdComment> comments = cdCommentRepository.findByMyCdId(myCdId);
-
-    System.out.println("조회된 댓글 개수: " + comments.size()); // 디버깅
+    log.info("조회된 댓글 개수: {}", comments.size());
 
     if (comments.isEmpty()) {
       throw new CdCommentListEmptyException();
@@ -144,7 +142,6 @@ public class CdCommentService {
         .collect(Collectors.toList());
   }
 
-
   @Transactional
   public void deleteComment(Long userId, Long commentId) {
     CdComment comment = cdCommentRepository.findById(commentId)
@@ -159,6 +156,5 @@ public class CdCommentService {
 
     cdCommentRepository.delete(comment);
   }
-
 
 }

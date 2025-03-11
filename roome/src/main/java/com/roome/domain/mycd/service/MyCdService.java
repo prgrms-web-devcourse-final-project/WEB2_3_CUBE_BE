@@ -66,6 +66,9 @@ public class MyCdService {
   private final FurnitureService furnitureService;
   private final FurnitureCapacity furnitureCapacity;
   private final ApplicationEventPublisher eventPublisher; // 이벤트 발행을 위해 추가
+  
+  @Qualifier("myCdRedisTemplate")
+  private final RedisTemplate<String, MyCdResponse> redisTemplate;
 
   @Qualifier("myCdRedisTemplate")
   private final RedisTemplate<String, MyCdResponse> redisTemplate;
@@ -92,7 +95,7 @@ public class MyCdService {
               request.getReleaseDate(), request.getCoverUrl(), request.getYoutubeUrl(),
               request.getDuration());
 
-          // 장르 추가
+          // 장르가 있을 경우만 추가
           if (request.getGenres() != null && !request.getGenres().isEmpty()) {
             for (String genreName : request.getGenres()) {
               CdGenreType genreType = cdGenreTypeRepository.findByName(genreName)
@@ -256,4 +259,5 @@ public class MyCdService {
     eventPublisher.publishEvent(new CdCollectionEvent.CdRemovedEvent(this, userId));
     log.info("Published CD removed event for user: {}", userId);
   }
+  
 }

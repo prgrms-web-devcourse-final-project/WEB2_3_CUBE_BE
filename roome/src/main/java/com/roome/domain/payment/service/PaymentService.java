@@ -290,7 +290,7 @@ public class PaymentService {
             .user(payment.getUser())
             .amount(-refundAmount)
             .earnedPoints(-payment.getPurchasedPoints())
-            .paymentKey(paymentKey + "-REFUND")
+            .paymentKey(paymentKey)
             .isRefund(true) // 환불 내역임을 표시
             .build();
     paymentLogRepository.save(refundLog);
