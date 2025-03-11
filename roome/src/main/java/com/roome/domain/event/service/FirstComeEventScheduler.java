@@ -18,14 +18,14 @@ public class FirstComeEventScheduler {
   private final FirstComeEventRepository firstComeEventRepository;
 
   // 테스트 환경: 5분마다 이벤트 자동 생성
-  @Scheduled(cron = "0 */5 * * * *")
+  @Scheduled(cron = "0 0/10 17-23 * * *")
   public void createTestEvent() {
     log.info("🔹 [테스트] 주간 선착순 이벤트 자동 생성 시작");
 
     FirstComeEvent event = FirstComeEvent.builder()
         .eventName("테스트 선착순 이벤트")
         .rewardPoints(200)
-        .maxParticipants(1)
+        .maxParticipants(3)
         .eventTime(LocalDateTime.now()) // 즉시 진행
         .status(EventStatus.ONGOING) // 바로 진행 중 상태
         .build();
@@ -38,7 +38,7 @@ public class FirstComeEventScheduler {
   @Scheduled(cron = "0 */1 * * * *") // 1분마다 실행
   public void updateEndedTestEvents() {
     List<FirstComeEvent> ongoingEvents = firstComeEventRepository.findByStatus(EventStatus.ONGOING);
-    LocalDateTime now = LocalDateTime.now().minusMinutes(5); // 5분 이상 지난 이벤트 종료
+    LocalDateTime now = LocalDateTime.now().minusMinutes(10); // 5분 이상 지난 이벤트 종료
 
     for (FirstComeEvent event : ongoingEvents) {
       if (event.getEventTime().isBefore(now)) {
