@@ -135,7 +135,7 @@ spring:
 # 로컬 환경용 OAuth2 리디렉션 설정
 app:
   oauth2:
-    redirectUri: http://localhost:5173/oauth/callback
+    redirectUri: http://localhost:5173/login/callback
 # 알라딘 API 키
 aladin:
   api:
@@ -174,7 +174,7 @@ spring:
 # 개발 서버용 OAuth2 리디렉션 설정
 app:
   oauth2:
-    redirectUri: http://localhost:5173/oauth/callback
+    redirectUri: http://localhost:5173/login/callback
 # 알라딘 API 키
 aladin:
   api:
@@ -212,7 +212,7 @@ spring:
 # 프로덕션 서버용 OAuth2 리디렉션 설정
 app:
   oauth2:
-    redirectUri: https://desqb38rc2v50.cloudfront.net/oauth/callback
+    redirectUri: https://desqb38rc2v50.cloudfront.net/login/callback
 
 # 알라딘 API 키
 aladin:
@@ -245,4 +245,4 @@ spring:
 # 테스트용 OAuth2 리디렉션 설정
 app:
   oauth2:
-    redirectUri: http://localhost:5173/oauth/callback
+    redirectUri: http://localhost:5173/login/callback
