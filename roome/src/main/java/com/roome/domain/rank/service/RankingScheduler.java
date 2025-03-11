@@ -60,7 +60,9 @@ public class RankingScheduler {
 
     // Redis에 랭킹 데이터 저장
     for (Map.Entry<Long, Integer> entry : userScores.entrySet()) {
-      redisTemplate.opsForZSet().add(RANKING_KEY, entry.getKey().toString(), entry.getValue());
+      // userId를 문자열로 명시적으로 변환
+      String userIdStr = String.valueOf(entry.getKey());
+      redisTemplate.opsForZSet().add(RANKING_KEY, userIdStr, entry.getValue());
     }
 
     log.info("랭킹 갱신 완료: 사용자 {}명의 점수 업데이트", userScores.size());
