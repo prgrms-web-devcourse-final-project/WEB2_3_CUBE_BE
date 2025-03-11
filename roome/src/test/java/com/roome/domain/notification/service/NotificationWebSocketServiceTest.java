@@ -1,6 +1,6 @@
 package com.roome.domain.notification.service;
 
-import com.roome.domain.notification.dto.NotificationType;
+import com.roome.domain.notification.entity.NotificationType;
 import com.roome.domain.notification.dto.NotificationWebSocketMessageDto;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;

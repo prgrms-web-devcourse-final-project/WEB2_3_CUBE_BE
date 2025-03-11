@@ -6,6 +6,7 @@ import com.roome.domain.point.dto.PointHistoryResponse;
 import com.roome.domain.point.entity.Point;
 import com.roome.domain.point.entity.PointHistory;
 import com.roome.domain.point.entity.PointReason;
+import com.roome.domain.point.event.PointEvent;
 import com.roome.domain.point.exception.InsufficientPointsException;
 import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.point.repository.PointRepository;
@@ -19,6 +20,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -37,6 +39,7 @@ public class PointService {
   private final UserRepository userRepository;
   private final RedisTemplate<String, Object> redisTemplate;
   private final RedisLockService redisLockService; // 추가
+  private final ApplicationEventPublisher eventPublisher; // 이벤트 게시자 추가
 
 
   private static final String BALANCE_CACHE_PREFIX = "point_balance:";
@@ -82,6 +85,9 @@ public class PointService {
     int amount = POINT_EARN_MAP.getOrDefault(reason, 0);
     point.addPoints(amount);
     savePointHistory(user, amount, reason);
+
+    // 포인트 적립 이벤트 발생
+    publishPointEarnedEvent(user, point.getId(), amount, reason);
 
     redisTemplate.delete(BALANCE_CACHE_PREFIX + user.getId()); // 캐시 삭제 추가
   }
@@ -186,6 +192,20 @@ public class PointService {
     log.info("updateCache - Redis 캐싱 업데이트 시작, User: {}", userId);
     redisTemplate.opsForValue().set(BALANCE_CACHE_PREFIX + userId, balance, CACHE_DURATION);
     log.info("updateCache - Redis 캐싱 업데이트 완료, User: {}", userId);
+  }
+
+  private void publishPointEarnedEvent(User user, Long pointId, int amount, PointReason reason) {
+    log.info("publishPointEarnedEvent - User: {}, Amount: {}, Reason: {}", user.getId(), amount, reason);
+
+    // 이벤트 발행 (시스템에서 사용자에게 알림 전송, senderId는 시스템 ID인 0L로 설정)
+    eventPublisher.publishEvent(new PointEvent(
+            this,       // 이벤트 소스
+            0L,         // 시스템 ID (sender로 시스템을 사용)
+            user.getId(), // 수신자 ID
+            pointId,    // 대상 ID (Point ID)
+            amount,     // 적립 금액
+            reason      // 적립 사유
+    ));
   }
 
 }

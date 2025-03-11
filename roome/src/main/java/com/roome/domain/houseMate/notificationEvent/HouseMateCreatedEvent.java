@@ -1,6 +1,6 @@
 package com.roome.domain.houseMate.notificationEvent;
 
-import com.roome.domain.notification.dto.NotificationType;
+import com.roome.domain.notification.entity.NotificationType;
 import com.roome.global.notificationEvent.NotificationEvent;
 
 public class HouseMateCreatedEvent extends NotificationEvent {

@@ -3,7 +3,7 @@ package com.roome.global.notificationEvent;
 import com.roome.domain.cdcomment.notificationEvent.CdCommentCreatedEvent;
 import com.roome.domain.guestbook.notificationEvent.GuestBookCreatedEvent;
 import com.roome.domain.houseMate.notificationEvent.HouseMateCreatedEvent;
-import com.roome.domain.notification.dto.NotificationType;
+import com.roome.domain.notification.entity.NotificationType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

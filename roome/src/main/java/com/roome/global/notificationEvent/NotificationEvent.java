@@ -1,6 +1,6 @@
 package com.roome.global.notificationEvent;
 
-import com.roome.domain.notification.dto.NotificationType;
+import com.roome.domain.notification.entity.NotificationType;
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 

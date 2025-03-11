@@ -3,7 +3,7 @@ package com.roome.domain.notification.controller;
 import com.roome.domain.notification.dto.NotificationInfo;
 import com.roome.domain.notification.dto.NotificationReadResponse;
 import com.roome.domain.notification.dto.NotificationResponse;
-import com.roome.domain.notification.dto.NotificationType;
+import com.roome.domain.notification.entity.NotificationType;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

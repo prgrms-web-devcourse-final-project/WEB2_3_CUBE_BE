@@ -1,7 +1,7 @@
 package com.roome.domain.event.service;
 
 import com.roome.domain.event.notificationEvent.EventUpcomingNotificationEvent;
-import com.roome.domain.notification.dto.NotificationType;
+import com.roome.domain.notification.entity.NotificationType;
 import com.roome.domain.notification.entity.Notification;
 import com.roome.domain.notification.listener.NotificationEventListener;
 import com.roome.domain.notification.repository.NotificationRepository;
