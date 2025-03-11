@@ -1,5 +1,5 @@
 # Skill
-![image](https://github.com/user-attachments/assets/92b59553-307c-42c7-9c6e-77d5a02087ca)
+![image](https://github.com/user-attachments/assets/ad376cef-92e5-4b0f-907a-db2b4f8dca99)
 
 
 # Infra Structure
