@@ -24,7 +24,7 @@ public class PointController {
 
   private final PointService pointService;
 
-  @Operation(summary = "포인트 내역 조회", description = "사용자의 포인트 내역을 조회합니다. 최신순 정렬이며, 커서 기반 페이징을 지원합니다.")
+  @Operation(summary = "포인트 내역 조회", description = "사용자의 포인트 내역을 조회합니다. 최신순 정렬이며, 날짜별 그룹화 및 커서 기반 페이징을 지원합니다.")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "포인트 내역 조회 성공"),
       @ApiResponse(responseCode = "400", description = "유효하지 않은 요청 값"),
@@ -34,10 +34,12 @@ public class PointController {
   @GetMapping("/history")
   public ResponseEntity<PointHistoryResponse> getPointHistory(
       @AuthenticatedUser Long userId,
-      @RequestParam @Parameter(description = "커서 값 (마지막 조회한 포인트 내역 ID)") Long cursor,
+      @RequestParam(required = false) @Parameter(description = "마지막 조회한 날짜 (YYYY-MM-DD 형식)") String dayCursor,
+      @RequestParam(required = false) @Parameter(description = "마지막 조회한 포인트 내역 ID") Long itemCursor,
       @RequestParam @Parameter(description = "한 번에 조회할 포인트 내역 개수") int size) {
 
-    PointHistoryResponse response = pointService.getPointHistory(userId, cursor, size);
+    PointHistoryResponse response = pointService.getPointHistory(userId, dayCursor, itemCursor,
+        size);
     return ResponseEntity.ok(response);
   }
 
