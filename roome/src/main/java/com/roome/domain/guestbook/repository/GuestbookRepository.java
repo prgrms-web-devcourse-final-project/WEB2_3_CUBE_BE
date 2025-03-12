@@ -18,4 +18,7 @@ public interface GuestbookRepository extends JpaRepository<Guestbook, Long> {
   List<Guestbook> findAllByRoomOrUserId(@Param("room") Room room, @Param("userId") Long userId);
 
   List<Guestbook> findAllByUserId(Long userId);
+
+  @Query("SELECT DISTINCT g.user.id FROM Guestbook g WHERE g.room.id = :roomId")
+  List<Long> findAllUserIdsByRoomId(@Param("roomId") Long roomId);
 }

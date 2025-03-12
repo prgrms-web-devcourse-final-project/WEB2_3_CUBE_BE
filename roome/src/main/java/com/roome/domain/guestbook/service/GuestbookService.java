@@ -57,12 +57,10 @@ public class GuestbookService {
 
     Long roomOwnerId = room.getUser().getId();
 
-    List<Long> userIds = guestbookPage.getContent().stream()
-        .map(guestbook -> guestbook.getUser().getId())
-        .distinct()
-        .collect(Collectors.toList());
+    List<Long> userIds = guestbookRepository.findAllUserIdsByRoomId(roomId);
 
     Map<Long, Boolean> housemateStatusMap = userIds.stream()
+            .distinct()
         .collect(Collectors.toMap(
             userId -> userId,
             userId -> housemateRepository.existsByUserIdAndAddedId(roomOwnerId, userId)
