@@ -3,6 +3,7 @@ package com.roome.domain.room.service;
 import com.roome.domain.book.entity.repository.GenreRepository;
 import com.roome.domain.cd.repository.CdGenreTypeRepository;
 import com.roome.domain.cdcomment.repository.CdCommentRepository;
+import com.roome.domain.cdtemplate.repository.CdTemplateRepository;
 import com.roome.domain.furniture.dto.FurnitureResponseDto;
 import com.roome.domain.furniture.entity.Furniture;
 import com.roome.domain.furniture.entity.FurnitureType;
@@ -46,7 +47,7 @@ public class RoomService {
   private final MyCdCountRepository myCdCountRepository;
   private final MyBookCountRepository myBookCountRepository;
   private final MyBookReviewRepository myBookReviewRepository;
-  private final CdCommentRepository cdCommentRepository;
+  private final CdTemplateRepository cdTemplateRepository;
   private final UserActivityService userActivityService;
   private final GenreRepository genreRepository;
   private final CdGenreTypeRepository cdGenreTypeRepository;
@@ -354,7 +355,7 @@ public class RoomService {
 
   Long fetchWrittenMusicLogsCount(Long userId) {
     try {
-      return cdCommentRepository.countByUserId(userId);
+      return cdTemplateRepository.countByUserId(userId);
     } catch (Exception e) {
       log.error("사용자의 작성한 음악 로그 개수 조회 중 오류 발생 (userId={})", userId, e);
       return 0L;
