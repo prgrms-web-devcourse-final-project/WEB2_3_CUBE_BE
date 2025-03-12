@@ -57,31 +57,35 @@ public class GuestbookService {
 
     Long roomOwnerId = room.getUser().getId();
 
-    List<Long> userIds = guestbookRepository.findAllUserIdsByRoomId(roomId);
+    List<Guestbook> guestbooks = guestbookPage.getContent();
+
+    List<Long> userIds = guestbooks.stream()
+            .map(guestbook -> guestbook.getUser().getId())
+            .distinct()
+            .collect(Collectors.toList());
 
     Map<Long, Boolean> housemateStatusMap = userIds.stream()
-            .distinct()
-        .collect(Collectors.toMap(
-            userId -> userId,
-            userId -> housemateRepository.existsByUserIdAndAddedId(roomOwnerId, userId)
-        ));
+            .collect(Collectors.toMap(
+                    userId -> userId,
+                    userId -> housemateRepository.existsByUserIdAndAddedId(roomOwnerId, userId)
+            ));
 
-    List<GuestbookResponseDto> guestbooks = guestbookPage.stream()
-        .map(guestbook -> {
-          boolean isHousemate = housemateStatusMap.getOrDefault(guestbook.getUser().getId(), false);
-          return GuestbookResponseDto.from(guestbook, isHousemate);
-        })
-        .collect(Collectors.toList());
+    List<GuestbookResponseDto> guestbookResponses = guestbooks.stream()
+            .map(guestbook -> {
+              boolean isHousemate = housemateStatusMap.getOrDefault(guestbook.getUser().getId(), false);
+              return GuestbookResponseDto.from(guestbook, isHousemate);
+            })
+            .collect(Collectors.toList());
 
     return GuestbookListResponseDto.builder()
-        .roomId(roomId)
-        .guestbook(guestbooks)
-        .pagination(PaginationDto.builder()
-            .page(page)
-            .size(size)
-            .totalPages(guestbookPage.getTotalPages())
-            .build())
-        .build();
+            .roomId(roomId)
+            .guestbook(guestbookResponses)
+            .pagination(PaginationDto.builder()
+                    .page(page)
+                    .size(size)
+                    .totalPages(guestbookPage.getTotalPages())
+                    .build())
+            .build();
   }
 
   @Transactional
