@@ -72,8 +72,20 @@ public class GuestbookService {
 
     List<GuestbookResponseDto> guestbookResponses = guestbooks.stream()
             .map(guestbook -> {
-              boolean isHousemate = housemateStatusMap.getOrDefault(guestbook.getUser().getId(), false);
-              return GuestbookResponseDto.from(guestbook, isHousemate);
+              Long guestUserId = guestbook.getUser().getId();
+              boolean isHousemate = housemateStatusMap.getOrDefault(guestUserId, false);
+
+              // 방명록 RelationType을 현재 하우스메이트 여부에 따라 업데이트
+              RelationType updatedRelation = isHousemate ? RelationType.하우스메이트 : RelationType.지나가던_나그네;
+
+              return GuestbookResponseDto.builder()
+                      .guestbookId(guestbook.getGuestbookId())
+                      .nickname(guestbook.getNickname())
+                      .profileImage(guestbook.getProfileImage())
+                      .message(guestbook.getMessage())
+                      .relation(updatedRelation.name()) // 현재 상태 반영
+                      .createdAt(guestbook.getCreatedAt())
+                      .build();
             })
             .collect(Collectors.toList());
 
