@@ -40,7 +40,7 @@ public class GuestbookResponseDto {
                 .profileImage(guestbook.getUser().getProfileImage())
                 .message(guestbook.getMessage())
                 .createdAt(guestbook.getCreatedAt())
-                .relation(isHousemate ? "하우스메이트" : guestbook.getRelation().name()) // 하우스메이트 여부 반영
+                .relation(isHousemate ? "하우스메이트" : "지나가던 나그네") // 하우스메이트 여부 반영
                 .build();
     }
 }
