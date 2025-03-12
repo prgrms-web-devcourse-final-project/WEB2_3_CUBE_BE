@@ -2,6 +2,7 @@ package com.roome.domain.point.service;
 
 import com.roome.domain.point.dto.PointBalanceResponse;
 import com.roome.domain.point.dto.PointHistoryDto;
+import com.roome.domain.point.dto.PointHistoryGroupedDto;
 import com.roome.domain.point.dto.PointHistoryResponse;
 import com.roome.domain.point.entity.Point;
 import com.roome.domain.point.entity.PointHistory;
@@ -15,6 +16,9 @@ import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.jwt.exception.UserNotFoundException;
 import com.roome.global.service.RedisLockService;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -87,7 +91,11 @@ public class PointService {
     savePointHistory(user, amount, reason);
 
     // 포인트 적립 이벤트 발생
-    publishPointEarnedEvent(user, point.getId(), amount, reason);
+    // 수정된 부분: 일일 출석 보상일 때만 이벤트 발행
+    if (reason == PointReason.DAILY_ATTENDANCE) {
+      publishPointEarnedEvent(user, point.getId(), amount, reason);
+      log.info("Daily attendance reward notification sent - User: {}, Amount: {}", user.getId(), amount);
+    }
 
     redisTemplate.delete(BALANCE_CACHE_PREFIX + user.getId()); // 캐시 삭제 추가
   }
@@ -131,8 +139,10 @@ public class PointService {
   }
 
   @Transactional(readOnly = true)
-  public PointHistoryResponse getPointHistory(Long userId, Long cursor, int size) {
-    log.info("getPointHistory - User: {}, Cursor: {}, Size: {}", userId, cursor, size);
+  public PointHistoryResponse getPointHistory(Long userId, String dayCursor, Long itemCursor,
+      int size) {
+    log.info("getPointHistory - User: {}, DayCursor: {}, ItemCursor: {}, Size: {}", userId,
+        dayCursor, itemCursor, size);
 
     User user = userRepository.findById(userId).orElseThrow(() -> {
       log.warn("getPointHistory - 사용자 없음! UserId: {}", userId);
@@ -142,27 +152,62 @@ public class PointService {
     int balance = pointRepository.findByUserId(user.getId()).map(Point::getBalance).orElse(0);
     Pageable pageable = PageRequest.of(0, size);
 
-    // 전체 데이터 기준으로 firstId / lastId 조회
+    // 전체 데이터 기준 firstId, lastId 조회
     Long firstId = pointHistoryRepository.findFirstIdByUser(userId);
     Long lastId = pointHistoryRepository.findLastIdByUser(userId);
 
-    // 커서 기반 페이징
-    Slice<PointHistory> historySlice = cursor == 0 ?
-        pointHistoryRepository.findByUserOrderByIdDesc(user, pageable) :
-        pointHistoryRepository.findByUserAndIdLessThanOrderByIdDesc(user, cursor, pageable);
+    Slice<PointHistory> historySlice;
 
-    List<PointHistoryDto> historyItems = historySlice.getContent().stream()
+    if (dayCursor == null || itemCursor == null) {
+      // 처음 요청일 경우 (최신순)
+      historySlice = pointHistoryRepository.findByUserIdOrderByCreatedAtDesc(user.getId(),
+          pageable);
+    } else {
+      // 커서가 있을 경우 (페이징 처리)
+      LocalDate parsedDayCursor = LocalDate.parse(dayCursor);
+      historySlice = pointHistoryRepository.findHistoryByCursor(user.getId(), parsedDayCursor,
+          itemCursor, pageable);
+    }
+
+    List<PointHistory> historyList = historySlice.getContent();
+
+    if (historyList.isEmpty()) {
+      return new PointHistoryResponse(Collections.emptyList(), balance, 0, null, null, null, null);
+    }
+
+    // 날짜별 그룹핑
+    Map<LocalDate, List<PointHistoryDto>> groupedHistory = historyList.stream()
         .map(PointHistoryDto::fromEntity)
+        .collect(Collectors.groupingBy(dto -> LocalDate.parse(dto.getDateTime().split(" ")[0]),
+            LinkedHashMap::new, Collectors.toList()));
+
+    List<PointHistoryGroupedDto> groupedResponse = groupedHistory.entrySet().stream()
+        .map(entry -> new PointHistoryGroupedDto(entry.getKey().toString(), entry.getValue()))
         .collect(Collectors.toList());
 
-    log.info("getPointHistory - 조회 완료! User: {}, History Count: {}", userId, historyItems.size());
+    // 다음 커서 계산
+    String nextDayCursor = null;
+    Long nextItemCursor = null;
 
-    return PointHistoryResponse.fromEntityList(historyItems, balance,
-        pointHistoryRepository.countByUserId(user.getId()),
-        firstId,   // 전체 기준 firstId 적용
-        lastId,    // 전체 기준 lastId 적용
-        historySlice.hasNext() ? historyItems.get(historyItems.size() - 1).getId() : null);
+    if (!groupedResponse.isEmpty()) {
+      PointHistoryGroupedDto lastGroup = groupedResponse.get(groupedResponse.size() - 1);
+      nextDayCursor = lastGroup.getDate();
+
+      List<PointHistoryDto> lastItems = lastGroup.getItems();
+      if (!lastItems.isEmpty()) {
+        nextItemCursor = lastItems.get(lastItems.size() - 1).getId();
+      }
+    }
+
+    log.info("getPointHistory - 조회 완료! User: {}, NextDayCursor: {}, NextItemCursor: {}", userId,
+        nextDayCursor, nextItemCursor);
+
+    return new PointHistoryResponse(
+        groupedResponse, balance, pointHistoryRepository.countByUserId(user.getId()),
+        firstId, lastId, nextDayCursor, nextItemCursor
+    );
   }
+
 
   public PointBalanceResponse getUserPointBalance(Long userId) {
     log.info("getUserPointBalance - User: {}", userId);
@@ -195,16 +240,17 @@ public class PointService {
   }
 
   private void publishPointEarnedEvent(User user, Long pointId, int amount, PointReason reason) {
-    log.info("publishPointEarnedEvent - User: {}, Amount: {}, Reason: {}", user.getId(), amount, reason);
+    log.info("publishPointEarnedEvent - User: {}, Amount: {}, Reason: {}", user.getId(), amount,
+        reason);
 
     // 이벤트 발행 (시스템에서 사용자에게 알림 전송, senderId는 시스템 ID인 0L로 설정)
     eventPublisher.publishEvent(new PointEvent(
-            this,       // 이벤트 소스
-            0L,         // 시스템 ID (sender로 시스템을 사용)
-            user.getId(), // 수신자 ID
-            pointId,    // 대상 ID (Point ID)
-            amount,     // 적립 금액
-            reason      // 적립 사유
+        this,       // 이벤트 소스
+        0L,         // 시스템 ID (sender로 시스템을 사용)
+        user.getId(), // 수신자 ID
+        pointId,    // 대상 ID (Point ID)
+        amount,     // 적립 금액
+        reason      // 적립 사유
     ));
   }
 
