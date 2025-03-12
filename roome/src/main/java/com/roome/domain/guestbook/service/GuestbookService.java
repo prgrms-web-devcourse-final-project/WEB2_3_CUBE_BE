@@ -79,6 +79,7 @@ public class GuestbookService {
               RelationType updatedRelation = isHousemate ? RelationType.하우스메이트 : RelationType.지나가던_나그네;
 
               return GuestbookResponseDto.builder()
+                      .userId(guestUserId)
                       .guestbookId(guestbook.getGuestbookId())
                       .nickname(guestbook.getNickname())
                       .profileImage(guestbook.getProfileImage())
