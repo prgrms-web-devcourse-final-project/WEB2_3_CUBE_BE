@@ -68,6 +68,9 @@ public class HousemateService {
     AddedHousemate newHousemate = housemateRepository.save(
         AddedHousemate.builder().userId(userId).addedId(targetId).build());
 
+    guestbookRepository.updateRelationType(targetId, userId, RelationType.하우스메이트);
+
+
     // 하우스메이트 추가 알림 발행
     log.info("하우스메이트 알림 이벤트 발행: 발신자={}, 수신자={}, 대상 ID={}", userId, targetId, targetId);
     try {
