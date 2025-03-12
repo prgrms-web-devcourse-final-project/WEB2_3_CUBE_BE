@@ -9,22 +9,19 @@ import java.util.List;
 @AllArgsConstructor
 public class PointHistoryResponse {
 
-  private List<PointHistoryDto> history;
+  private List<PointHistoryGroupedDto> history;  // 날짜별 그룹핑된 데이터
   private int balance;
   private long totalCount;
   private Long firstId;
   private Long lastId;
-  private Long nextCursor;
+  private String nextDayCursor;  // 날짜 기준 커서
+  private Long nextItemCursor;   // 개별 항목 기준 커서
 
-  public static PointHistoryResponse fromEntityList(List<PointHistoryDto> historyList, int balance,
-      long totalCount, Long firstId, Long lastId, Long nextCursor) {
+  public static PointHistoryResponse fromEntityList(List<PointHistoryGroupedDto> historyList,
+      int balance,
+      long totalCount, Long firstId, Long lastId, String nextDayCursor, Long nextItemCursor) {
     return new PointHistoryResponse(
-        historyList,
-        balance,
-        totalCount,
-        firstId,
-        lastId,
-        nextCursor
+        historyList, balance, totalCount, firstId, lastId, nextDayCursor, nextItemCursor
     );
   }
 }
