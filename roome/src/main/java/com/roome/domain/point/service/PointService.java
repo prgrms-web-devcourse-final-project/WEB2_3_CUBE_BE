@@ -91,7 +91,11 @@ public class PointService {
     savePointHistory(user, amount, reason);
 
     // 포인트 적립 이벤트 발생
-    publishPointEarnedEvent(user, point.getId(), amount, reason);
+    // 수정된 부분: 일일 출석 보상일 때만 이벤트 발행
+    if (reason == PointReason.DAILY_ATTENDANCE) {
+      publishPointEarnedEvent(user, point.getId(), amount, reason);
+      log.info("Daily attendance reward notification sent - User: {}, Amount: {}", user.getId(), amount);
+    }
 
     redisTemplate.delete(BALANCE_CACHE_PREFIX + user.getId()); // 캐시 삭제 추가
   }
