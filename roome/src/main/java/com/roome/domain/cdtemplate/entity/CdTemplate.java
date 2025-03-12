@@ -1,6 +1,7 @@
 package com.roome.domain.cdtemplate.entity;
 
 import com.roome.domain.mycd.entity.MyCd;
+import com.roome.domain.user.entity.User;
 import com.roome.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -19,6 +20,10 @@ public class CdTemplate extends BaseEntity {
   @JoinColumn(name = "my_cd_id", nullable = false, unique = true)
   private MyCd myCd;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_Id", nullable = false, unique = true)
+  private User user;
+
   @Column(nullable = false, length = 255)
   private String comment1;
 
@@ -32,8 +37,10 @@ public class CdTemplate extends BaseEntity {
   private String comment4;
 
   @Builder
-  public CdTemplate(MyCd myCd, String comment1, String comment2, String comment3, String comment4) {
+  public CdTemplate(MyCd myCd, User user, String comment1, String comment2, String comment3,
+      String comment4) {
     this.myCd = myCd;
+    this.user = user;
     this.comment1 = comment1;
     this.comment2 = comment2;
     this.comment3 = comment3;
