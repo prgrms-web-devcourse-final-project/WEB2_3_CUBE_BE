@@ -1,5 +1,8 @@
 package com.roome.domain.houseMate.service;
 
+import com.roome.domain.guestbook.entity.RelationType;
+import com.roome.domain.guestbook.repository.GuestbookRepository;
+import com.roome.domain.guestbook.service.GuestbookService;
 import com.roome.domain.houseMate.dto.HousemateInfo;
 import com.roome.domain.houseMate.dto.HousemateListResponse;
 import com.roome.domain.houseMate.dto.HousemateResponseDto;
@@ -28,6 +31,7 @@ public class HousemateService {
   private final UserRepository userRepository;
   private final ApplicationEventPublisher eventPublisher; // 이벤트 발행자
   private final UserActivityService userActivityService;
+  private final GuestbookRepository guestbookRepository;
 
   // 팔로잉 목록 조회 (내가 추가한 유저 목록)
   public HousemateListResponse getFollowingList(Long userId, Long cursor, int limit,
@@ -89,6 +93,9 @@ public class HousemateService {
     }
 
     housemateRepository.deleteByUserIdAndAddedId(userId, targetId);
+
+    // 방명록 RelationType 업데이트 (하우스메이트 → 지나가던 나그네)
+    guestbookRepository.updateRelationType(targetId, userId, RelationType.지나가던_나그네);
   }
 
   // 하우스메이트 목록 응답 생성
