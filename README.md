@@ -1,11 +1,12 @@
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/c7e9f361-0ae1-4d06-a747-573d74c97140", height="200px" width="500px">
+  <a href="https://desqb38rc2v50.cloudfront.net" target="_blank">
+    <img src="https://github.com/user-attachments/assets/c7e9f361-0ae1-4d06-a747-573d74c97140" height="200px" width="500px">
+  </a>
 </p>
-
 
 <div align="center">
   
-  RoomE는 **"나만의 공간"을 통해 감정을 탐색**하고, <br> 
+  [RoomE](https://desqb38rc2v50.cloudfront.net)는 **"나만의 공간"을 통해 감정을 탐색**하고, <br> 
   **취향을 자유롭게 표현**할 수 있는 플랫폼을 제공합니다. <br> 
   <br>
   
