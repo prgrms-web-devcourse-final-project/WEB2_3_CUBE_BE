@@ -9,21 +9,33 @@ import com.roome.domain.cdtemplate.exception.UnauthorizedCdTemplateAccessExcepti
 import com.roome.domain.cdtemplate.repository.CdTemplateRepository;
 import com.roome.domain.mycd.entity.MyCd;
 import com.roome.domain.mycd.repository.MyCdRepository;
+import com.roome.domain.user.entity.User;
+import com.roome.domain.user.repository.UserRepository;
+import com.roome.global.jwt.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CdTemplateService {
 
   private final CdTemplateRepository cdTemplateRepository;
   private final MyCdRepository myCdRepository;
+  private final UserRepository userRepository;
 
   @Transactional
   public CdTemplateResponse createTemplate(Long myCdId, Long userId, CdTemplateRequest request) {
     MyCd myCd = myCdRepository.findById(myCdId)
         .orElseThrow(CdTemplateNotFoundException::new);
+
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> {
+          log.error("사용자를 찾을 수 없습니다. userId={}", userId);
+          return new UserNotFoundException();
+        });
 
     if (!myCd.getUser().getId().equals(userId)) {
       throw new UnauthorizedCdTemplateAccessException();
@@ -33,6 +45,7 @@ public class CdTemplateService {
     if (!cdTemplateRepository.existsByMyCdId(myCdId)) {
       CdTemplate cdTemplate = CdTemplate.builder()
           .myCd(myCd)
+          .user(user)
           .comment1(request.getComment1())
           .comment2(request.getComment2())
           .comment3(request.getComment3())
