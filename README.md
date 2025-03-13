@@ -1,19 +1,23 @@
-<p align="center">
-  <a href="https://desqb38rc2v50.cloudfront.net" target="_blank">
-    <img src="https://github.com/user-attachments/assets/c7e9f361-0ae1-4d06-a747-573d74c97140" height="200px" width="500px">
-  </a>
-</p>
+![Thumbnail](https://github.com/user-attachments/assets/2b64a918-ded2-4f52-8a87-f5c711cfea7b)
 
-<div align="center">
-  
-  [RoomE](https://desqb38rc2v50.cloudfront.net)는 **"나만의 공간"을 통해 감정을 탐색**하고, <br> 
-  **취향을 자유롭게 표현**할 수 있는 플랫폼을 제공합니다. <br> 
-  <br>
-  
-  단순한 취향 공유를 넘어, **자신을 이해하고 마음의 안정을 찾으며**, <br>
-  같은 관심사를 가진 사람들과 자연스럽게 연결될 수 있는 **디지털 힐링 공간**을 경험해보세요.
-  
-</div>
+<br/>
+
+- 프로젝트 기간 : 2025.02.06 ~ 2025.03.14
+- 배포 URL : https://desqb38rc2v50.cloudfront.net/
+
+
+<hr/>
+
+<br/>
+
+## ☁️ 프로젝트 소개 - 나를 찾는 디지털 힐링 공간 RoomE
+- RoomE(루미)는 바쁜 일상 속에서 자신을 잃어가는 현대인들에게 자아 탐색과 심리적 안정을 위한 공간을 제공합니다.
+- 사용자는 개성과 취향을 자유롭게 표현하며, 같은 관심사를 가진 사람들과 자연스럽게 연결될 수 있는 디지털 힐링 & 커뮤니티 플랫폼입니다.
+- 책장, CD 플레이어, 테마 등을 활용해 나만의 감성과 취향이 담긴 공간을 자유롭게 꾸밀 수 있습니다.
+- 자신을 더 깊이 이해하고 감정을 치유하는 특별한 경험을 제공합니다.
+- 취향 공유를 넘어 공통 관심사를 기반으로 사람들과 매칭되고, 정서적 공감을 나누는 커뮤니티를 지원합니다.
+
+<br />
 
 # Skill
 ![image](https://github.com/user-attachments/assets/8d553034-ce41-41cd-9a6e-d4bf7e2b234a)
