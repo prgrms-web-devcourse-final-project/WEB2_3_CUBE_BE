@@ -34,6 +34,9 @@
 | PO | Team-Lead  | Clerk | Clerk | Clerk |
 | AWS, CI/CD, <br> 알림/친구, 프로필 | 음악, 포인트, 이벤트 | 로그인, 랭킹 | 메인/룸, <br> 방명록, 결제 | 도서, 출석체크 |
 
+
+***
+
 <div align='center'>
   <a href="https://desqb38rc2v50.cloudfront.net/">
     <img src="https://github.com/user-attachments/assets/fbd61d4b-096a-4f1b-aa5e-4c3d7babee83" width="340" />
