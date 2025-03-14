@@ -51,4 +51,4 @@
 
 ***
 
-[👉 자세한 프로젝트 문서는 Wiki에서 확인하세요](https://github.com/prgrms-web-devcourse-final-project/WEB2_3_CUBE_BE/wiki)
+### [👉 자세한 프로젝트 문서는 Wiki에서 확인하세요](https://github.com/prgrms-web-devcourse-final-project/WEB2_3_CUBE_BE/wiki)
