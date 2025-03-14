@@ -20,7 +20,7 @@
 <br />
 
 # 시연 영상
-프로젝트 시연 영상은 [여기](https://www.youtube.com/watch?v=cfqYWgZEVag)에서 확인하실 수 있습니다.
+[![ROOME 프로젝트 시연 영상](https://img.youtube.com/vi/cfqYWgZEVag/0.jpg)](https://www.youtube.com/watch?v=cfqYWgZEVag)
 
 # Skill
 ![image](https://github.com/user-attachments/assets/8d553034-ce41-41cd-9a6e-d4bf7e2b234a)
