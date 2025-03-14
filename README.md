@@ -29,6 +29,9 @@
 # Infra Structure
 ![image](https://github.com/user-attachments/assets/95428da4-4439-4321-9005-d27fd6ac42bc)
 
+# ERD
+[![Roome_ERD](https://github.com/user-attachments/assets/bab32380-31ca-4330-a891-c2e8126ce524)](https://github.com/user-attachments/assets/bab32380-31ca-4330-a891-c2e8126ce524)
+
 
 # Member
 | [유방현](https://github.com/chesthyeon) | [정현구](https://github.com/jhyngu) | [이하연](https://github.com/exxyeon) | [김소연](https://github.com/soyeon1806) | [장대영](https://github.com/JangDaeyeong) |
