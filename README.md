@@ -30,7 +30,7 @@
 ![image](https://github.com/user-attachments/assets/95428da4-4439-4321-9005-d27fd6ac42bc)
 
 # ERD
-[![Roome_ERD](https://github.com/user-attachments/assets/bab32380-31ca-4330-a891-c2e8126ce524)](https://github.com/user-attachments/assets/bab32380-31ca-4330-a891-c2e8126ce524)
+[![Roome_ERD](https://github.com/user-attachments/assets/bab32380-31ca-4330-a891-c2e8126ce524)](https://github.com/user-attachments/assets/c762c51e-d1b1-4941-941c-9d51b33b4c16)
 
 
 # Member
