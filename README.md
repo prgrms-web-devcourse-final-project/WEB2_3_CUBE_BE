@@ -4,7 +4,7 @@
 
 - 프로젝트 기간 : 2025.02.06 ~ 2025.03.14
 - 배포 URL : https://desqb38rc2v50.cloudfront.net/
-
+- 프런트 Repository : https://github.com/prgrms-web-devcourse-final-project/WEB2_3_CUBE_FE
 
 <hr/>
 
@@ -19,12 +19,18 @@
 
 <br />
 
+# 시연 영상
+[![ROOME 프로젝트 시연 영상](https://img.youtube.com/vi/cfqYWgZEVag/0.jpg)](https://www.youtube.com/watch?v=cfqYWgZEVag)
+
 # Skill
 ![image](https://github.com/user-attachments/assets/8d553034-ce41-41cd-9a6e-d4bf7e2b234a)
 
 
 # Infra Structure
 ![image](https://github.com/user-attachments/assets/95428da4-4439-4321-9005-d27fd6ac42bc)
+
+# ERD
+[![Roome_ERD](https://github.com/user-attachments/assets/bab32380-31ca-4330-a891-c2e8126ce524)](https://github.com/user-attachments/assets/c762c51e-d1b1-4941-941c-9d51b33b4c16)
 
 
 # Member
@@ -33,3 +39,16 @@
 | <a href="https://github.com/chesthyeon"><img src="https://avatars.githubusercontent.com/u/75735367?v=4" width="100px;" alt=""/></a> | <a href="https://github.com/jhyngu"><img src="https://avatars.githubusercontent.com/u/154207428?v=4" width="100px;" alt=""/></a> | <a href="https://github.com/exxyeon"><img src="https://avatars.githubusercontent.com/u/170444258?v=4" width="100px;" alt=""/></a> | <a href="https://github.com/soyeon1806"><img src="https://avatars.githubusercontent.com/u/102381857?v=4" width="100px;" alt=""/></a> | <a href="https://github.com/JangDaeyeong"><img src="https://avatars.githubusercontent.com/JangDaeyeong" width="100px;" alt=""/></a> |
 | PO | Team-Lead  | Clerk | Clerk | Clerk |
 | AWS, CI/CD, <br> 알림/친구, 프로필 | 음악, 포인트, 이벤트 | 로그인, 랭킹 | 메인/룸, <br> 방명록, 결제 | 도서, 출석체크 |
+
+
+***
+
+<div align='center'>
+  <a href="https://desqb38rc2v50.cloudfront.net/">
+    <img src="https://github.com/user-attachments/assets/fbd61d4b-096a-4f1b-aa5e-4c3d7babee83" width="340" />
+  </a>
+</div>
+
+***
+
+### [👉 자세한 프로젝트 문서는 Wiki에서 확인하세요](https://github.com/prgrms-web-devcourse-final-project/WEB2_3_CUBE_BE/wiki)
