@@ -27,4 +27,5 @@ public interface GuestbookRepository extends JpaRepository<Guestbook, Long> {
   @Modifying
   @Query("UPDATE Guestbook g SET g.relation = :relation WHERE g.user.id = :guestId AND g.room.user.id = :ownerId")
   void updateRelationType(@Param("guestId") Long guestId, @Param("ownerId") Long ownerId, @Param("relation") RelationType relation);
+
 }
