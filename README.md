@@ -48,3 +48,7 @@
     <img src="https://github.com/user-attachments/assets/fbd61d4b-096a-4f1b-aa5e-4c3d7babee83" width="340" />
   </a>
 </div>
+
+***
+
+[👉 자세한 프로젝트 문서는 Wiki에서 확인하세요](https://github.com/prgrms-web-devcourse-final-project/WEB2_3_CUBE_BE/wiki)
