@@ -4,7 +4,7 @@
 
 - 프로젝트 기간 : 2025.02.06 ~ 2025.03.14
 - 배포 URL : https://desqb38rc2v50.cloudfront.net/
-
+- 프런트 Repository : https://github.com/prgrms-web-devcourse-final-project/WEB2_3_CUBE_FE
 
 <hr/>
 
