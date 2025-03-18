@@ -51,4 +51,10 @@
 
 ***
 
+***
+# 수상내역
+![우수상](https://github.com/user-attachments/assets/fcbb42e1-49fc-4b4b-8982-57d1babf1c61)
+![인기상](https://github.com/user-attachments/assets/f6863c36-5df2-40b9-b503-293e06ffbd83)
+
+
 ### [👉 자세한 프로젝트 문서는 Wiki에서 확인하세요](https://github.com/prgrms-web-devcourse-final-project/WEB2_3_CUBE_BE/wiki)
