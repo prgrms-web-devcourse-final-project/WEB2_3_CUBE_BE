@@ -3,6 +3,7 @@ package com.roome.global.exception;
 import com.roome.domain.auth.dto.response.MessageResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -52,6 +53,16 @@ public class GlobalExceptionHandler {
     return ResponseEntity
         .status(HttpStatus.BAD_REQUEST)
         .body(new ErrorResponse(message, HttpStatus.BAD_REQUEST.value()));
+  }
+
+  // 낙관적 락 충돌: 동시 요청이 같은 리소스를 변경한 경우 409로 처리 (재시도 유도)
+  @ExceptionHandler(OptimisticLockingFailureException.class)
+  public ResponseEntity<ErrorResponse> handleOptimisticLock(OptimisticLockingFailureException e) {
+    log.warn("동시 변경 충돌 발생: {}", e.getMessage());
+    ErrorCode error = ErrorCode.PAYMENT_ALREADY_PROCESSED;
+    return ResponseEntity
+        .status(error.getStatus())
+        .body(new ErrorResponse(error.getMessage(), error.getStatus().value()));
   }
 
   // DB 관련 예외 처리

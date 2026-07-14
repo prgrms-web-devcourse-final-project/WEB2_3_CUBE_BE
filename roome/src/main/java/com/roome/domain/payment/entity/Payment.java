@@ -41,6 +41,9 @@ public class Payment extends BaseTimeEntity {
     private LocalDateTime approvedAt; // 결제 승인(완결) 시각 - 환불 기한 산정의 기준
     private LocalDateTime canceledAt; // 결제 취소 시각
 
+    @Version
+    private Long version; // 낙관적 락 - 동시 상태 변경(중복 완결/취소) 방지
+
     public void updateStatus(PaymentStatus status) {
         this.status = status;
     }
