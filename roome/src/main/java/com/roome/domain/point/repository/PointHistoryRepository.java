@@ -3,6 +3,7 @@ package com.roome.domain.point.repository;
 import com.roome.domain.point.entity.PointHistory;
 import com.roome.domain.point.entity.PointReason;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -67,19 +68,20 @@ public interface PointHistoryRepository extends JpaRepository<PointHistory, Long
   @Query("SELECT MIN(ph.id) FROM PointHistory ph WHERE ph.user.id = :userId")
   Long findLastIdByUser(@Param("userId") Long userId);
 
-  // 최근 구매 후 사용한 포인트 여부 확인
+  // 특정 시점 이후 포인트 사용 여부 확인
+  // 사용은 reason 나열이 아닌 음수 변동(amount < 0)으로 판별하고, 환불로 인한 차감은 제외
   @Query("""
           SELECT CASE WHEN COUNT(ph) > 0 THEN TRUE ELSE FALSE END
           FROM PointHistory ph
           WHERE ph.user.id = :userId
-          AND ph.reason = 'POINT_USE'
-          AND ph.createdAt > (
-              SELECT MAX(ph2.createdAt)
-              FROM PointHistory ph2
-              WHERE ph2.user.id = :userId AND ph2.reason = 'POINT_PURCHASE'
-          )
+          AND ph.amount < 0
+          AND ph.reason NOT IN :refundReasons
+          AND ph.createdAt > :since
       """)
-  boolean hasUsedPointsAfterLastPurchase(@Param("userId") Long userId);
+  boolean hasUsedPointsAfter(
+      @Param("userId") Long userId,
+      @Param("since") LocalDateTime since,
+      @Param("refundReasons") List<PointReason> refundReasons);
 
   // 최근 포인트 구매 내역 조회
   @Query("""
