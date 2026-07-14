@@ -3,6 +3,8 @@ package com.roome.domain.payment.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -13,6 +15,8 @@ import com.roome.domain.payment.entity.Payment;
 import com.roome.domain.payment.entity.PaymentStatus;
 import com.roome.domain.payment.repository.PaymentLogRepository;
 import com.roome.domain.payment.repository.PaymentRepository;
+import com.roome.domain.point.entity.PointHistory;
+import com.roome.domain.point.entity.PointReason;
 import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.point.service.PointService;
@@ -20,7 +24,10 @@ import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -132,5 +139,66 @@ class PaymentServiceTest {
     assertThatThrownBy(() -> paymentService.requestPayment(1L, requestDto))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
+  }
+
+  @Test
+  @DisplayName("구매 후 포인트를 사용했다면 Toss 취소 요청 전에 환불이 차단되어야 한다.")
+  void cancelPayment_UsedPoints_BlockedBeforeTossCall() {
+    // given
+    Payment payment = successPayment("pk123");
+    PointHistory lastPurchase =
+        new PointHistory(testUser, 550, PointReason.POINT_PURCHASE_550,
+            LocalDateTime.now().minusDays(1));
+
+    when(paymentRepository.findByPaymentKey("pk123")).thenReturn(Optional.of(payment));
+    when(pointHistoryRepository.findLatestPurchase(eq(1L), anyList(), any(Pageable.class)))
+        .thenReturn(List.of(lastPurchase));
+    when(pointHistoryRepository.hasUsedPointsAfter(eq(1L), eq(lastPurchase.getCreatedAt()),
+        anyList())).thenReturn(true);
+
+    // when & then
+    assertThatThrownBy(() -> paymentService.cancelPayment(1L, "pk123", "단순 변심", 5_000))
+        .isInstanceOf(BusinessException.class)
+        .hasMessageContaining(ErrorCode.PAYMENT_ALREADY_USED.getMessage());
+
+    // 비가역적인 외부 취소 요청은 절대 나가면 안 된다
+    verify(tossPaymentClient, never()).cancelPayment(any(), any(), any());
+    verify(pointService, never()).usePoints(any(), any());
+  }
+
+  @Test
+  @DisplayName("구매 후 포인트 사용 이력이 없으면 환불이 정상 진행되어야 한다.")
+  void cancelPayment_NoUsage_Success() {
+    // given
+    Payment payment = successPayment("pk123");
+    PointHistory lastPurchase =
+        new PointHistory(testUser, 550, PointReason.POINT_PURCHASE_550,
+            LocalDateTime.now().minusDays(1));
+
+    when(paymentRepository.findByPaymentKey("pk123")).thenReturn(Optional.of(payment));
+    when(pointHistoryRepository.findLatestPurchase(eq(1L), anyList(), any(Pageable.class)))
+        .thenReturn(List.of(lastPurchase));
+    when(pointHistoryRepository.hasUsedPointsAfter(eq(1L), eq(lastPurchase.getCreatedAt()),
+        anyList())).thenReturn(false);
+    when(tossPaymentClient.cancelPayment("pk123", "단순 변심", 5_000)).thenReturn(true);
+
+    // when
+    PaymentResponseDto response = paymentService.cancelPayment(1L, "pk123", "단순 변심", 5_000);
+
+    // then
+    assertThat(response.getStatus()).isEqualTo(PaymentStatus.CANCELED);
+    verify(pointService).usePoints(testUser, PointReason.POINT_REFUND_550);
+    verify(paymentLogRepository).save(any());
+  }
+
+  private Payment successPayment(String paymentKey) {
+    return Payment.builder()
+        .user(testUser)
+        .orderId("order123")
+        .paymentKey(paymentKey)
+        .amount(5_000)
+        .purchasedPoints(550)
+        .status(PaymentStatus.SUCCESS)
+        .build();
   }
 }

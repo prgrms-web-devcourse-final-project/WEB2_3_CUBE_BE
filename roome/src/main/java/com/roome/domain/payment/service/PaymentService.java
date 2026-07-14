@@ -222,8 +222,9 @@ public class PaymentService {
       throw new BusinessException(ErrorCode.PAYMENT_REFUND_PERIOD_EXCEEDED);
     }
 
-    // 포인트 사용 여부 체크
-    boolean hasUsedPoints = pointHistoryRepository.hasUsedPointsAfterLastPurchase(userId);
+    // 포인트 사용 여부 체크 (마지막 구매 이후 사용 이력이 있으면 환불 불가)
+    boolean hasUsedPoints = pointHistoryRepository.hasUsedPointsAfter(
+        userId, lastPurchase.getCreatedAt(), PointProduct.refundReasons());
     if (hasUsedPoints) {
       throw new BusinessException(ErrorCode.PAYMENT_ALREADY_USED);
     }

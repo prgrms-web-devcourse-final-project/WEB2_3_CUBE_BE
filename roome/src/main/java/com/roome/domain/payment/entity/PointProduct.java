@@ -40,4 +40,10 @@ public enum PointProduct {
         .map(PointProduct::getEarnReason)
         .toList();
   }
+
+  public static List<PointReason> refundReasons() {
+    return Arrays.stream(values())
+        .map(PointProduct::getRefundReason)
+        .toList();
+  }
 }
