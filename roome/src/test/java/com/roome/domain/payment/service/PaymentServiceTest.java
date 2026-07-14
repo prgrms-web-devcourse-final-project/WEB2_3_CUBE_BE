@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import com.roome.domain.payment.dto.PaymentRequestDto;
 import com.roome.domain.payment.dto.PaymentResponseDto;
+import com.roome.domain.payment.dto.PaymentVerifyDto;
 import com.roome.domain.payment.entity.Payment;
 import com.roome.domain.payment.entity.PaymentStatus;
 import com.roome.domain.payment.repository.PaymentLogRepository;
@@ -281,6 +282,93 @@ class PaymentServiceTest {
     // then
     verify(pointService, never()).earnPoints(any(), any());
     verify(paymentLogRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("타인의 결제를 검증 요청하면 Toss 승인 호출 전에 차단되어야 한다.")
+  void verifyPayment_NotOwner_AccessDenied() {
+    // given: 결제 소유자는 user 2, 요청자는 user 1
+    User other = User.builder().id(2L).nickname("other").build();
+    Payment payment = Payment.builder()
+        .user(other)
+        .orderId("order123")
+        .amount(1_000)
+        .purchasedPoints(100)
+        .status(PaymentStatus.PENDING)
+        .build();
+    when(paymentRepository.findByOrderId("order123")).thenReturn(Optional.of(payment));
+
+    // when & then
+    assertThatThrownBy(
+        () -> paymentService.verifyPayment(1L, new PaymentVerifyDto("pk123", "order123", 1_000)))
+        .isInstanceOf(BusinessException.class)
+        .hasMessageContaining(ErrorCode.PAYMENT_ACCESS_DENIED.getMessage());
+
+    // 실결제 승인(부수효과)은 절대 나가면 안 된다
+    verify(tossPaymentClient, never()).requestConfirm(any());
+  }
+
+  @Test
+  @DisplayName("타인의 결제를 실패 처리하려 하면 차단되어야 한다.")
+  void failPayment_NotOwner_AccessDenied() {
+    // given
+    User other = User.builder().id(2L).nickname("other").build();
+    Payment payment = Payment.builder()
+        .user(other).orderId("order123").amount(1_000).purchasedPoints(100)
+        .status(PaymentStatus.PENDING).build();
+    when(paymentRepository.findByOrderId("order123")).thenReturn(Optional.of(payment));
+
+    // when & then
+    assertThatThrownBy(() -> paymentService.failPayment(1L, "order123"))
+        .isInstanceOf(BusinessException.class)
+        .hasMessageContaining(ErrorCode.PAYMENT_ACCESS_DENIED.getMessage());
+    assertThat(payment.getStatus()).isEqualTo(PaymentStatus.PENDING);
+  }
+
+  @Test
+  @DisplayName("본인의 PENDING 결제는 실패 처리되어야 한다.")
+  void failPayment_Pending_MarksFailed() {
+    // given
+    Payment payment = Payment.builder()
+        .user(testUser).orderId("order123").amount(1_000).purchasedPoints(100)
+        .status(PaymentStatus.PENDING).build();
+    when(paymentRepository.findByOrderId("order123")).thenReturn(Optional.of(payment));
+
+    // when
+    paymentService.failPayment(1L, "order123");
+
+    // then
+    assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAILED);
+  }
+
+  @Test
+  @DisplayName("승인 완료된 결제는 실패로 덮어쓸 수 없어야 한다.")
+  void failPayment_AlreadySuccess_Rejected() {
+    // given
+    Payment payment = successPayment("pk123");
+    when(paymentRepository.findByOrderId("order123")).thenReturn(Optional.of(payment));
+
+    // when & then
+    assertThatThrownBy(() -> paymentService.failPayment(1L, "order123"))
+        .isInstanceOf(BusinessException.class)
+        .hasMessageContaining(ErrorCode.PAYMENT_ALREADY_PROCESSED.getMessage());
+    assertThat(payment.getStatus()).isEqualTo(PaymentStatus.SUCCESS);
+  }
+
+  @Test
+  @DisplayName("이미 실패한 결제의 실패 처리 재요청은 예외 없이 무시되어야 한다 (멱등성).")
+  void failPayment_AlreadyFailed_Idempotent() {
+    // given
+    Payment payment = Payment.builder()
+        .user(testUser).orderId("order123").amount(1_000).purchasedPoints(100)
+        .status(PaymentStatus.FAILED).build();
+    when(paymentRepository.findByOrderId("order123")).thenReturn(Optional.of(payment));
+
+    // when
+    paymentService.failPayment(1L, "order123");
+
+    // then
+    assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAILED);
   }
 
   private Payment successPayment(String paymentKey) {

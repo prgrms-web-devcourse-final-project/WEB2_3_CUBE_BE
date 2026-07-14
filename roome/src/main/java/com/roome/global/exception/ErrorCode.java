@@ -72,6 +72,7 @@ public enum ErrorCode {
   INVALID_REFUND_POINT_AMOUNT(HttpStatus.BAD_REQUEST, "잘못된 포인트 환불 단위입니다."),
   PAYMENT_REFUND_PERIOD_EXCEEDED(HttpStatus.BAD_REQUEST, "환불 가능 기간을 초과하였습니다."),
   PAYMENT_ALREADY_USED(HttpStatus.BAD_REQUEST, "포인트를 이미 사용하여 환불할 수 없습니다."),
+  PAYMENT_ALREADY_PROCESSED(HttpStatus.BAD_REQUEST, "이미 처리된 결제입니다."),
   POINT_PURCHASE_NOT_FOUND(HttpStatus.NOT_FOUND, "포인트 결제 정보를 찾을 수 없습니다."),
   // 서평 관련 예외
   MY_BOOK_REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "서평을 찾을 수 없습니다."),

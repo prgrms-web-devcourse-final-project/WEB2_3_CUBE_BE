@@ -57,6 +57,7 @@ public class PaymentController {
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "결제 검증 성공"),
       @ApiResponse(responseCode = "400", description = "잘못된 결제 검증 요청 (INVALID_PAYMENT_VERIFICATION)"),
+      @ApiResponse(responseCode = "403", description = "본인의 결제가 아님 (PAYMENT_ACCESS_DENIED)"),
       @ApiResponse(responseCode = "500", description = "서버 내부 오류")
   })
   @PostMapping("/verify")
@@ -75,15 +76,19 @@ public class PaymentController {
   @Operation(summary = "결제 실패 처리", description = "결제가 실패한 경우 해당 결제 정보를 실패 상태로 업데이트한다.")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "204", description = "결제 실패 처리 성공"),
+      @ApiResponse(responseCode = "400", description = "이미 처리된 결제 (PAYMENT_ALREADY_PROCESSED)"),
+      @ApiResponse(responseCode = "403", description = "본인의 결제가 아님 (PAYMENT_ACCESS_DENIED)"),
       @ApiResponse(responseCode = "404", description = "해당 결제 정보를 찾을 수 없음 (PAYMENT_NOT_FOUND)"),
       @ApiResponse(responseCode = "500", description = "서버 내부 오류")
   })
   @PostMapping("/fail/{orderId}")
-  public ResponseEntity<Void> failPayment(@PathVariable String orderId) {
+  public ResponseEntity<Void> failPayment(
+      @AuthenticationPrincipal Long userId,
+      @PathVariable String orderId) {
 
-    log.warn("결제 실패 처리 요청: orderId={}", orderId);
+    log.warn("결제 실패 처리 요청: userId={}, orderId={}", userId, orderId);
 
-    paymentService.failPayment(orderId);
+    paymentService.failPayment(userId, orderId);
     return ResponseEntity.noContent().build();
   }
 
