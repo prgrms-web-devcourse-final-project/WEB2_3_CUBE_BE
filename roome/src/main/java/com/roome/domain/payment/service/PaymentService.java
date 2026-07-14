@@ -105,6 +105,13 @@ public class PaymentService {
     log.info("✅ Step 3: DB 조회 완료 - orderId={}, amount={}, paymentKey={}",
             payment.getOrderId(), payment.getAmount(), payment.getPaymentKey());
 
+    // 소유권 검증: 본인의 결제만 검증 요청 가능 (Toss 승인 호출 등 어떤 부수효과보다 먼저 수행)
+    if (!payment.getUser().getId().equals(userId)) {
+      log.warn("결제 검증 권한 없음: orderId={}, 요청자={}, 소유자={}",
+          verifyDto.getOrderId(), userId, payment.getUser().getId());
+      throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
+    }
+
     if (payment.getAmount() != verifyDto.getAmount()) {
       log.error("❌ Step 4: 결제 금액 불일치 - 요청 금액={}, 저장된 금액={}",
               verifyDto.getAmount(), payment.getAmount());
@@ -192,12 +199,28 @@ public class PaymentService {
 
   // 결제 실패 처리
   @Transactional
-  public void failPayment(String orderId) {
+  public void failPayment(Long userId, String orderId) {
     Payment payment = paymentRepository.findByOrderId(orderId)
         .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
+    // 소유권 검증: 본인의 결제만 실패 처리 가능
+    if (!payment.getUser().getId().equals(userId)) {
+      log.warn("결제 실패 처리 권한 없음: orderId={}, 요청자={}, 소유자={}",
+          orderId, userId, payment.getUser().getId());
+      throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
+    }
+
+    // 이미 실패 처리된 결제는 무시 (실패 콜백 재시도에 대한 멱등 처리)
+    if (payment.getStatus() == PaymentStatus.FAILED) {
+      return;
+    }
+
+    // PENDING 상태만 실패로 전이 가능 (승인이나 취소된 결제를 실패로 덮어쓰는 것 방지)
+    if (payment.getStatus() != PaymentStatus.PENDING) {
+      throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
+    }
+
     payment.updateStatus(PaymentStatus.FAILED);
-    paymentRepository.save(payment);
 
     log.warn("결제 실패: orderId={}", orderId);
   }

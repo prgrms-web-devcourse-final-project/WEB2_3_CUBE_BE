@@ -229,7 +229,7 @@ class PaymentControllerTest {
     void failPayment_Success() throws Exception {
         // given
         setAuthenticatedUser(1L);
-        doNothing().when(paymentService).failPayment("order123");
+        doNothing().when(paymentService).failPayment(1L, "order123");
 
         // when & then
         mockMvc.perform(post("/api/payments/fail/order123")
@@ -237,7 +237,7 @@ class PaymentControllerTest {
                         .with(csrf()))
                 .andExpect(status().isNoContent());
 
-        verify(paymentService, times(1)).failPayment("order123");
+        verify(paymentService, times(1)).failPayment(1L, "order123");
     }
 
 
@@ -246,7 +246,7 @@ class PaymentControllerTest {
     void failPayment_OrderNotFound() throws Exception {
         // given
         setAuthenticatedUser(1L);
-        doThrow(new BusinessException(ErrorCode.PAYMENT_NOT_FOUND)).when(paymentService).failPayment("invalidOrder");
+        doThrow(new BusinessException(ErrorCode.PAYMENT_NOT_FOUND)).when(paymentService).failPayment(1L, "invalidOrder");
 
         // when & then
         mockMvc.perform(post("/api/payments/fail/invalidOrder")
@@ -254,7 +254,7 @@ class PaymentControllerTest {
                         .with(csrf()))
                 .andExpect(status().isNotFound());
 
-        verify(paymentService, times(1)).failPayment("invalidOrder");
+        verify(paymentService, times(1)).failPayment(1L, "invalidOrder");
     }
 
 }
