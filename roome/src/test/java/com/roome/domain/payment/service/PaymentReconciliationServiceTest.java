@@ -70,14 +70,15 @@ class PaymentReconciliationServiceTest {
     Payment payment = pendingPayment(1L, "order1");
     givenStalePayments(payment);
     when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
+    LocalDateTime tossApprovedAt = LocalDateTime.of(2026, 7, 15, 10, 0);
     when(tossPaymentClient.findPaymentByOrderId("order1"))
-        .thenReturn(Optional.of(new TossPaymentInfo("pk1", "DONE", 5_000)));
+        .thenReturn(Optional.of(new TossPaymentInfo("pk1", "DONE", 5_000, tossApprovedAt)));
 
     // when
     reconciliationService.reconcilePendingPayments();
 
-    // then
-    verify(paymentService).completePayment(payment, "pk1");
+    // then: Toss가 확정한 승인 시각이 완결 처리로 그대로 전달되어야 한다
+    verify(paymentService).completePayment(payment, "pk1", tossApprovedAt);
   }
 
   @Test
@@ -88,13 +89,13 @@ class PaymentReconciliationServiceTest {
     givenStalePayments(payment);
     when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
     when(tossPaymentClient.findPaymentByOrderId("order1"))
-        .thenReturn(Optional.of(new TossPaymentInfo("pk1", "DONE", 30_000)));
+        .thenReturn(Optional.of(new TossPaymentInfo("pk1", "DONE", 30_000, null)));
 
     // when
     reconciliationService.reconcilePendingPayments();
 
     // then
-    verify(paymentService, never()).completePayment(any(), any());
+    verify(paymentService, never()).completePayment(any(), any(), any());
     assertThat(payment.getStatus()).isEqualTo(PaymentStatus.PENDING);
   }
 
@@ -112,7 +113,7 @@ class PaymentReconciliationServiceTest {
 
     // then
     assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAILED);
-    verify(paymentService, never()).completePayment(any(), any());
+    verify(paymentService, never()).completePayment(any(), any(), any());
   }
 
   @Test
@@ -123,7 +124,7 @@ class PaymentReconciliationServiceTest {
     givenStalePayments(payment);
     when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
     when(tossPaymentClient.findPaymentByOrderId("order1"))
-        .thenReturn(Optional.of(new TossPaymentInfo("pk1", "CANCELED", 5_000)));
+        .thenReturn(Optional.of(new TossPaymentInfo("pk1", "CANCELED", 5_000, null)));
 
     // when
     reconciliationService.reconcilePendingPayments();
@@ -143,13 +144,13 @@ class PaymentReconciliationServiceTest {
         .status(PaymentStatus.SUCCESS).build();
     when(paymentRepository.findById(1L)).thenReturn(Optional.of(completed));
     when(tossPaymentClient.findPaymentByOrderId("order1"))
-        .thenReturn(Optional.of(new TossPaymentInfo("pk1", "DONE", 5_000)));
+        .thenReturn(Optional.of(new TossPaymentInfo("pk1", "DONE", 5_000, null)));
 
     // when
     reconciliationService.reconcilePendingPayments();
 
     // then
-    verify(paymentService, never()).completePayment(any(), any());
+    verify(paymentService, never()).completePayment(any(), any(), any());
     assertThat(completed.getStatus()).isEqualTo(PaymentStatus.SUCCESS);
   }
 
@@ -163,13 +164,13 @@ class PaymentReconciliationServiceTest {
     when(tossPaymentClient.findPaymentByOrderId("order1"))
         .thenThrow(new RuntimeException("Toss 조회 실패"));
     when(tossPaymentClient.findPaymentByOrderId("order2"))
-        .thenReturn(Optional.of(new TossPaymentInfo("pk2", "DONE", 5_000)));
+        .thenReturn(Optional.of(new TossPaymentInfo("pk2", "DONE", 5_000, null)));
     when(paymentRepository.findById(2L)).thenReturn(Optional.of(second));
 
     // when
     reconciliationService.reconcilePendingPayments();
 
     // then
-    verify(paymentService).completePayment(second, "pk2");
+    verify(paymentService).completePayment(eq(second), eq("pk2"), any());
   }
 }

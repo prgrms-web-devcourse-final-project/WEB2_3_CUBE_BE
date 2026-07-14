@@ -1,5 +1,6 @@
 package com.roome.domain.payment.dto;
 
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,4 +14,5 @@ public class TossPaymentInfo {
     private final String paymentKey;
     private final String status; // DONE, CANCELED, READY, IN_PROGRESS, EXPIRED, ABORTED 등
     private final int totalAmount;
+    private final LocalDateTime approvedAt; // Toss가 확정한 승인 시각 (미승인 상태면 null)
 }

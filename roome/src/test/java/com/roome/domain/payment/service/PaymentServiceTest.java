@@ -321,14 +321,37 @@ class PaymentServiceTest {
         .status(PaymentStatus.PENDING)
         .build();
 
+    LocalDateTime tossApprovedAt = LocalDateTime.of(2026, 7, 15, 10, 0);
+
     // when
-    paymentService.completePayment(payment, "pk123");
+    paymentService.completePayment(payment, "pk123", tossApprovedAt);
+
+    // then: 승인 시각은 Toss가 확정한 값으로 기록된다
+    assertThat(payment.getStatus()).isEqualTo(PaymentStatus.SUCCESS);
+    assertThat(payment.getPaymentKey()).isEqualTo("pk123");
+    assertThat(payment.getApprovedAt()).isEqualTo(tossApprovedAt);
+    verify(pointService).earnPoints(testUser, PointReason.POINT_PURCHASE_550);
+    verify(paymentLogRepository).save(any());
+  }
+
+  @Test
+  @DisplayName("Toss 승인 시각이 없으면 서버 시각으로 대체하여 완결한다.")
+  void completePayment_NullApprovedAt_FallsBackToServerTime() {
+    // given
+    Payment payment = Payment.builder()
+        .user(testUser)
+        .orderId("order123")
+        .amount(5_000)
+        .purchasedPoints(550)
+        .status(PaymentStatus.PENDING)
+        .build();
+
+    // when
+    paymentService.completePayment(payment, "pk123", null);
 
     // then
     assertThat(payment.getStatus()).isEqualTo(PaymentStatus.SUCCESS);
-    assertThat(payment.getPaymentKey()).isEqualTo("pk123");
-    verify(pointService).earnPoints(testUser, PointReason.POINT_PURCHASE_550);
-    verify(paymentLogRepository).save(any());
+    assertThat(payment.getApprovedAt()).isNotNull();
   }
 
   @Test
@@ -338,7 +361,7 @@ class PaymentServiceTest {
     Payment payment = successPayment("pk123");
 
     // when
-    paymentService.completePayment(payment, "pk123");
+    paymentService.completePayment(payment, "pk123", LocalDateTime.now());
 
     // then
     verify(pointService, never()).earnPoints(any(), any());
