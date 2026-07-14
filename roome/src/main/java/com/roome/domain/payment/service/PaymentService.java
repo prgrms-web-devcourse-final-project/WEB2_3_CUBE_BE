@@ -9,6 +9,7 @@ import com.roome.domain.payment.dto.PaymentVerifyDto;
 import com.roome.domain.payment.entity.Payment;
 import com.roome.domain.payment.entity.PaymentLog;
 import com.roome.domain.payment.entity.PaymentStatus;
+import com.roome.domain.payment.entity.PointProduct;
 import com.roome.domain.payment.repository.PaymentLogRepository;
 import com.roome.domain.payment.repository.PaymentRepository;
 import com.roome.domain.point.entity.Point;
@@ -60,11 +61,20 @@ public class PaymentService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
+    // 금액이 판매 중인 상품 가격인지 검증하고, 지급 포인트는 클라이언트 값이 아닌 카탈로그에서 파생한다.
+    PointProduct product = PointProduct.findByPrice(requestDto.getAmount())
+        .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_PAYMENT_AMOUNT));
+
+    if (product.getPoints() != requestDto.getPurchasedPoints()) {
+      log.warn("포인트 수량 위변조 의심: userId={}, orderId={}, 요청 포인트={}, 카탈로그 포인트={}",
+          userId, requestDto.getOrderId(), requestDto.getPurchasedPoints(), product.getPoints());
+    }
+
     Payment payment = Payment.builder()
         .user(user)
         .orderId(requestDto.getOrderId())
-        .amount(requestDto.getAmount())
-        .purchasedPoints(requestDto.getPurchasedPoints())
+        .amount(product.getPrice())
+        .purchasedPoints(product.getPoints())
         .status(PaymentStatus.PENDING)
         .paymentKey(null) // 결제 성공 후 업데이트 예정
         .build();
@@ -151,8 +161,10 @@ public class PaymentService {
     paymentRepository.save(payment);
 
     // 사용자 포인트 지급
-    PointReason pointReason = getPointReasonForAmount(payment.getPurchasedPoints());
-    pointService.earnPoints(payment.getUser(), pointReason);
+    // Toss가 승인한 결제 금액(payment.amount)을 기준으로 카탈로그에서 지급 사유를 파생
+    PointProduct product = PointProduct.findByPrice(payment.getAmount())
+        .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_PAYMENT_AMOUNT));
+    pointService.earnPoints(payment.getUser(), product.getEarnReason());
 
     // 결제 내역 로그 저장
     savePaymentLog(payment, verifyDto.getPaymentKey());
@@ -192,12 +204,7 @@ public class PaymentService {
       throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
     }
 
-    List<PointReason> purchaseReasons = List.of(
-            PointReason.POINT_PURCHASE_100,
-            PointReason.POINT_PURCHASE_550,
-            PointReason.POINT_PURCHASE_1200,
-            PointReason.POINT_PURCHASE_4000
-    );
+    List<PointReason> purchaseReasons = PointProduct.purchaseReasons();
     PageRequest pageRequest = PageRequest.of(0, 1); // 최신 1개만 조회
 
     List<PointHistory> latestPurchases = pointHistoryRepository.findLatestPurchase(userId, purchaseReasons, pageRequest);
@@ -226,7 +233,13 @@ public class PaymentService {
       throw new BusinessException(ErrorCode.PAYMENT_NOT_CANCELABLE);
     }
 
-    int refundPoints = getRefundPointsForAmount(cancelAmount);
+    // 환불 금액이 판매 중인 상품 가격 단위인지 검증하고, 차감 포인트를 카탈로그에서 파생한다.
+    if (cancelAmount == null) {
+      throw new BusinessException(ErrorCode.INVALID_REFUND_AMOUNT);
+    }
+    PointProduct refundProduct = PointProduct.findByPrice(cancelAmount)
+        .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_REFUND_AMOUNT));
+    int refundPoints = refundProduct.getPoints();
 
     // Toss API에 결제 취소 요청
     boolean isCanceled = tossPaymentClient.cancelPayment(payment.getPaymentKey(), cancelReason,
@@ -240,7 +253,7 @@ public class PaymentService {
     paymentRepository.save(payment);
 
     // 사용자 포인트 차감
-    pointService.usePoints(payment.getUser(), getRefundReasonForAmount(refundPoints));
+    pointService.usePoints(payment.getUser(), refundProduct.getRefundReason());
 
     saveRefundLog(payment, cancelAmount, paymentKey);
 
@@ -297,33 +310,4 @@ public class PaymentService {
   }
 
 
-  private PointReason getPointReasonForAmount(int purchasedPoints) {
-    return switch (purchasedPoints) {
-      case 100 -> PointReason.POINT_PURCHASE_100;
-      case 550 -> PointReason.POINT_PURCHASE_550;
-      case 1200 -> PointReason.POINT_PURCHASE_1200;
-      case 4000 -> PointReason.POINT_PURCHASE_4000;
-      default -> throw new BusinessException(ErrorCode.INVALID_PAYMENT_AMOUNT);
-    };
-  }
-
-  private PointReason getRefundReasonForAmount(int refundPoints) {
-    return switch (refundPoints) {
-      case 100 -> PointReason.POINT_REFUND_100;
-      case 550 -> PointReason.POINT_REFUND_550;
-      case 1200 -> PointReason.POINT_REFUND_1200;
-      case 4000 -> PointReason.POINT_REFUND_4000;
-      default -> throw new BusinessException(ErrorCode.INVALID_REFUND_POINT_AMOUNT);
-    };
-  }
-
-  private int getRefundPointsForAmount(int cancelAmount) {
-    return switch (cancelAmount) {
-      case 1000 -> 100;
-      case 5000 -> 550;
-      case 10000 -> 1200;
-      case 30000 -> 4000;
-      default -> throw new BusinessException(ErrorCode.INVALID_REFUND_AMOUNT);
-    };
-  }
 }
