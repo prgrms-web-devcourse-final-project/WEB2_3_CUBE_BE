@@ -155,19 +155,8 @@ public class PaymentService {
     }
 
 
-    // 결제 상태 업데이트
-    payment.updateStatus(PaymentStatus.SUCCESS);
-    payment.updatePaymentKey(verifyDto.getPaymentKey());
-    paymentRepository.save(payment);
-
-    // 사용자 포인트 지급
-    // Toss가 승인한 결제 금액(payment.amount)을 기준으로 카탈로그에서 지급 사유를 파생
-    PointProduct product = PointProduct.findByPrice(payment.getAmount())
-        .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_PAYMENT_AMOUNT));
-    pointService.earnPoints(payment.getUser(), product.getEarnReason());
-
-    // 결제 내역 로그 저장
-    savePaymentLog(payment, verifyDto.getPaymentKey());
+    // 결제 완결 처리 (상태 변경 + 포인트 지급 + 로그 저장)
+    completePayment(payment, verifyDto.getPaymentKey());
 
     log.info("결제 성공 및 포인트 지급 완료: orderId={}, userId={}, pointsAdded={}",
         verifyDto.getOrderId(), userId, payment.getPurchasedPoints());
@@ -179,6 +168,26 @@ public class PaymentService {
         .purchasedPoints(payment.getPurchasedPoints())
         .status(payment.getStatus())
         .build();
+  }
+
+  // 승인이 확인된 결제를 완결 처리한다 (상태 변경 + 포인트 지급 + 로그 저장)
+  // verifyPayment(사용자 콜백)와 PaymentReconciliationService(대사 배치)가 공유하는 단일 완결 경로
+  @Transactional
+  public void completePayment(Payment payment, String paymentKey) {
+    if (payment.getStatus() == PaymentStatus.SUCCESS) {
+      log.warn("이미 완결된 결제 - 중복 완결 방지: orderId={}", payment.getOrderId());
+      return;
+    }
+
+    payment.updateStatus(PaymentStatus.SUCCESS);
+    payment.updatePaymentKey(paymentKey);
+
+    // Toss가 승인한 결제 금액(payment.amount)을 기준으로 카탈로그에서 지급 사유를 파생
+    PointProduct product = PointProduct.findByPrice(payment.getAmount())
+        .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_PAYMENT_AMOUNT));
+    pointService.earnPoints(payment.getUser(), product.getEarnReason());
+
+    savePaymentLog(payment, paymentKey);
   }
 
   // 결제 실패 처리

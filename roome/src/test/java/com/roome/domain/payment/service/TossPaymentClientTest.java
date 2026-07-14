@@ -149,6 +149,47 @@ class TossPaymentClientTest {
     }
 
     @Test
+    @DisplayName("orderId 결제 조회 성공 - 응답 파싱")
+    void findPaymentByOrderId_Success() throws Exception {
+        // given
+        String responseBody = """
+        {
+            "paymentKey": "pk123",
+            "status": "DONE",
+            "totalAmount": 5000
+        }
+        """;
+        ResponseEntity<String> mockResponse = new ResponseEntity<>(responseBody, HttpStatus.OK);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(mockResponse);
+        when(objectMapper.readTree(responseBody)).thenReturn(new ObjectMapper().readTree(responseBody));
+
+        // when
+        var result = tossPaymentClient.findPaymentByOrderId("order123");
+
+        // then
+        assertTrue(result.isPresent());
+        assertEquals("pk123", result.get().getPaymentKey());
+        assertEquals("DONE", result.get().getStatus());
+        assertEquals(5000, result.get().getTotalAmount());
+    }
+
+    @Test
+    @DisplayName("orderId 결제 조회 - Toss에 기록이 없으면(404) 빈 Optional 반환")
+    void findPaymentByOrderId_NotFound_ReturnsEmpty() {
+        // given
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
+                .thenThrow(HttpClientErrorException.create(
+                        HttpStatus.NOT_FOUND, "Not Found", HttpHeaders.EMPTY, new byte[0], null));
+
+        // when
+        var result = tossPaymentClient.findPaymentByOrderId("order123");
+
+        // then
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
     @DisplayName("결제 검증 실패 - API 응답이 5xx 서버 오류 발생")
     void verifyPayment_Fail_ServerError() {
         // given
