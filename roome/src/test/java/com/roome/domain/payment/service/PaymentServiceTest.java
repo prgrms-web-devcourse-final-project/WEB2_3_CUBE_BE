@@ -247,6 +247,42 @@ class PaymentServiceTest {
         .hasMessageContaining(ErrorCode.PAYMENT_CANCEL_FAILED.getMessage());
   }
 
+  @Test
+  @DisplayName("결제 완결 시 상태 변경, paymentKey 저장, 포인트 지급, 로그 저장이 수행되어야 한다.")
+  void completePayment_Success() {
+    // given
+    Payment payment = Payment.builder()
+        .user(testUser)
+        .orderId("order123")
+        .amount(5_000)
+        .purchasedPoints(550)
+        .status(PaymentStatus.PENDING)
+        .build();
+
+    // when
+    paymentService.completePayment(payment, "pk123");
+
+    // then
+    assertThat(payment.getStatus()).isEqualTo(PaymentStatus.SUCCESS);
+    assertThat(payment.getPaymentKey()).isEqualTo("pk123");
+    verify(pointService).earnPoints(testUser, PointReason.POINT_PURCHASE_550);
+    verify(paymentLogRepository).save(any());
+  }
+
+  @Test
+  @DisplayName("이미 완결된 결제를 다시 완결해도 포인트가 중복 지급되지 않아야 한다 (멱등성).")
+  void completePayment_AlreadyCompleted_NoDoubleEarn() {
+    // given
+    Payment payment = successPayment("pk123");
+
+    // when
+    paymentService.completePayment(payment, "pk123");
+
+    // then
+    verify(pointService, never()).earnPoints(any(), any());
+    verify(paymentLogRepository, never()).save(any());
+  }
+
   private Payment successPayment(String paymentKey) {
     return Payment.builder()
         .user(testUser)

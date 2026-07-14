@@ -2,11 +2,15 @@ package com.roome.domain.payment.repository;
 
 import com.roome.domain.payment.entity.Payment;
 import com.roome.domain.payment.entity.PaymentStatus;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
+
+  // 특정 시점 이전에 생성되어 특정 상태에 머물러 있는 결제 조회 (대사 배치용)
+  List<Payment> findByStatusAndCreatedAtBefore(PaymentStatus status, LocalDateTime threshold);
 
   // paymentKey로 결제 정보 조회
   Optional<Payment> findByPaymentKey(String paymentKey);
