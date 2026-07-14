@@ -13,8 +13,6 @@ import com.roome.domain.payment.entity.PointProduct;
 import com.roome.domain.payment.repository.PaymentLogRepository;
 import com.roome.domain.payment.repository.PaymentRepository;
 import com.roome.domain.point.entity.Point;
-import com.roome.domain.point.entity.PointHistory;
-import com.roome.domain.point.entity.PointReason;
 import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.point.service.PointService;
@@ -197,8 +195,7 @@ public class PaymentService {
       return;
     }
 
-    payment.updateStatus(PaymentStatus.SUCCESS);
-    payment.updatePaymentKey(paymentKey);
+    payment.markApproved(paymentKey, LocalDateTime.now());
 
     // Toss가 승인한 결제 금액(payment.amount)을 기준으로 카탈로그에서 지급 사유를 파생
     PointProduct product = PointProduct.findByPrice(payment.getAmount())
@@ -247,34 +244,22 @@ public class PaymentService {
       throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
     }
 
-    List<PointReason> purchaseReasons = PointProduct.purchaseReasons();
-    PageRequest pageRequest = PageRequest.of(0, 1); // 최신 1개만 조회
-
-    List<PointHistory> latestPurchases = pointHistoryRepository.findLatestPurchase(userId, purchaseReasons, pageRequest);
-
-    Optional<PointHistory> latestPurchase = latestPurchases.isEmpty() ? Optional.empty() : Optional.of(latestPurchases.get(0));
-
-    if (latestPurchase.isEmpty()) {
-      throw new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
-    }
-
-    PointHistory lastPurchase = latestPurchase.get();
-
-    // 환불 가능 기간 체크
-    if (lastPurchase.getCreatedAt().isBefore(LocalDateTime.now().minusDays(7))) {
-      throw new BusinessException(ErrorCode.PAYMENT_REFUND_PERIOD_EXCEEDED);
-    }
-
-    // 포인트 사용 여부 체크 (마지막 구매 이후 사용 이력이 있으면 환불 불가)
-    boolean hasUsedPoints = pointHistoryRepository.hasUsedPointsAfter(
-        userId, lastPurchase.getCreatedAt(), PointProduct.refundReasons());
-    if (hasUsedPoints) {
-      throw new BusinessException(ErrorCode.PAYMENT_ALREADY_USED);
-    }
-
     // 결제 상태가 SUCCESS가 아닐 경우, 취소 불가능
     if (!payment.getStatus().equals(PaymentStatus.SUCCESS)) {
       throw new BusinessException(ErrorCode.PAYMENT_NOT_CANCELABLE);
+    }
+
+    // 환불 가능 기간 체크: '최신 구매'가 아니라 '이 결제'의 승인 시각을 기준으로 판정 (건별 검증)
+    LocalDateTime approvedAt = payment.getApprovedAt();
+    if (approvedAt == null || approvedAt.isBefore(LocalDateTime.now().minusDays(7))) {
+      throw new BusinessException(ErrorCode.PAYMENT_REFUND_PERIOD_EXCEEDED);
+    }
+
+    // 포인트 사용 여부 체크: 이 결제의 승인 이후 포인트를 사용했다면 환불 불가
+    boolean hasUsedPoints = pointHistoryRepository.hasUsedPointsAfter(
+        userId, approvedAt, PointProduct.refundReasons());
+    if (hasUsedPoints) {
+      throw new BusinessException(ErrorCode.PAYMENT_ALREADY_USED);
     }
 
     // 환불 금액이 판매 중인 상품 가격 단위인지 검증하고, 차감 포인트를 카탈로그에서 파생한다.
@@ -292,7 +277,7 @@ public class PaymentService {
     pointService.usePoints(payment.getUser(), refundProduct.getRefundReason());
 
     // 결제 상태 업데이트
-    payment.updateStatus(PaymentStatus.CANCELED);
+    payment.markCanceled(LocalDateTime.now());
 
     saveRefundLog(payment, cancelAmount, paymentKey);
 

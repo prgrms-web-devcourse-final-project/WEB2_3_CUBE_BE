@@ -18,7 +18,6 @@ import com.roome.domain.payment.entity.Payment;
 import com.roome.domain.payment.entity.PaymentStatus;
 import com.roome.domain.payment.repository.PaymentLogRepository;
 import com.roome.domain.payment.repository.PaymentRepository;
-import com.roome.domain.point.entity.PointHistory;
 import com.roome.domain.point.entity.PointReason;
 import com.roome.domain.point.exception.InsufficientPointsException;
 import com.roome.domain.point.repository.PointHistoryRepository;
@@ -29,10 +28,8 @@ import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.Pageable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -148,18 +145,12 @@ class PaymentServiceTest {
   }
 
   @Test
-  @DisplayName("구매 후 포인트를 사용했다면 Toss 취소 요청 전에 환불이 차단되어야 한다.")
+  @DisplayName("이 결제의 승인 이후 포인트를 사용했다면 Toss 취소 요청 전에 환불이 차단되어야 한다.")
   void cancelPayment_UsedPoints_BlockedBeforeTossCall() {
     // given
     Payment payment = successPayment("pk123");
-    PointHistory lastPurchase =
-        new PointHistory(testUser, 550, PointReason.POINT_PURCHASE_550,
-            LocalDateTime.now().minusDays(1));
-
     when(paymentRepository.findByPaymentKey("pk123")).thenReturn(Optional.of(payment));
-    when(pointHistoryRepository.findLatestPurchase(eq(1L), anyList(), any(Pageable.class)))
-        .thenReturn(List.of(lastPurchase));
-    when(pointHistoryRepository.hasUsedPointsAfter(eq(1L), eq(lastPurchase.getCreatedAt()),
+    when(pointHistoryRepository.hasUsedPointsAfter(eq(1L), eq(payment.getApprovedAt()),
         anyList())).thenReturn(true);
 
     // when & then
@@ -173,18 +164,12 @@ class PaymentServiceTest {
   }
 
   @Test
-  @DisplayName("구매 후 포인트 사용 이력이 없으면 환불이 정상 진행되어야 한다.")
+  @DisplayName("승인 후 포인트 사용 이력이 없으면 환불이 정상 진행되어야 한다.")
   void cancelPayment_NoUsage_Success() {
     // given
     Payment payment = successPayment("pk123");
-    PointHistory lastPurchase =
-        new PointHistory(testUser, 550, PointReason.POINT_PURCHASE_550,
-            LocalDateTime.now().minusDays(1));
-
     when(paymentRepository.findByPaymentKey("pk123")).thenReturn(Optional.of(payment));
-    when(pointHistoryRepository.findLatestPurchase(eq(1L), anyList(), any(Pageable.class)))
-        .thenReturn(List.of(lastPurchase));
-    when(pointHistoryRepository.hasUsedPointsAfter(eq(1L), eq(lastPurchase.getCreatedAt()),
+    when(pointHistoryRepository.hasUsedPointsAfter(eq(1L), eq(payment.getApprovedAt()),
         anyList())).thenReturn(false);
     when(tossPaymentClient.cancelPayment("pk123", "단순 변심", 5_000)).thenReturn(true);
 
@@ -202,18 +187,28 @@ class PaymentServiceTest {
   }
 
   @Test
+  @DisplayName("환불 기한(7일)이 지난 결제는 최근에 다른 구매가 있어도 환불이 거부되어야 한다.")
+  void cancelPayment_ApprovedOverSevenDaysAgo_PeriodExceeded() {
+    // given: 8일 전에 승인된 결제 (C-3 회귀 방지 - '최신 구매'가 아닌 '이 결제' 기준으로 판정)
+    Payment payment = successPayment("pk123", LocalDateTime.now().minusDays(8));
+    when(paymentRepository.findByPaymentKey("pk123")).thenReturn(Optional.of(payment));
+
+    // when & then
+    assertThatThrownBy(() -> paymentService.cancelPayment(1L, "pk123", "단순 변심", 5_000))
+        .isInstanceOf(BusinessException.class)
+        .hasMessageContaining(ErrorCode.PAYMENT_REFUND_PERIOD_EXCEEDED.getMessage());
+
+    verify(tossPaymentClient, never()).cancelPayment(any(), any(), any());
+    verify(pointService, never()).usePoints(any(), any());
+  }
+
+  @Test
   @DisplayName("포인트 잔액이 부족하면 Toss 취소 요청 전에 환불이 중단되어야 한다.")
   void cancelPayment_InsufficientPoints_BlockedBeforeTossCall() {
     // given
     Payment payment = successPayment("pk123");
-    PointHistory lastPurchase =
-        new PointHistory(testUser, 550, PointReason.POINT_PURCHASE_550,
-            LocalDateTime.now().minusDays(1));
-
     when(paymentRepository.findByPaymentKey("pk123")).thenReturn(Optional.of(payment));
-    when(pointHistoryRepository.findLatestPurchase(eq(1L), anyList(), any(Pageable.class)))
-        .thenReturn(List.of(lastPurchase));
-    when(pointHistoryRepository.hasUsedPointsAfter(eq(1L), eq(lastPurchase.getCreatedAt()),
+    when(pointHistoryRepository.hasUsedPointsAfter(eq(1L), eq(payment.getApprovedAt()),
         anyList())).thenReturn(false);
     doThrow(new InsufficientPointsException())
         .when(pointService).usePoints(testUser, PointReason.POINT_REFUND_550);
@@ -232,14 +227,8 @@ class PaymentServiceTest {
   void cancelPayment_TossCancelFails_ThrowsException() {
     // given
     Payment payment = successPayment("pk123");
-    PointHistory lastPurchase =
-        new PointHistory(testUser, 550, PointReason.POINT_PURCHASE_550,
-            LocalDateTime.now().minusDays(1));
-
     when(paymentRepository.findByPaymentKey("pk123")).thenReturn(Optional.of(payment));
-    when(pointHistoryRepository.findLatestPurchase(eq(1L), anyList(), any(Pageable.class)))
-        .thenReturn(List.of(lastPurchase));
-    when(pointHistoryRepository.hasUsedPointsAfter(eq(1L), eq(lastPurchase.getCreatedAt()),
+    when(pointHistoryRepository.hasUsedPointsAfter(eq(1L), eq(payment.getApprovedAt()),
         anyList())).thenReturn(false);
     when(tossPaymentClient.cancelPayment("pk123", "단순 변심", 5_000)).thenReturn(false);
 
@@ -403,7 +392,12 @@ class PaymentServiceTest {
     assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAILED);
   }
 
+  // 환불 기한(7일) 이내에 승인된 결제
   private Payment successPayment(String paymentKey) {
+    return successPayment(paymentKey, LocalDateTime.now().minusDays(1));
+  }
+
+  private Payment successPayment(String paymentKey, LocalDateTime approvedAt) {
     return Payment.builder()
         .user(testUser)
         .orderId("order123")
@@ -411,6 +405,7 @@ class PaymentServiceTest {
         .amount(5_000)
         .purchasedPoints(550)
         .status(PaymentStatus.SUCCESS)
+        .approvedAt(approvedAt)
         .build();
   }
 }
