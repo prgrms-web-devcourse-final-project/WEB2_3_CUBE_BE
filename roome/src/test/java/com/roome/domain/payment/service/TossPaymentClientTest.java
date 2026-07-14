@@ -48,7 +48,7 @@ class TossPaymentClientTest {
         String responseBody = """
         {
             "status": "DONE",
-            "amount": 1000
+            "totalAmount": 1000
         }
         """;
 
@@ -80,7 +80,7 @@ class TossPaymentClientTest {
         String responseBody = """
         {
             "status": "DONE",
-            "amount": 500
+            "totalAmount": 500
         }
         """;
 
@@ -111,7 +111,7 @@ class TossPaymentClientTest {
         String responseBody = """
         {
             "status": "CANCELED",
-            "amount": 1000
+            "totalAmount": 1000
         }
         """;
 
