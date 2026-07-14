@@ -96,7 +96,8 @@ public class PaymentController {
   @Operation(summary = "결제 취소 (환불)", description = "결제 취소 요청을 처리하고 환불을 진행한다.")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "결제 취소 성공"),
-      @ApiResponse(responseCode = "400", description = "잘못된 결제 취소 요청 (INVALID_PAYMENT_CANCEL)"),
+      @ApiResponse(responseCode = "400", description = "잘못된 결제 취소 요청 / 부분 취소 미지원 (PARTIAL_CANCEL_NOT_SUPPORTED)"),
+      @ApiResponse(responseCode = "403", description = "본인의 결제가 아님 (PAYMENT_ACCESS_DENIED)"),
       @ApiResponse(responseCode = "404", description = "해당 결제 정보를 찾을 수 없음 (PAYMENT_NOT_FOUND)"),
       @ApiResponse(responseCode = "500", description = "서버 내부 오류")
   })

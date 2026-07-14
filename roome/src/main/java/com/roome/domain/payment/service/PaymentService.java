@@ -278,11 +278,14 @@ public class PaymentService {
       throw new BusinessException(ErrorCode.PAYMENT_ALREADY_USED);
     }
 
-    // 환불 금액이 판매 중인 상품 가격 단위인지 검증하고, 차감 포인트를 카탈로그에서 파생한다.
-    if (cancelAmount == null) {
-      throw new BusinessException(ErrorCode.INVALID_REFUND_AMOUNT);
+    // 부분 취소는 지원하지 않으므로 cancelAmount가 주어졌다면 결제 전액과 일치해야 함
+    if (cancelAmount != null && cancelAmount != payment.getAmount()) {
+      throw new BusinessException(ErrorCode.PARTIAL_CANCEL_NOT_SUPPORTED);
     }
-    PointProduct refundProduct = PointProduct.findByPrice(cancelAmount)
+
+    // 환불 금액과 차감 포인트는 클라이언트 값이 아니라 이 결제에서 파생
+    int refundAmount = payment.getAmount();
+    PointProduct refundProduct = PointProduct.findByPrice(refundAmount)
         .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_REFUND_AMOUNT));
     int refundPoints = refundProduct.getPoints();
 
@@ -295,17 +298,17 @@ public class PaymentService {
     // 결제 상태 업데이트
     payment.markCanceled(LocalDateTime.now());
 
-    saveRefundLog(payment, cancelAmount, paymentKey);
+    saveRefundLog(payment, refundAmount, paymentKey);
 
-    // Toss API에 결제 취소 요청
+    // Toss API에 결제 취소 요청 (전액 취소)
     boolean isCanceled = tossPaymentClient.cancelPayment(payment.getPaymentKey(), cancelReason,
-        cancelAmount);
+        refundAmount);
     if (!isCanceled) {
       throw new BusinessException(ErrorCode.PAYMENT_CANCEL_FAILED);
     }
 
     log.info("결제 취소 완료: paymentKey={}, userId={}, refundPoints={}, refundAmount={}",
-            paymentKey, userId, refundPoints, cancelAmount);
+            paymentKey, userId, refundPoints, refundAmount);
 
     return PaymentResponseDto.builder()
         .orderId(payment.getOrderId())

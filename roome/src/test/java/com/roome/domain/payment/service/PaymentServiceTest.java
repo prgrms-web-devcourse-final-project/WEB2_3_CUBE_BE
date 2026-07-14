@@ -221,6 +221,43 @@ class PaymentServiceTest {
   }
 
   @Test
+  @DisplayName("cancelAmount가 결제 전액과 다르면 부분 취소로 간주해 거부되어야 한다.")
+  void cancelPayment_PartialAmount_Rejected() {
+    // given: 5,000원 결제에 1,000원만 취소 요청
+    Payment payment = successPayment("pk123");
+    when(paymentRepository.findByPaymentKey("pk123")).thenReturn(Optional.of(payment));
+    when(pointHistoryRepository.hasUsedPointsAfter(eq(1L), eq(payment.getApprovedAt()),
+        anyList())).thenReturn(false);
+
+    // when & then
+    assertThatThrownBy(() -> paymentService.cancelPayment(1L, "pk123", "단순 변심", 1_000))
+        .isInstanceOf(BusinessException.class)
+        .hasMessageContaining(ErrorCode.PARTIAL_CANCEL_NOT_SUPPORTED.getMessage());
+
+    verify(pointService, never()).usePoints(any(), any());
+    verify(tossPaymentClient, never()).cancelPayment(any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("cancelAmount가 없으면 결제 전액 기준으로 취소되어야 한다.")
+  void cancelPayment_NullAmount_FullCancel() {
+    // given
+    Payment payment = successPayment("pk123");
+    when(paymentRepository.findByPaymentKey("pk123")).thenReturn(Optional.of(payment));
+    when(pointHistoryRepository.hasUsedPointsAfter(eq(1L), eq(payment.getApprovedAt()),
+        anyList())).thenReturn(false);
+    when(tossPaymentClient.cancelPayment("pk123", "단순 변심", 5_000)).thenReturn(true);
+
+    // when: cancelAmount = null
+    PaymentResponseDto response = paymentService.cancelPayment(1L, "pk123", "단순 변심", null);
+
+    // then: 결제 전액(5,000)과 카탈로그 파생 포인트(550)로 취소
+    assertThat(response.getStatus()).isEqualTo(PaymentStatus.CANCELED);
+    verify(pointService).usePoints(testUser, PointReason.POINT_REFUND_550);
+    verify(tossPaymentClient).cancelPayment("pk123", "단순 변심", 5_000);
+  }
+
+  @Test
   @DisplayName("환불 기한(7일)이 지난 결제는 최근에 다른 구매가 있어도 환불이 거부되어야 한다.")
   void cancelPayment_ApprovedOverSevenDaysAgo_PeriodExceeded() {
     // given: 8일 전에 승인된 결제 (C-3 회귀 방지 - '최신 구매'가 아닌 '이 결제' 기준으로 판정)
