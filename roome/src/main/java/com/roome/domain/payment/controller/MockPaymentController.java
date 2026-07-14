@@ -5,10 +5,12 @@ import com.roome.domain.payment.dto.PaymentResponseDto;
 import com.roome.domain.payment.dto.PaymentVerifyDto;
 import com.roome.domain.payment.entity.PaymentStatus;
 import io.swagger.v3.oas.annotations.Hidden;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,6 +18,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+// 프론트 개발 협업용 Mock API - 운영(prod) 환경에서는 빈 자체가 등록되지 않는다.
+// 새 프로파일이 추가되어도 기본적으로 제외되도록 화이트리스트 방식을 사용한다.
+@Profile({"local", "dev", "test"})
 @Hidden
 @Slf4j
 @RestController
@@ -23,7 +28,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class MockPaymentController {
 
-  private final Map<String, PaymentResponseDto> mockPaymentStorage = new HashMap<>();
+  private static final int MAX_MOCK_ENTRIES = 1_000;
+
+  // 무인증 엔드포인트이므로 동시 접근에 안전해야 하고, 크기를 제한해 메모리 고갈을 막는다
+  private final Map<String, PaymentResponseDto> mockPaymentStorage =
+      Collections.synchronizedMap(new LinkedHashMap<>(16, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, PaymentResponseDto> eldest) {
+          return size() > MAX_MOCK_ENTRIES;
+        }
+      });
 
   @PostMapping("/request")
   public ResponseEntity<PaymentResponseDto> mockRequestPayment(
