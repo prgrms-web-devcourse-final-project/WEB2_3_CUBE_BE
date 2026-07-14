@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -17,6 +19,7 @@ import com.roome.domain.payment.repository.PaymentLogRepository;
 import com.roome.domain.payment.repository.PaymentRepository;
 import com.roome.domain.point.entity.PointHistory;
 import com.roome.domain.point.entity.PointReason;
+import com.roome.domain.point.exception.InsufficientPointsException;
 import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.point.service.PointService;
@@ -33,6 +36,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -187,8 +191,60 @@ class PaymentServiceTest {
 
     // then
     assertThat(response.getStatus()).isEqualTo(PaymentStatus.CANCELED);
-    verify(pointService).usePoints(testUser, PointReason.POINT_REFUND_550);
     verify(paymentLogRepository).save(any());
+
+    // 포인트 차감(내부, 롤백 가능)이 Toss 취소(외부, 비가역)보다 먼저 수행되어야 한다
+    InOrder inOrder = inOrder(pointService, tossPaymentClient);
+    inOrder.verify(pointService).usePoints(testUser, PointReason.POINT_REFUND_550);
+    inOrder.verify(tossPaymentClient).cancelPayment("pk123", "단순 변심", 5_000);
+  }
+
+  @Test
+  @DisplayName("포인트 잔액이 부족하면 Toss 취소 요청 전에 환불이 중단되어야 한다.")
+  void cancelPayment_InsufficientPoints_BlockedBeforeTossCall() {
+    // given
+    Payment payment = successPayment("pk123");
+    PointHistory lastPurchase =
+        new PointHistory(testUser, 550, PointReason.POINT_PURCHASE_550,
+            LocalDateTime.now().minusDays(1));
+
+    when(paymentRepository.findByPaymentKey("pk123")).thenReturn(Optional.of(payment));
+    when(pointHistoryRepository.findLatestPurchase(eq(1L), anyList(), any(Pageable.class)))
+        .thenReturn(List.of(lastPurchase));
+    when(pointHistoryRepository.hasUsedPointsAfter(eq(1L), eq(lastPurchase.getCreatedAt()),
+        anyList())).thenReturn(false);
+    doThrow(new InsufficientPointsException())
+        .when(pointService).usePoints(testUser, PointReason.POINT_REFUND_550);
+
+    // when & then
+    assertThatThrownBy(() -> paymentService.cancelPayment(1L, "pk123", "단순 변심", 5_000))
+        .isInstanceOf(InsufficientPointsException.class);
+
+    // 비가역적인 외부 취소 요청은 절대 나가면 안 된다
+    verify(tossPaymentClient, never()).cancelPayment(any(), any(), any());
+    verify(paymentLogRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("Toss 취소가 실패하면 예외가 발생해야 한다 (트랜잭션 롤백으로 내부 변경 원복).")
+  void cancelPayment_TossCancelFails_ThrowsException() {
+    // given
+    Payment payment = successPayment("pk123");
+    PointHistory lastPurchase =
+        new PointHistory(testUser, 550, PointReason.POINT_PURCHASE_550,
+            LocalDateTime.now().minusDays(1));
+
+    when(paymentRepository.findByPaymentKey("pk123")).thenReturn(Optional.of(payment));
+    when(pointHistoryRepository.findLatestPurchase(eq(1L), anyList(), any(Pageable.class)))
+        .thenReturn(List.of(lastPurchase));
+    when(pointHistoryRepository.hasUsedPointsAfter(eq(1L), eq(lastPurchase.getCreatedAt()),
+        anyList())).thenReturn(false);
+    when(tossPaymentClient.cancelPayment("pk123", "단순 변심", 5_000)).thenReturn(false);
+
+    // when & then
+    assertThatThrownBy(() -> paymentService.cancelPayment(1L, "pk123", "단순 변심", 5_000))
+        .isInstanceOf(BusinessException.class)
+        .hasMessageContaining(ErrorCode.PAYMENT_CANCEL_FAILED.getMessage());
   }
 
   private Payment successPayment(String paymentKey) {

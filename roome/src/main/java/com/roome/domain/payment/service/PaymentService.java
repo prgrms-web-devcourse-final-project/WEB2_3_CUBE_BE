@@ -242,21 +242,23 @@ public class PaymentService {
         .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_REFUND_AMOUNT));
     int refundPoints = refundProduct.getPoints();
 
+    // 실패 가능한 내부 변경(포인트 차감, 상태 변경, 로그)을 모두 끝낸 뒤 Toss 취소 실행
+    // Toss 취소가 실패하면 예외로 트랜잭션 전체가 롤백돼서 내부 변경이 자동 원상복구됨
+
+    // 사용자 포인트 차감 (잔액 부족 시 여기서 예외가 나고 Toss 호출 전에 중단)
+    pointService.usePoints(payment.getUser(), refundProduct.getRefundReason());
+
+    // 결제 상태 업데이트
+    payment.updateStatus(PaymentStatus.CANCELED);
+
+    saveRefundLog(payment, cancelAmount, paymentKey);
+
     // Toss API에 결제 취소 요청
     boolean isCanceled = tossPaymentClient.cancelPayment(payment.getPaymentKey(), cancelReason,
         cancelAmount);
     if (!isCanceled) {
       throw new BusinessException(ErrorCode.PAYMENT_CANCEL_FAILED);
     }
-
-    // 결제 상태 업데이트
-    payment.updateStatus(PaymentStatus.CANCELED);
-    paymentRepository.save(payment);
-
-    // 사용자 포인트 차감
-    pointService.usePoints(payment.getUser(), refundProduct.getRefundReason());
-
-    saveRefundLog(payment, cancelAmount, paymentKey);
 
     log.info("결제 취소 완료: paymentKey={}, userId={}, refundPoints={}, refundAmount={}",
             paymentKey, userId, refundPoints, cancelAmount);
