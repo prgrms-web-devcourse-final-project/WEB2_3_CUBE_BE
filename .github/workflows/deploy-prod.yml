@@ -1,8 +1,9 @@
 name: Deploy to EC2
 
+# 배포 대상 EC2 서버가 종료되어 자동 배포를 중단하고 수동 실행으로 전환
+# (서버 복구 시: 트리거를 push로 되돌리고 EC2_HOST 등 secrets를 새 서버 정보로 갱신)
 on:
-  push:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   deploy:
