@@ -31,6 +31,7 @@ import com.roome.global.exception.ErrorCode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -282,6 +283,37 @@ class PaymentServiceTest {
     // then
     verify(pointService, never()).earnPoints(any(), any());
     verify(paymentLogRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("이미 사용 중인 orderId로 결제 요청 시 409 예외가 발생해야 한다.")
+  void requestPayment_DuplicateOrderId_Conflict() {
+    // given
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(paymentRepository.existsByOrderId("order123")).thenReturn(true);
+    PaymentRequestDto requestDto = new PaymentRequestDto("order123", 1_000, 100);
+
+    // when & then
+    assertThatThrownBy(() -> paymentService.requestPayment(1L, requestDto))
+        .isInstanceOf(BusinessException.class)
+        .hasMessageContaining(ErrorCode.ORDER_ID_ALREADY_EXISTS.getMessage());
+    verify(paymentRepository, never()).save(any(Payment.class));
+  }
+
+  @Test
+  @DisplayName("선제 확인과 저장 사이에 orderId가 선점되면(레이스) 409 예외로 변환되어야 한다.")
+  void requestPayment_DuplicateOrderIdRace_Conflict() {
+    // given: exists 확인은 통과했지만 save 시점에 unique 제약 위반 발생
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(paymentRepository.existsByOrderId("order123")).thenReturn(false);
+    when(paymentRepository.save(any(Payment.class)))
+        .thenThrow(new DataIntegrityViolationException("duplicate key"));
+    PaymentRequestDto requestDto = new PaymentRequestDto("order123", 1_000, 100);
+
+    // when & then
+    assertThatThrownBy(() -> paymentService.requestPayment(1L, requestDto))
+        .isInstanceOf(BusinessException.class)
+        .hasMessageContaining(ErrorCode.ORDER_ID_ALREADY_EXISTS.getMessage());
   }
 
   @Test

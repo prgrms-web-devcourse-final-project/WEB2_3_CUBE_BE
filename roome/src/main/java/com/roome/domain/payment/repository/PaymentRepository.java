@@ -18,6 +18,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
   // orderId로 결제 정보 조회
   Optional<Payment> findByOrderId(String orderId);
 
+  // orderId 중복 여부 확인
+  boolean existsByOrderId(String orderId);
+
   // 특정 사용자(userId)의 결제 내역 조회
   List<Payment> findByUserId(Long userId);
 

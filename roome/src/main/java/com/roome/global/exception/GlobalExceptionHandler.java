@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -38,6 +40,18 @@ public class GlobalExceptionHandler {
     return ResponseEntity
         .status(HttpStatus.FORBIDDEN)
         .body(new ErrorResponse(e.getMessage(), HttpStatus.FORBIDDEN.value()));
+  }
+
+  // @Valid 검증 실패는 400으로 처리 (기존에는 catch-all에 걸려 500으로 응답되던 문제 수정)
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException e) {
+    String message = e.getBindingResult().getFieldErrors().stream()
+        .findFirst()
+        .map(FieldError::getDefaultMessage)
+        .orElse("요청 값이 올바르지 않습니다.");
+    return ResponseEntity
+        .status(HttpStatus.BAD_REQUEST)
+        .body(new ErrorResponse(message, HttpStatus.BAD_REQUEST.value()));
   }
 
   // DB 관련 예외 처리
