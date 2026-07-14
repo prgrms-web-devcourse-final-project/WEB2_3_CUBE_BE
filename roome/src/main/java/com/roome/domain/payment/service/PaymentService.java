@@ -121,6 +121,18 @@ public class PaymentService {
       throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
     }
 
+    // 멱등성: 이미 완결된 결제면 Toss 재승인, 재지급 없이 기존 결과를 그대로 반환
+    // (더블클릭이나 네트워크 재시도로 같은 orderId가 재요청되는 경우)
+    if (payment.getStatus() == PaymentStatus.SUCCESS) {
+      log.info("이미 완결된 결제 - 멱등 응답 반환: orderId={}", verifyDto.getOrderId());
+      return toResponse(payment);
+    }
+
+    // PENDING이 아닌 상태(FAILED/CANCELED)는 검증할 수 없다
+    if (payment.getStatus() != PaymentStatus.PENDING) {
+      throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
+    }
+
     if (payment.getAmount() != verifyDto.getAmount()) {
       log.error("❌ Step 4: 결제 금액 불일치 - 요청 금액={}, 저장된 금액={}",
               verifyDto.getAmount(), payment.getAmount());
@@ -177,9 +189,13 @@ public class PaymentService {
     log.info("결제 성공 및 포인트 지급 완료: orderId={}, userId={}, pointsAdded={}",
         verifyDto.getOrderId(), userId, payment.getPurchasedPoints());
 
+    return toResponse(payment);
+  }
+
+  private PaymentResponseDto toResponse(Payment payment) {
     return PaymentResponseDto.builder()
         .orderId(payment.getOrderId())
-        .paymentKey(verifyDto.getPaymentKey())
+        .paymentKey(payment.getPaymentKey())
         .amount(payment.getAmount())
         .purchasedPoints(payment.getPurchasedPoints())
         .status(payment.getStatus())

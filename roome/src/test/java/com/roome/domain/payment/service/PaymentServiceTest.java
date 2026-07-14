@@ -145,6 +145,40 @@ class PaymentServiceTest {
   }
 
   @Test
+  @DisplayName("이미 완결(SUCCESS)된 결제를 다시 검증 요청하면 Toss 재승인 없이 기존 결과를 반환해야 한다 (멱등성).")
+  void verifyPayment_AlreadySuccess_ReturnsIdempotently() {
+    // given
+    Payment payment = successPayment("pk123");
+    when(paymentRepository.findByOrderId("order123")).thenReturn(Optional.of(payment));
+
+    // when
+    PaymentResponseDto response =
+        paymentService.verifyPayment(1L, new PaymentVerifyDto("pk123", "order123", 5_000));
+
+    // then: 기존 완결 결과를 그대로 반환하고, Toss 승인·포인트 지급은 재실행되지 않는다
+    assertThat(response.getStatus()).isEqualTo(PaymentStatus.SUCCESS);
+    verify(tossPaymentClient, never()).requestConfirm(any());
+    verify(pointService, never()).earnPoints(any(), any());
+  }
+
+  @Test
+  @DisplayName("PENDING이 아닌(FAILED/CANCELED) 결제를 검증 요청하면 예외가 발생해야 한다.")
+  void verifyPayment_NotPending_Rejected() {
+    // given
+    Payment payment = Payment.builder()
+        .user(testUser).orderId("order123").amount(5_000).purchasedPoints(550)
+        .status(PaymentStatus.CANCELED).build();
+    when(paymentRepository.findByOrderId("order123")).thenReturn(Optional.of(payment));
+
+    // when & then
+    assertThatThrownBy(
+        () -> paymentService.verifyPayment(1L, new PaymentVerifyDto("pk123", "order123", 5_000)))
+        .isInstanceOf(BusinessException.class)
+        .hasMessageContaining(ErrorCode.PAYMENT_ALREADY_PROCESSED.getMessage());
+    verify(tossPaymentClient, never()).requestConfirm(any());
+  }
+
+  @Test
   @DisplayName("이 결제의 승인 이후 포인트를 사용했다면 Toss 취소 요청 전에 환불이 차단되어야 한다.")
   void cancelPayment_UsedPoints_BlockedBeforeTossCall() {
     // given
