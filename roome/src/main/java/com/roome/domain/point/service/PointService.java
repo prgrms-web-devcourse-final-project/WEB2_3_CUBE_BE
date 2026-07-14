@@ -14,9 +14,9 @@ import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
 import com.roome.global.jwt.exception.UserNotFoundException;
-import com.roome.global.service.RedisLockService;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Collections;
 import java.util.List;
@@ -42,7 +42,6 @@ public class PointService {
   private final PointHistoryRepository pointHistoryRepository;
   private final UserRepository userRepository;
   private final RedisTemplate<String, Object> redisTemplate;
-  private final RedisLockService redisLockService; // 추가
   private final ApplicationEventPublisher eventPublisher; // 이벤트 게시자 추가
 
 
@@ -72,65 +71,46 @@ public class PointService {
       PointReason.POINT_REFUND_4000, 4000
   );
 
+  // 포인트 적립
+  // 잔액 변경을 DB의 원자적 UPDATE로 수행하여 동시 요청 간 lost update를 방지한다.
+  // 호출자의 트랜잭션에 참여하므로(REQUIRED), 상위 작업이 롤백되면 적립도 함께 롤백된다.
   public void earnPoints(User user, PointReason reason) {
-    String lockKey = "lock:point:user:" + user.getId();
-
-    redisLockService.executeWithLock(lockKey, 5, 2, () -> {
-      earnPointsInternal(user, reason);
-      return null;
-    });
-  }
-
-  @Transactional
-  public void earnPointsInternal(User user, PointReason reason) {
-    Point point = pointRepository.findByUserId(user.getId())
-        .orElseGet(() -> pointRepository.save(new Point(user, 0, 0, 0)));
-
+    Point point = getOrCreatePoint(user);
     int amount = POINT_EARN_MAP.getOrDefault(reason, 0);
-    point.addPoints(amount);
+
+    pointRepository.addBalance(user.getId(), amount, LocalDateTime.now());
     savePointHistory(user, amount, reason);
 
-    // 포인트 적립 이벤트 발생
-    // 수정된 부분: 일일 출석 보상일 때만 이벤트 발행
+    // 일일 출석 보상일 때만 알림 이벤트 발행
     if (reason == PointReason.DAILY_ATTENDANCE) {
       publishPointEarnedEvent(user, point.getId(), amount, reason);
       log.info("Daily attendance reward notification sent - User: {}, Amount: {}", user.getId(), amount);
     }
 
-    redisTemplate.delete(BALANCE_CACHE_PREFIX + user.getId()); // 캐시 삭제 추가
+    redisTemplate.delete(BALANCE_CACHE_PREFIX + user.getId());
   }
 
-  @Transactional
-  protected void usePointsInternal(User user, PointReason reason) {
+  // 포인트 사용
+  // 잔액 확인과 차감을 단일 원자적 UPDATE로 수행 (갱신 행이 0이면 잔액 부족)
+  public void usePoints(User user, PointReason reason) {
+    getOrCreatePoint(user);
     int amount = POINT_USAGE_MAP.getOrDefault(reason, 0);
     log.info("usePoints - User: {}, Reason: {}, Amount: {}", user.getId(), reason, amount);
 
-    Point point = pointRepository.findByUserId(user.getId())
-        .orElseGet(() -> {
-          log.info("usePoints - 포인트 계정 없음, 새로 생성! User: {}", user.getId());
-          return pointRepository.save(new Point(user, 0, 0, 0));
-        });
-
-    if (point.getBalance() < amount) {
-      log.warn("usePoints - 포인트 부족! User: {}, Balance: {}, Required: {}", user.getId(),
-          point.getBalance(), amount);
+    int updated = pointRepository.subtractBalanceIfEnough(user.getId(), amount, LocalDateTime.now());
+    if (updated == 0) {
+      log.warn("usePoints - 포인트 부족으로 차감 실패! User: {}, Required: {}", user.getId(), amount);
       throw new InsufficientPointsException();
     }
-
-    point.subtractPoints(amount);
-    log.info("usePoints - 포인트 사용 완료! User: {}, New Balance: {}", user.getId(), point.getBalance());
 
     savePointHistory(user, -amount, reason);
     redisTemplate.delete(BALANCE_CACHE_PREFIX + user.getId());
   }
 
-  public void usePoints(User user, PointReason reason) {
-    String lockKey = "lock:point:user:" + user.getId();
-
-    redisLockService.executeWithLock(lockKey, 5, 2, () -> {
-      usePointsInternal(user, reason);
-      return null;
-    });
+  // 포인트 계정 조회 (없으면 생성) - 정상 흐름에서는 회원가입 시 이미 생성되어 있으니까 이건 방어적 용도
+  private Point getOrCreatePoint(User user) {
+    return pointRepository.findByUserId(user.getId())
+        .orElseGet(() -> pointRepository.save(new Point(user, 0, 0, 0)));
   }
 
   private void savePointHistory(User user, int amount, PointReason reason) {
