@@ -1,5 +1,5 @@
-# 1. JDK 17이 포함된 경량 Linux 환경을 사용
-FROM openjdk:17-jdk-slim
+# 1. JRE 17이 포함된 경량 Linux 환경을 사용 (openjdk 이미지 deprecated로 eclipse-temurin으로 교체)
+FROM eclipse-temurin:17-jre-jammy
 
 # 2. 작성자 정보
 LABEL authors="yubanghyeon"
