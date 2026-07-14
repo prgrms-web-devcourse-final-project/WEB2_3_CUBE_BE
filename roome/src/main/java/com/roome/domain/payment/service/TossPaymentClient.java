@@ -21,6 +21,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -153,6 +156,7 @@ public class TossPaymentClient {
                     .status(json.path("status").asText(null))
                     // 금액이 없으면 -1로 두어 어떤 결제 금액과도 일치하지 않게 함
                     .totalAmount(json.path("totalAmount").asInt(-1))
+                    .approvedAt(parseTossDateTime(json.path("approvedAt").asText(null)))
                     .build());
         } catch (HttpClientErrorException.NotFound e) {
             return Optional.empty();
@@ -195,6 +199,19 @@ public class TossPaymentClient {
         return false;
     }
 
+
+    // Toss의 ISO-8601 오프셋 시각(예: 2024-02-13T12:17:57+09:00)을 LocalDateTime으로 변환
+    // 값이 없거나 형식이 잘못되면 null을 반환해 호출부가 서버 시각으로 대체하도록 함
+    public static LocalDateTime parseTossDateTime(String isoDateTime) {
+        if (isoDateTime == null || isoDateTime.isBlank()) {
+            return null;
+        }
+        try {
+            return OffsetDateTime.parse(isoDateTime).toLocalDateTime();
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
 
     // Secret Key를 Base64 인코딩하여 반환
     private String encodeSecretKey() {

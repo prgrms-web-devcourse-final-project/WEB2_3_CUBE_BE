@@ -140,6 +140,7 @@ public class PaymentService {
     }
 
     log.info("✅ Step 5: Toss 결제 승인 요청 시작");
+    LocalDateTime approvedAt;
     try {
       ResponseEntity<String> response = tossPaymentClient.requestConfirm(verifyDto);
       log.info("✅ Step 6: Toss API 응답 수신 - Status={}, Body={}",
@@ -161,7 +162,11 @@ public class PaymentService {
 
         throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
       }
+      // Toss가 확정한 승인 시각을 원장에 기록하기 위해 추출 (없으면 null로 두고 완결 시 서버 시각으로 대체)
+      approvedAt = TossPaymentClient.parseTossDateTime(jsonResponse.path("approvedAt").asText(null));
       log.info("✅ Step 10: 결제 승인 성공 및 상태 확인 완료");
+    } catch (BusinessException e) {
+      throw e;
     } catch (Exception e) {
       log.error("❌ Step 11: 결제 승인 중 예외 발생: {}", e.getMessage());
       throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
@@ -184,7 +189,7 @@ public class PaymentService {
 
 
     // 결제 완결 처리 (상태 변경 + 포인트 지급 + 로그 저장)
-    completePayment(payment, verifyDto.getPaymentKey());
+    completePayment(payment, verifyDto.getPaymentKey(), approvedAt);
 
     log.info("결제 성공 및 포인트 지급 완료: orderId={}, userId={}, pointsAdded={}",
         verifyDto.getOrderId(), userId, payment.getPurchasedPoints());
@@ -205,13 +210,14 @@ public class PaymentService {
   // 승인이 확인된 결제를 완결 처리한다 (상태 변경 + 포인트 지급 + 로그 저장)
   // verifyPayment(사용자 콜백)와 PaymentReconciliationService(대사 배치)가 공유하는 단일 완결 경로
   @Transactional
-  public void completePayment(Payment payment, String paymentKey) {
+  public void completePayment(Payment payment, String paymentKey, LocalDateTime approvedAt) {
     if (payment.getStatus() == PaymentStatus.SUCCESS) {
       log.warn("이미 완결된 결제 - 중복 완결 방지: orderId={}", payment.getOrderId());
       return;
     }
 
-    payment.markApproved(paymentKey, LocalDateTime.now());
+    // 승인 시각은 Toss가 확정한 값을 원장에 기록하고, 값이 없으면 서버 시각으로 대체
+    payment.markApproved(paymentKey, approvedAt != null ? approvedAt : LocalDateTime.now());
 
     // Toss가 승인한 결제 금액(payment.amount)을 기준으로 카탈로그에서 지급 사유를 파생
     PointProduct product = PointProduct.findByPrice(payment.getAmount())
