@@ -24,6 +24,7 @@ import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -61,6 +62,11 @@ public class PaymentService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
+    // 중복 주문 ID 선제 확인 - 최종 방어는 DB unique 제약이며, 아래 save의 catch가 레이스 케이스를 처리
+    if (paymentRepository.existsByOrderId(requestDto.getOrderId())) {
+      throw new BusinessException(ErrorCode.ORDER_ID_ALREADY_EXISTS);
+    }
+
     // 금액이 판매 중인 상품 가격인지 검증하고, 지급 포인트는 클라이언트 값이 아닌 카탈로그에서 파생한다.
     PointProduct product = PointProduct.findByPrice(requestDto.getAmount())
         .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_PAYMENT_AMOUNT));
@@ -79,7 +85,12 @@ public class PaymentService {
         .paymentKey(null) // 결제 성공 후 업데이트 예정
         .build();
 
-    paymentRepository.save(payment);
+    try {
+      paymentRepository.save(payment);
+    } catch (DataIntegrityViolationException e) {
+      // exists 확인과 save 사이에 같은 orderId가 먼저 저장된 경우 (TOCTOU 레이스) - unique 제약이 최종 방어
+      throw new BusinessException(ErrorCode.ORDER_ID_ALREADY_EXISTS);
+    }
     log.info("결제 요청 저장 완료: orderId={}, amount={}, userId={}",
         payment.getOrderId(), payment.getAmount(), user.getId());
 

@@ -85,6 +85,24 @@ class PaymentControllerTest {
 
 
     @Test
+    @DisplayName("orderId 형식이 잘못된 결제 요청은 400으로 거절되어야 한다.")
+    void requestPayment_InvalidOrderIdFormat_BadRequest() throws Exception {
+        // given: 허용되지 않는 문자와 길이 미달
+        setAuthenticatedUser(1L);
+        PaymentRequestDto requestDto = new PaymentRequestDto("주문!", 1000, 100);
+
+        // when & then
+        mockMvc.perform(post("/api/payments/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto))
+                        .header("Authorization", "Bearer test-token")
+                        .with(csrf()))
+                .andExpect(status().isBadRequest());
+
+        verify(paymentService, never()).requestPayment(any(Long.class), any(PaymentRequestDto.class));
+    }
+
+    @Test
     @DisplayName("결제 검증이 정상적으로 수행되어야 한다.")
     void verifyPayment_Success() throws Exception {
         // given
