@@ -14,6 +14,8 @@ import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
 import com.roome.domain.mycd.entity.MyCd;
 import com.roome.domain.mycd.repository.MyCdCountRepository;
 import com.roome.domain.mycd.repository.MyCdRepository;
+import com.roome.domain.payment.entity.Payment;
+import com.roome.domain.payment.entity.PaymentLog;
 import com.roome.domain.payment.repository.PaymentLogRepository;
 import com.roome.domain.payment.repository.PaymentRepository;
 import com.roome.domain.point.repository.PointHistoryRepository;
@@ -233,12 +235,15 @@ public class UserService {
   }
 
   private void deletePaymentData(Long userId) {
-    // 결제 로그 삭제
-    paymentLogRepository.deleteByUserId(userId);
-    log.debug("[회원탈퇴] 결제 로그 삭제 완료: userId={}", userId);
+    // 전자상거래법상 대금결제 기록은 보존 의무가 있으므로 물리 삭제 x
+    // 개인 식별 참조(user)만 끊어 비식별 상태로 보존
+    List<Payment> payments = paymentRepository.findByUserId(userId);
+    payments.forEach(Payment::detachUser);
 
-    // 결제 정보 삭제
-    paymentRepository.deleteByUserId(userId);
-    log.debug("[회원탈퇴] 결제 정보 삭제 완료: userId={}", userId);
+    List<PaymentLog> paymentLogs = paymentLogRepository.findByUserId(userId);
+    paymentLogs.forEach(PaymentLog::detachUser);
+
+    log.debug("[회원탈퇴] 결제 기록 비식별화 보존 완료: 결제 {}건, 로그 {}건, userId={}",
+        payments.size(), paymentLogs.size(), userId);
   }
 }

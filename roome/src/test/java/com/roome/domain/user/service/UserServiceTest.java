@@ -23,14 +23,22 @@ import com.roome.domain.mybookreview.entity.repository.MyBookReviewRepository;
 import com.roome.domain.mycd.entity.MyCd;
 import com.roome.domain.mycd.repository.MyCdCountRepository;
 import com.roome.domain.mycd.repository.MyCdRepository;
+import com.roome.domain.payment.entity.Payment;
+import com.roome.domain.payment.entity.PaymentLog;
+import com.roome.domain.payment.repository.PaymentLogRepository;
+import com.roome.domain.payment.repository.PaymentRepository;
 import com.roome.domain.point.repository.PointHistoryRepository;
 import com.roome.domain.point.repository.PointRepository;
+import com.roome.domain.recommendedUser.repository.RecommendedUserRepository;
 import com.roome.domain.room.entity.Room;
 import com.roome.domain.room.repository.RoomRepository;
+import com.roome.domain.room.repository.RoomThemeUnlockRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
+import com.roome.domain.userGenrePreference.repository.UserGenrePreferenceRepository;
 import com.roome.global.exception.BusinessException;
 import com.roome.global.exception.ErrorCode;
+import com.roome.global.service.RedisService;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -77,6 +85,18 @@ class UserServiceTest {
   private PointRepository pointRepository;
   @Mock
   private MyBookCountRepository myBookCountRepository; // 추가
+  @Mock
+  private PaymentRepository paymentRepository;
+  @Mock
+  private PaymentLogRepository paymentLogRepository;
+  @Mock
+  private RecommendedUserRepository recommendedUserRepository;
+  @Mock
+  private UserGenrePreferenceRepository userGenrePreferenceRepository;
+  @Mock
+  private RoomThemeUnlockRepository roomThemeUnlockRepository;
+  @Mock
+  private RedisService redisService;
 
   private static final Long USER_ID = 1L;
   private static final Long ROOM_ID = 1L;
@@ -111,9 +131,15 @@ class UserServiceTest {
     when(furnitureRepository.findByRoomId(ROOM_ID)).thenReturn(furnitures);
     when(myBookRepository.findAllByUserId(USER_ID)).thenReturn(myBooks);
     when(myCdRepository.findByUserId(USER_ID)).thenReturn(myCds);
-    when(cdCommentRepository.findAllByUserId(USER_ID)).thenReturn(comments);
+    when(cdCommentRepository.findByMyCdIdIn(any())).thenReturn(comments);
     when(guestbookRepository.findAllByRoomOrUserId(testRoom, USER_ID)).thenReturn(guestbooks);
     when(housemateRepository.deleteByUserIdOrAddedId(USER_ID, USER_ID)).thenReturn(3);
+
+    // 결제 원장은 삭제하지 않고 user 참조만 끊어 보존
+    Payment payment = mock(Payment.class);
+    PaymentLog paymentLog = mock(PaymentLog.class);
+    when(paymentRepository.findByUserId(USER_ID)).thenReturn(List.of(payment));
+    when(paymentLogRepository.findByUserId(USER_ID)).thenReturn(List.of(paymentLog));
 
     // when
     userService.deleteUser(USER_ID);
@@ -130,6 +156,10 @@ class UserServiceTest {
     }
     verify(roomRepository, times(1)).delete(testRoom);
     verify(userRepository, times(1)).delete(testUser);
+
+    // 결제 원장은 물리 삭제 대신 user 참조만 끊어 법적 보존
+    verify(payment, times(1)).detachUser();
+    verify(paymentLog, times(1)).detachUser();
   }
 
   @Test
