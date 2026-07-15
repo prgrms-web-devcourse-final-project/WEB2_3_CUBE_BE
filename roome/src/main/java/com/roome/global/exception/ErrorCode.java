@@ -63,6 +63,7 @@ public enum ErrorCode {
   PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 결제 정보를 찾을 수 없습니다."),
   PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "결제 금액이 일치하지 않습니다."),
   PAYMENT_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "결제 검증에 실패했습니다."),
+  PAYMENT_REJECTED(HttpStatus.BAD_REQUEST, "카드사/결제 수단에서 결제가 거절되었습니다."),
   PAYMENT_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "결제 처리 중 오류가 발생했습니다."),
   PAYMENT_ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 결제에 대한 접근 권한이 없습니다."),
   PAYMENT_NOT_CANCELABLE(HttpStatus.BAD_REQUEST, "이 결제는 취소할 수 없습니다."),
