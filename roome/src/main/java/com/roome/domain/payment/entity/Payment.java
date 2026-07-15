@@ -20,9 +20,10 @@ public class Payment extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 회원 탈퇴 시에도 결제 원장은 법적 보존을 위해 남기고 user 참조만 끊으므로 nullable
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user; // 결제한 사용자
+    @JoinColumn(name = "user_id")
+    private User user; // 결제한 사용자 (탈퇴 후 비식별화되면 null)
 
     @Column(unique = true)
     private String paymentKey; // 결제 성공 시 반환되는 키
@@ -63,6 +64,11 @@ public class Payment extends BaseTimeEntity {
         this.method = method;
         this.receiptUrl = receiptUrl;
         this.approveNo = approveNo;
+    }
+
+    // 회원 탈퇴 시 개인 식별 참조만 끊어 결제 원장을 비식별 보존
+    public void detachUser() {
+        this.user = null;
     }
 
     // 결제 실패 처리 (PENDING -> FAILED)

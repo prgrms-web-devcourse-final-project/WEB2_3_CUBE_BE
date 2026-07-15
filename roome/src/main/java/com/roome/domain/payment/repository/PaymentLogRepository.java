@@ -24,7 +24,4 @@ public interface PaymentLogRepository extends JpaRepository<PaymentLog, Long> {
 
   // 특정 결제 키(paymentKey)로 결제 내역 조회
   List<PaymentLog> findByPaymentKey(String paymentKey);
-
-  // 특정 사용자(userId)의 결제 로그 삭제
-  void deleteByUserId(Long userId);
 }

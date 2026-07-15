@@ -18,9 +18,10 @@ public class PaymentLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 회원 탈퇴 시에도 결제 이력은 보존하고 user 참조만 끊으므로 nullable
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user; // 결제한 사용자
+    @JoinColumn(name = "user_id")
+    private User user; // 결제한 사용자 (탈퇴 후 비식별화되면 null)
 
     // 이 로그가 속한 결제 건 (로그를 Payment와 매칭하기 위한 연결)
     // (기존 로그 호환을 위해 nullable, 신규 로그는 항상 설정)
@@ -46,5 +47,10 @@ public class PaymentLog {
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+    }
+
+    // 회원 탈퇴 시 개인 식별 참조만 끊어 결제 이력을 비식별 보존
+    public void detachUser() {
+        this.user = null;
     }
 }

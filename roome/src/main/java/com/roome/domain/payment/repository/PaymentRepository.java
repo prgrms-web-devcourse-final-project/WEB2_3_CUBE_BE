@@ -26,7 +26,4 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
   // 특정 사용자(userId)의 성공한 결제 내역 조회
   List<Payment> findByUserIdAndStatus(Long userId, PaymentStatus status);
-
-  // 특정 사용자(userId)의 결제 데이터 삭제
-  void deleteByUserId(Long userId);
 }
