@@ -15,4 +15,7 @@ public class TossPaymentInfo {
     private final String status; // DONE, CANCELED, READY, IN_PROGRESS, EXPIRED, ABORTED 등
     private final int totalAmount;
     private final LocalDateTime approvedAt; // Toss가 확정한 승인 시각 (미승인 상태면 null)
+    private final String method; // 결제 수단
+    private final String receiptUrl; // 영수증 URL
+    private final String approveNo; // PG(카드사) 승인 번호
 }

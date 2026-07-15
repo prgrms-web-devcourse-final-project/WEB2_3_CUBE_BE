@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 import com.roome.domain.payment.dto.PaymentRequestDto;
 import com.roome.domain.payment.dto.PaymentResponseDto;
 import com.roome.domain.payment.dto.PaymentVerifyDto;
+import com.roome.domain.payment.dto.TossPaymentInfo;
 import com.roome.domain.payment.entity.Payment;
 import com.roome.domain.payment.entity.PaymentStatus;
 import com.roome.domain.payment.repository.PaymentLogRepository;
@@ -369,14 +370,21 @@ class PaymentServiceTest {
         .build();
 
     LocalDateTime tossApprovedAt = LocalDateTime.of(2026, 7, 15, 10, 0);
+    TossPaymentInfo info = TossPaymentInfo.builder()
+        .paymentKey("pk123").status("DONE").totalAmount(5_000).approvedAt(tossApprovedAt)
+        .method("카드").receiptUrl("https://receipt/pk123").approveNo("00012345")
+        .build();
 
     // when
-    paymentService.completePayment(payment, "pk123", tossApprovedAt);
+    paymentService.completePayment(payment, "pk123", info);
 
-    // then: 승인 시각은 Toss가 확정한 값으로 기록된다
+    // then: 승인 시각·PG 메타데이터가 원장에 기록된다
     assertThat(payment.getStatus()).isEqualTo(PaymentStatus.SUCCESS);
     assertThat(payment.getPaymentKey()).isEqualTo("pk123");
     assertThat(payment.getApprovedAt()).isEqualTo(tossApprovedAt);
+    assertThat(payment.getMethod()).isEqualTo("카드");
+    assertThat(payment.getReceiptUrl()).isEqualTo("https://receipt/pk123");
+    assertThat(payment.getApproveNo()).isEqualTo("00012345");
     verify(pointService).earnPoints(testUser, PointReason.POINT_PURCHASE_550);
     verify(paymentLogRepository).save(any());
   }
@@ -393,8 +401,12 @@ class PaymentServiceTest {
         .status(PaymentStatus.PENDING)
         .build();
 
+    // Toss가 승인 시각을 주지 않은 경우 (approvedAt = null)
+    TossPaymentInfo info = TossPaymentInfo.builder()
+        .paymentKey("pk123").status("DONE").totalAmount(5_000).approvedAt(null).build();
+
     // when
-    paymentService.completePayment(payment, "pk123", null);
+    paymentService.completePayment(payment, "pk123", info);
 
     // then
     assertThat(payment.getStatus()).isEqualTo(PaymentStatus.SUCCESS);
@@ -408,7 +420,8 @@ class PaymentServiceTest {
     Payment payment = successPayment("pk123");
 
     // when
-    paymentService.completePayment(payment, "pk123", LocalDateTime.now());
+    paymentService.completePayment(payment, "pk123",
+        TossPaymentInfo.builder().paymentKey("pk123").status("DONE").totalAmount(5_000).build());
 
     // then
     verify(pointService, never()).earnPoints(any(), any());

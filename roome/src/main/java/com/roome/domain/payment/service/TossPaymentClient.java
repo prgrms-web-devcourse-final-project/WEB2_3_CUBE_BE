@@ -115,19 +115,27 @@ public class TossPaymentClient {
             );
 
             JsonNode json = objectMapper.readTree(response.getBody());
-            return Optional.of(TossPaymentInfo.builder()
-                    .paymentKey(json.path("paymentKey").asText(null))
-                    .status(json.path("status").asText(null))
-                    // 금액이 없으면 -1로 두어 어떤 결제 금액과도 일치하지 않게 함
-                    .totalAmount(json.path("totalAmount").asInt(-1))
-                    .approvedAt(parseTossDateTime(json.path("approvedAt").asText(null)))
-                    .build());
+            return Optional.of(parsePaymentInfo(json));
         } catch (HttpClientErrorException.NotFound e) {
             return Optional.empty();
         } catch (Exception e) {
             log.error("Toss 결제 조회 실패: orderId={}", orderId, e);
             throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
         }
+    }
+
+    // Toss 결제 객체 JSON을 TossPaymentInfo로 파싱
+    public static TossPaymentInfo parsePaymentInfo(JsonNode json) {
+        return TossPaymentInfo.builder()
+                .paymentKey(json.path("paymentKey").asText(null))
+                .status(json.path("status").asText(null))
+                // 금액이 없으면 -1로 두어 어떤 결제 금액과도 일치하지 않게 함
+                .totalAmount(json.path("totalAmount").asInt(-1))
+                .approvedAt(parseTossDateTime(json.path("approvedAt").asText(null)))
+                .method(json.path("method").asText(null))
+                .receiptUrl(json.path("receipt").path("url").asText(null))
+                .approveNo(json.path("card").path("approveNo").asText(null))
+                .build();
     }
 
     // Toss 결제 취소 요청

@@ -1,11 +1,11 @@
 package com.roome.domain.payment.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.roome.domain.payment.dto.PaymentLogResponseDto;
 import com.roome.domain.payment.dto.PaymentRequestDto;
 import com.roome.domain.payment.dto.PaymentResponseDto;
 import com.roome.domain.payment.dto.PaymentVerifyDto;
+import com.roome.domain.payment.dto.TossPaymentInfo;
 import com.roome.domain.payment.entity.Payment;
 import com.roome.domain.payment.entity.PaymentLog;
 import com.roome.domain.payment.entity.PaymentStatus;
@@ -126,7 +126,7 @@ public class PaymentService {
       throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
     }
 
-    LocalDateTime approvedAt;
+    TossPaymentInfo tossInfo;
     try {
       // 응답 전문에는 카드 및 구매자 정보가 포함될 수 있어 body를 로깅 x
       ResponseEntity<String> response = tossPaymentClient.requestConfirm(verifyDto);
@@ -134,24 +134,18 @@ public class PaymentService {
         throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
       }
 
-      JsonNode jsonResponse = new ObjectMapper().readTree(response.getBody());
-      if (!"DONE".equals(jsonResponse.path("status").asText())) {
+      // confirm 응답을 파싱해 상태, 금액 검증 및 원장 메타데이터에 사용
+      tossInfo = TossPaymentClient.parsePaymentInfo(new ObjectMapper().readTree(response.getBody()));
+      if (!"DONE".equals(tossInfo.getStatus())) {
         log.warn("결제 상태가 DONE이 아님: orderId={}, status={}",
-            verifyDto.getOrderId(), jsonResponse.path("status").asText());
+            verifyDto.getOrderId(), tossInfo.getStatus());
         throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
       }
-
-      // 승인 결과의 원본인 confirm 응답으로 금액 검증
-      // confirm 응답 자체가 승인 사실의 신뢰 원천이므로 재조회는 지연만 늘리고 불일치 위험을 키울 수 있음
-      int approvedAmount = jsonResponse.path("totalAmount").asInt(-1);
-      if (approvedAmount != payment.getAmount()) {
+      if (tossInfo.getTotalAmount() != payment.getAmount()) {
         log.warn("승인 금액 불일치: orderId={}, 저장 금액={}, Toss 승인 금액={}",
-            verifyDto.getOrderId(), payment.getAmount(), approvedAmount);
+            verifyDto.getOrderId(), payment.getAmount(), tossInfo.getTotalAmount());
         throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
       }
-
-      // Toss가 확정한 승인 시각을 원장에 기록하기 위해 추출 (없으면 null로 두고 완결 시 서버 시각으로 대체)
-      approvedAt = TossPaymentClient.parseTossDateTime(jsonResponse.path("approvedAt").asText(null));
     } catch (BusinessException e) {
       throw e;
     } catch (Exception e) {
@@ -160,7 +154,7 @@ public class PaymentService {
     }
 
     // 결제 완결 처리 (상태 변경 + 포인트 지급 + 로그 저장)
-    completePayment(payment, verifyDto.getPaymentKey(), approvedAt);
+    completePayment(payment, verifyDto.getPaymentKey(), tossInfo);
 
     log.info("결제 성공 및 포인트 지급 완료: orderId={}, userId={}, pointsAdded={}",
         verifyDto.getOrderId(), userId, payment.getPurchasedPoints());
@@ -181,14 +175,18 @@ public class PaymentService {
   // 승인이 확인된 결제를 완결 처리한다 (상태 변경 + 포인트 지급 + 로그 저장)
   // verifyPayment(사용자 콜백)와 PaymentReconciliationService(대사 배치)가 공유하는 단일 완결 경로
   @Transactional
-  public void completePayment(Payment payment, String paymentKey, LocalDateTime approvedAt) {
+  public void completePayment(Payment payment, String paymentKey, TossPaymentInfo tossInfo) {
     if (payment.getStatus() == PaymentStatus.SUCCESS) {
       log.warn("이미 완결된 결제 - 중복 완결 방지: orderId={}", payment.getOrderId());
       return;
     }
 
     // 승인 시각은 Toss가 확정한 값을 원장에 기록하고, 값이 없으면 서버 시각으로 대체
-    payment.markApproved(paymentKey, approvedAt != null ? approvedAt : LocalDateTime.now());
+    LocalDateTime approvedAt = tossInfo.getApprovedAt() != null
+        ? tossInfo.getApprovedAt() : LocalDateTime.now();
+    payment.markApproved(paymentKey, approvedAt);
+    // PG 승인 메타데이터를 원장에 기록
+    payment.applyPgDetails(tossInfo.getMethod(), tossInfo.getReceiptUrl(), tossInfo.getApproveNo());
 
     // Toss가 승인한 결제 금액(payment.amount)을 기준으로 카탈로그에서 지급 사유를 파생
     PointProduct product = PointProduct.findByPrice(payment.getAmount())

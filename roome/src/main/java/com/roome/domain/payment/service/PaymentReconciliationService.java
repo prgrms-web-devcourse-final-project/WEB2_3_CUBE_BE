@@ -80,7 +80,7 @@ public class PaymentReconciliationService {
                 orderId, payment.getAmount(), info.getTotalAmount());
             return;
           }
-          paymentService.completePayment(payment, info.getPaymentKey(), info.getApprovedAt());
+          paymentService.completePayment(payment, info.getPaymentKey(), info);
           log.warn("[대사 복구] 승인됐지만 미완결이던 결제를 완결: orderId={}, amount={}, points={}",
               orderId, payment.getAmount(), payment.getPurchasedPoints());
         }

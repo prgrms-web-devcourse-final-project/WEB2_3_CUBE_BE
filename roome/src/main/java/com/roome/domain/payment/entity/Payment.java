@@ -43,6 +43,11 @@ public class Payment extends BaseTimeEntity {
     private LocalDateTime approvedAt; // 결제 승인(완결) 시각 - 환불 기한 산정의 기준
     private LocalDateTime canceledAt; // 결제 취소 시각
 
+    // PG 승인 메타데이터 (best-effort로 채워지므로 nullable)
+    private String method; // 결제 수단 (카드, 가상계좌 등)
+    private String receiptUrl; // 영수증 URL
+    private String approveNo; // PG(카드사) 승인 번호
+
     @Version
     private Long version; // 낙관적 락 - 동시 상태 변경(중복 완결/취소) 방지
 
@@ -51,6 +56,13 @@ public class Payment extends BaseTimeEntity {
         transitionTo(PaymentStatus.SUCCESS);
         this.paymentKey = paymentKey;
         this.approvedAt = approvedAt;
+    }
+
+    // PG 승인 메타데이터 기록 (승인 완결과 함께 호출)
+    public void applyPgDetails(String method, String receiptUrl, String approveNo) {
+        this.method = method;
+        this.receiptUrl = receiptUrl;
+        this.approveNo = approveNo;
     }
 
     // 결제 실패 처리 (PENDING -> FAILED)
