@@ -331,7 +331,7 @@ public class PaymentService {
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
     PageRequest pageRequest = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-    Page<PaymentLog> paymentLogs = paymentLogRepository.findByUser(user, pageRequest);
+    Page<PaymentLog> paymentLogs = paymentLogRepository.findByUserWithPayment(user, pageRequest);
 
     return paymentLogs.stream()
             .map(log -> {
@@ -347,6 +347,7 @@ public class PaymentService {
   private void savePaymentLog(Payment payment, String paymentKey) {
     PaymentLog paymentLog = PaymentLog.builder()
             .user(payment.getUser())
+            .payment(payment)
             .amount(payment.getAmount())
             .earnedPoints(payment.getPurchasedPoints())
             .paymentKey(paymentKey)
@@ -357,6 +358,7 @@ public class PaymentService {
   private void saveRefundLog(Payment payment, int refundAmount, String paymentKey) {
     PaymentLog refundLog = PaymentLog.builder()
             .user(payment.getUser())
+            .payment(payment)
             .amount(-refundAmount)
             .earnedPoints(-payment.getPurchasedPoints())
             .paymentKey(paymentKey)
