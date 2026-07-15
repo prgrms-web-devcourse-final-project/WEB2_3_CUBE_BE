@@ -2,6 +2,8 @@ package com.roome.domain.payment.entity;
 
 import com.roome.domain.user.entity.User;
 import com.roome.global.entity.BaseTimeEntity;
+import com.roome.global.exception.BusinessException;
+import com.roome.global.exception.ErrorCode;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.*;
@@ -44,24 +46,29 @@ public class Payment extends BaseTimeEntity {
     @Version
     private Long version; // 낙관적 락 - 동시 상태 변경(중복 완결/취소) 방지
 
-    public void updateStatus(PaymentStatus status) {
-        this.status = status;
-    }
-
-    public void updatePaymentKey(String paymentKey) {
-        this.paymentKey = paymentKey;
-    }
-
-    // 결제 완결(승인 확인) 처리 (승인 시각 기록)
+    // 결제 완결(승인 확인) 처리 (PENDING -> SUCCESS) (승인 시각 기록)
     public void markApproved(String paymentKey, LocalDateTime approvedAt) {
-        this.status = PaymentStatus.SUCCESS;
+        transitionTo(PaymentStatus.SUCCESS);
         this.paymentKey = paymentKey;
         this.approvedAt = approvedAt;
     }
 
-    // 결제 취소 처리(취소 시각 기록)
+    // 결제 실패 처리 (PENDING -> FAILED)
+    public void markFailed() {
+        transitionTo(PaymentStatus.FAILED);
+    }
+
+    // 결제 취소 처리 - PENDING or SUCCESS -> CANCELED (취소 시각 기록)
     public void markCanceled(LocalDateTime canceledAt) {
-        this.status = PaymentStatus.CANCELED;
+        transitionTo(PaymentStatus.CANCELED);
         this.canceledAt = canceledAt;
+    }
+
+    // 상태 머신: 허용되지 않은 전이는 거부 (원장 오염 방지)
+    private void transitionTo(PaymentStatus target) {
+        if (!this.status.canTransitionTo(target)) {
+            throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATUS_TRANSITION);
+        }
+        this.status = target;
     }
 }

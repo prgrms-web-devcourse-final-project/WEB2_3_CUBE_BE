@@ -250,7 +250,7 @@ public class PaymentService {
       throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
     }
 
-    payment.updateStatus(PaymentStatus.FAILED);
+    payment.markFailed();
 
     log.warn("결제 실패: orderId={}", orderId);
   }

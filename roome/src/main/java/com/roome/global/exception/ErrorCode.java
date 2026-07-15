@@ -75,6 +75,7 @@ public enum ErrorCode {
   PAYMENT_ALREADY_PROCESSED(HttpStatus.BAD_REQUEST, "이미 처리된 결제입니다."),
   ORDER_ID_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 사용 중인 주문 ID입니다."),
   PARTIAL_CANCEL_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "부분 취소는 지원하지 않습니다. 전액 취소만 가능합니다."),
+  INVALID_PAYMENT_STATUS_TRANSITION(HttpStatus.CONFLICT, "허용되지 않은 결제 상태 전이입니다."),
   POINT_PURCHASE_NOT_FOUND(HttpStatus.NOT_FOUND, "포인트 결제 정보를 찾을 수 없습니다."),
   // 서평 관련 예외
   MY_BOOK_REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "서평을 찾을 수 없습니다."),
