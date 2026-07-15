@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
@@ -61,18 +62,45 @@ public class TossPaymentClient {
 
         HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 
-        // ✅ RestTemplate을 사용하여 POST 요청 수행
-        ResponseEntity<String> response = restTemplate.exchange(
-                requestUrl, HttpMethod.POST, requestEntity, String.class
-        );
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    requestUrl, HttpMethod.POST, requestEntity, String.class
+            );
+            log.info("Toss 결제 승인 응답 - Status: {}", response.getStatusCode());
+            return response;
+        } catch (HttpStatusCodeException e) {
+            // Toss는 실패 시 응답 body에 {code, message}를 담아 주니까 이걸 파싱해 도메인 에러로 매핑
+            throw mapConfirmError(e);
+        }
+    }
 
-        log.info("Toss API 응답 - Status: {}, Headers: {}, Body: {}",
-                response.getStatusCode(), response.getHeaders(), response.getBody());
+    // Toss 승인 실패 응답의 error code를 도메인 에러로 매핑
+    // 알려진 코드만 세분화하고, 나머지는 일반 실패로 두되 실제 code와 message를 로그로 남김
+    private BusinessException mapConfirmError(HttpStatusCodeException e) {
+        String code = null;
+        String message = null;
+        try {
+            JsonNode body = objectMapper.readTree(e.getResponseBodyAsString());
+            code = body.path("code").asText(null);
+            message = body.path("message").asText(null);
+        } catch (Exception parseError) {
+            log.warn("Toss 오류 응답 파싱 실패: body={}", e.getResponseBodyAsString());
+        }
 
+        log.error("Toss 결제 승인 실패: httpStatus={}, code={}, message={}",
+                e.getStatusCode(), code, message);
 
-        log.info("Toss 결제 승인 응답 - Status: {}, Body: {}", response.getStatusCode(), response.getBody());
-
-        return response;
+        ErrorCode mapped = switch (code == null ? "" : code) {
+            // 이미 승인 처리된 결제 (재시도/중복 요청)
+            case "ALREADY_PROCESSED_PAYMENT" -> ErrorCode.PAYMENT_ALREADY_PROCESSED;
+            // 카드사/결제 수단 거절 (사용자 조치 필요)
+            case "REJECT_CARD_COMPANY", "REJECT_ACCOUNT_PAYMENT", "INVALID_STOPPED_CARD",
+                 "EXCEED_MAX_DAILY_PAYMENT_COUNT", "NOT_ENOUGH_BALANCE",
+                 "INVALID_CARD_EXPIRATION", "EXCEED_MAX_PAYMENT_AMOUNT" -> ErrorCode.PAYMENT_REJECTED;
+            // 그 외: 실제 code는 로그로 남기고 일반 실패로 처리
+            default -> ErrorCode.PAYMENT_VERIFICATION_FAILED;
+        };
+        return new BusinessException(mapped);
     }
 
 
