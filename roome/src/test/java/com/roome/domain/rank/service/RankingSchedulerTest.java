@@ -5,10 +5,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.roome.domain.point.entity.Point;
-import com.roome.domain.point.entity.PointHistory;
-import com.roome.domain.point.repository.PointHistoryRepository;
-import com.roome.domain.point.repository.PointRepository;
+import com.roome.domain.point.entity.PointReason;
+import com.roome.domain.point.service.PointService;
 import com.roome.domain.rank.repository.UserActivityRepository;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
@@ -43,10 +41,7 @@ public class RankingSchedulerTest {
   private UserRepository userRepository;
 
   @Mock
-  private PointRepository pointRepository;
-
-  @Mock
-  private PointHistoryRepository pointHistoryRepository;
+  private PointService pointService;
 
   @InjectMocks
   private RankingScheduler rankingScheduler;
@@ -82,39 +77,22 @@ public class RankingSchedulerTest {
 
     when(zSetOperations.reverseRangeWithScores("user:ranking", 0, 2)).thenReturn(topRankers);
 
-    // 유저 정보 모킹 - ID 명시적 설정
+    // 유저 정보 모킹
     User user1 = Mockito.mock(User.class);
-    when(user1.getId()).thenReturn(1L);
-
     User user2 = Mockito.mock(User.class);
-    when(user2.getId()).thenReturn(2L);
-
     User user3 = Mockito.mock(User.class);
-    when(user3.getId()).thenReturn(3L);
 
     when(userRepository.findById(1L)).thenReturn(Optional.of(user1));
     when(userRepository.findById(2L)).thenReturn(Optional.of(user2));
     when(userRepository.findById(3L)).thenReturn(Optional.of(user3));
 
-    // 포인트 정보 모킹
-    Point point1 = Mockito.mock(Point.class);
-    Point point2 = Mockito.mock(Point.class);
-    Point point3 = Mockito.mock(Point.class);
-
-    when(pointRepository.findByUserId(1L)).thenReturn(Optional.of(point1));
-    when(pointRepository.findByUserId(2L)).thenReturn(Optional.of(point2));
-    when(pointRepository.findByUserId(3L)).thenReturn(Optional.of(point3));
-
     // When
     rankingScheduler.awardWeeklyPoints();
 
-    // Then
-    verify(point1).addPoints(100);
-    verify(point2).addPoints(70);
-    verify(point3).addPoints(50);
-
-    verify(pointRepository, times(3)).save(any(Point.class));
-    verify(pointHistoryRepository, times(3)).save(any(PointHistory.class));
+    // Then: 순위별 사유로 PointService 단일 경로를 통해 지급된다 (원자 적립 + 이력 + 캐시 무효화)
+    verify(pointService).earnPoints(user1, PointReason.RANK_1);
+    verify(pointService).earnPoints(user2, PointReason.RANK_2);
+    verify(pointService).earnPoints(user3, PointReason.RANK_3);
 
     verify(userActivityRepository).deleteAllByCreatedAtBefore(any(LocalDateTime.class));
 

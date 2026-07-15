@@ -1,11 +1,7 @@
 package com.roome.domain.rank.service;
 
-import com.roome.domain.point.entity.Point;
-import com.roome.domain.point.entity.PointHistory;
 import com.roome.domain.point.entity.PointReason;
-import com.roome.domain.point.exception.PointNotFoundException;
-import com.roome.domain.point.repository.PointHistoryRepository;
-import com.roome.domain.point.repository.PointRepository;
+import com.roome.domain.point.service.PointService;
 import com.roome.domain.rank.entity.UserActivity;
 import com.roome.domain.rank.repository.UserActivityRepository;
 import com.roome.domain.user.entity.User;
@@ -34,8 +30,7 @@ public class RankingScheduler {
   private final RedisTemplate<String, String> rankingRedisTemplate;
   private final UserActivityRepository userActivityRepository;
   private final UserRepository userRepository;
-  private final PointRepository pointRepository;
-  private final PointHistoryRepository pointHistoryRepository;
+  private final PointService pointService;
 
   private static final String RANKING_KEY = "user:ranking";
 
@@ -124,22 +119,12 @@ public class RankingScheduler {
             default:
               continue;
           }
-          int points = reason.getAmount();
 
-          // Point 엔티티 조회
-          Point pointEntity = pointRepository.findByUserId(user.getId())
-              .orElseThrow(PointNotFoundException::new);
-
-          // 포인트 적립
-          pointEntity.addPoints(points);
-          pointRepository.save(pointEntity);
-
-          // 포인트 히스토리 기록
-          PointHistory history = new PointHistory(user, points, reason);
-          pointHistoryRepository.save(history);
+          // 포인트 적립은 PointService 단일 경로로 위임
+          pointService.earnPoints(user, reason);
 
           log.info("포인트 지급: 유저={}, 순위={}, 점수={}, 포인트={}", userId, rank,
-              score != null ? score.intValue() : 0, points);
+              score != null ? score.intValue() : 0, reason.getAmount());
         } catch (NumberFormatException e) {
           log.error("랭킹 데이터 처리 중 형변환 오류: {}", e.getMessage());
         }
