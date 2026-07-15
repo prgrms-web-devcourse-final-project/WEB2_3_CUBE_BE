@@ -109,25 +109,22 @@ public class RankingScheduler {
             continue;
           }
 
-          // 포인트 금액 결정 및 이유
-          int points;
+          // 순위별 사유 결정
           PointReason reason;
           switch (rank) {
             case 1:
-              points = 100;
               reason = PointReason.RANK_1;
               break;
             case 2:
-              points = 70;
               reason = PointReason.RANK_2;
               break;
             case 3:
-              points = 50;
               reason = PointReason.RANK_3;
               break;
             default:
               continue;
           }
+          int points = reason.getAmount();
 
           // Point 엔티티 조회
           Point pointEntity = pointRepository.findByUserId(user.getId())

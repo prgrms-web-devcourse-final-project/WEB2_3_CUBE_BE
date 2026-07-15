@@ -49,34 +49,16 @@ public class PointService {
 
   private static final Duration CACHE_DURATION = Duration.ofMinutes(10); // 캐싱 유지 시간
 
-  private static final Map<PointReason, Integer> POINT_EARN_MAP = Map.of(
-      PointReason.GUESTBOOK_REWARD, 10,
-      PointReason.FIRST_COME_EVENT, 200,
-      PointReason.DAILY_ATTENDANCE, 400,
-      PointReason.POINT_PURCHASE_100, 100,
-      PointReason.POINT_PURCHASE_550, 550,
-      PointReason.POINT_PURCHASE_1200, 1200,
-      PointReason.POINT_PURCHASE_4000, 4000
-  );
-
-  private static final Map<PointReason, Integer> POINT_USAGE_MAP = Map.of(
-      PointReason.THEME_PURCHASE, 400,
-      PointReason.BOOK_UNLOCK_LV2, 500,
-      PointReason.BOOK_UNLOCK_LV3, 1500,
-      PointReason.CD_UNLOCK_LV2, 500,
-      PointReason.CD_UNLOCK_LV3, 1500,
-      PointReason.POINT_REFUND_100, 100,
-      PointReason.POINT_REFUND_550, 550,
-      PointReason.POINT_REFUND_1200, 1200,
-      PointReason.POINT_REFUND_4000, 4000
-  );
-
-  // 포인트 적립
-  // 잔액 변경을 DB의 원자적 UPDATE로 수행하여 동시 요청 간 lost update를 방지한다.
-  // 호출자의 트랜잭션에 참여하므로(REQUIRED), 상위 작업이 롤백되면 적립도 함께 롤백된다.
+  // 포인트 적립 (사유에 정의된 기본 금액으로 적립)
   public void earnPoints(User user, PointReason reason) {
+    earnPoints(user, reason, reason.getAmount());
+  }
+
+  // 포인트 적립 (선착순 이벤트처럼 금액이 사유가 아닌 외부(이벤트)에 종속된 경우)
+  // 잔액 변경을 DB의 원자적 UPDATE로 수행하여 동시 요청 간 lost update를 방지함
+  // 호출자의 트랜잭션에 참여하므로(REQUIRED) 상위 작업이 롤백되면 적립도 함께 롤백됨
+  public void earnPoints(User user, PointReason reason, int amount) {
     Point point = getOrCreatePoint(user);
-    int amount = POINT_EARN_MAP.getOrDefault(reason, 0);
 
     pointRepository.addBalance(user.getId(), amount, LocalDateTime.now());
     savePointHistory(user, amount, reason);
@@ -91,10 +73,10 @@ public class PointService {
   }
 
   // 포인트 사용
-  // 잔액 확인과 차감을 단일 원자적 UPDATE로 수행 (갱신 행이 0이면 잔액 부족)
+  // 금액은 PointReason에서 파생하고, 잔액 확인과 차감을 단일 원자적 UPDATE로 수행
   public void usePoints(User user, PointReason reason) {
     getOrCreatePoint(user);
-    int amount = POINT_USAGE_MAP.getOrDefault(reason, 0);
+    int amount = reason.getAmount();
     log.info("usePoints - User: {}, Reason: {}, Amount: {}", user.getId(), reason, amount);
 
     int updated = pointRepository.subtractBalanceIfEnough(user.getId(), amount, LocalDateTime.now());
