@@ -56,10 +56,6 @@ public class TossPaymentClient {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", encodeSecretKey());
 
-        log.info("Toss API 요청 URL: {}", requestUrl);
-        log.info("Toss API 요청 Headers: {}", headers);
-        log.info("Toss API 요청 Body: {}", requestBody);
-
         HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 
         try {
@@ -181,10 +177,8 @@ public class TossPaymentClient {
         }
     }
 
-    // Secret Key를 Base64 인코딩하여 반환
+    // Secret Key를 Base64 인코딩하여 반환 (시크릿키는 절대 로깅 x)
     private String encodeSecretKey() {
-        log.info("현재 사용 중인 Toss Secret Key: {}", secretKey);
-
         if (secretKey == null || secretKey.isEmpty()) {
             throw new RuntimeException("Toss Secret Key가 설정되지 않았습니다.");
         }

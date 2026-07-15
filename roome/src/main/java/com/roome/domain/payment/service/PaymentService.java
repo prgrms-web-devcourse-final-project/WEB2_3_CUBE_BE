@@ -143,12 +143,11 @@ public class PaymentService {
     LocalDateTime approvedAt;
     try {
       ResponseEntity<String> response = tossPaymentClient.requestConfirm(verifyDto);
-      log.info("✅ Step 6: Toss API 응답 수신 - Status={}, Body={}",
-              response.getStatusCode(), response.getBody());
+      // 응답 전문에는 카드 및 구매자 정보가 포함될 수 있어 body를 로깅 x
+      log.info("✅ Step 6: Toss API 응답 수신 - Status={}", response.getStatusCode());
 
       if (!response.getStatusCode().is2xxSuccessful()) {
-        log.error("❌ Step 7: 결제 승인 실패 - Status={}, Response={}",
-                response.getStatusCode(), response.getBody());
+        log.error("❌ Step 7: 결제 승인 실패 - Status={}", response.getStatusCode());
         throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
       }
 
