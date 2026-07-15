@@ -22,6 +22,12 @@ public class PaymentLog {
     @JoinColumn(name = "user_id", nullable = false)
     private User user; // 결제한 사용자
 
+    // 이 로그가 속한 결제 건 (로그를 Payment와 매칭하기 위한 연결)
+    // (기존 로그 호환을 위해 nullable, 신규 로그는 항상 설정)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_id")
+    private Payment payment;
+
     @Column(nullable = false)
     private int amount; // 결제 금액
 
