@@ -65,7 +65,7 @@ public class PaymentReconciliationService {
 
       // Toss에 기록 자체가 없음 = 사용자가 결제창까지 도달하지 못함 → 실패 처리
       if (tossInfo.isEmpty()) {
-        payment.updateStatus(PaymentStatus.FAILED);
+        payment.markFailed();
         log.info("[대사] Toss 기록 없음, 실패 처리: orderId={}", orderId);
         return;
       }
@@ -85,7 +85,7 @@ public class PaymentReconciliationService {
               orderId, payment.getAmount(), payment.getPurchasedPoints());
         }
         case "CANCELED", "PARTIAL_CANCELED" -> {
-          payment.updateStatus(PaymentStatus.CANCELED);
+          payment.markCanceled(LocalDateTime.now());
           log.info("[대사] Toss에서 취소 확인, 취소 처리: orderId={}", orderId);
         }
         case "WAITING_FOR_DEPOSIT" -> {
@@ -94,7 +94,7 @@ public class PaymentReconciliationService {
         }
         default -> {
           // READY, IN_PROGRESS, EXPIRED, ABORTED 등: 임계 시간이 지나도록 승인에 도달하지 못함
-          payment.updateStatus(PaymentStatus.FAILED);
+          payment.markFailed();
           log.info("[대사] 미완료 상태({}), 실패 처리: orderId={}", info.getStatus(), orderId);
         }
       }
