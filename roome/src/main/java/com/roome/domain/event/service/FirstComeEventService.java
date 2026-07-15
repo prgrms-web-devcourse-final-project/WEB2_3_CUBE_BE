@@ -48,7 +48,8 @@ public class FirstComeEventService {
 
     eventParticipationRepository.save(new EventParticipation(user, event, LocalDateTime.now()));
 
-    pointService.earnPoints(user, PointReason.FIRST_COME_EVENT);
+    // 보상 포인트는 이벤트별 설정값(rewardPoints)을 사용
+    pointService.earnPoints(user, PointReason.FIRST_COME_EVENT, event.getRewardPoints());
   }
 
   @Transactional(readOnly = true)

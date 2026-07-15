@@ -6,7 +6,7 @@ import com.roome.domain.furniture.exception.CdRackMaxLevelException;
 public enum PointReason {
   // 포인트 적립
   GUESTBOOK_REWARD(10),   // 방명록 작성 보상 (1일 1회)
-  FIRST_COME_EVENT(200),  // 선착순 이벤트 보상
+  FIRST_COME_EVENT(200),  // 선착순 이벤트 보상 (이건 기본값이고, 실제 지급은 이벤트별 rewardPoints로 override)
   DAILY_ATTENDANCE(400),  // 출석 체크 보상 (하루 1회)
   RANK_1(100),            // 주간 랭킹 1등
   RANK_2(70),             // 주간 랭킹 2등
