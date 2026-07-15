@@ -30,6 +30,8 @@ import com.roome.global.exception.ErrorCode;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.junit.jupiter.api.BeforeEach;
@@ -442,6 +444,25 @@ class PaymentServiceTest {
     assertThatThrownBy(() -> paymentService.requestPayment(1L, requestDto))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining(ErrorCode.ORDER_ID_ALREADY_EXISTS.getMessage());
+  }
+
+  @Test
+  @DisplayName("결제 내역 조회는 잘못된 page/size를 안전한 범위로 보정해야 한다 (500 및 과도힌 조회 방지).")
+  void getPaymentHistory_ClampsPageAndSize() {
+    // given: page=0(→PageRequest.of(-1) 500 유발), size=10000(과도 조회)
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(paymentLogRepository.findByUserWithPayment(eq(testUser), any(Pageable.class)))
+        .thenReturn(Page.empty());
+
+    // when
+    paymentService.getPaymentHistory(1L, 0, 10_000);
+
+    // then: page는 0 이상, size는 100 이하로 보정되어 조회된다
+    ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+    verify(paymentLogRepository).findByUserWithPayment(eq(testUser), captor.capture());
+    Pageable used = captor.getValue();
+    assertThat(used.getPageNumber()).isEqualTo(0);
+    assertThat(used.getPageSize()).isEqualTo(100);
   }
 
   @Test

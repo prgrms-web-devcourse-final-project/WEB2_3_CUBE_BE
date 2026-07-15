@@ -12,9 +12,7 @@ import com.roome.domain.payment.entity.PaymentStatus;
 import com.roome.domain.payment.entity.PointProduct;
 import com.roome.domain.payment.repository.PaymentLogRepository;
 import com.roome.domain.payment.repository.PaymentRepository;
-import com.roome.domain.point.entity.Point;
 import com.roome.domain.point.repository.PointHistoryRepository;
-import com.roome.domain.point.repository.PointRepository;
 import com.roome.domain.point.service.PointService;
 import com.roome.domain.user.entity.User;
 import com.roome.domain.user.repository.UserRepository;
@@ -26,19 +24,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -48,10 +39,11 @@ public class PaymentService {
   private final PaymentRepository paymentRepository;
   private final PaymentLogRepository paymentLogRepository;
   private final UserRepository userRepository;
-  private final PointRepository pointRepository;
   private final TossPaymentClient tossPaymentClient;
   private final PointService pointService;
   private final PointHistoryRepository pointHistoryRepository;
+
+  private static final int MAX_PAGE_SIZE = 100; // 결제 내역 조회 페이지 크기 상한 (과도한 조회 방지)
 
   // 사용자가 포인트 결제를 요청하면 DB에 저장해 줌
   // 결제 진행 중인 상태
@@ -104,15 +96,10 @@ public class PaymentService {
   // 결제 성공 후, 토스 API의 응답을 검증하고 포인트 지급
   @Transactional
   public PaymentResponseDto verifyPayment(Long userId, PaymentVerifyDto verifyDto) {
-    log.info("✅ Step 1: 결제 검증 시작");
-    Payment payment = paymentRepository.findByOrderId(verifyDto.getOrderId())
-            .orElseThrow(() -> {
-              log.error("❌ Step 2: 결제 정보 없음 - orderId={}", verifyDto.getOrderId());
-              return new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
-            });
+    log.info("결제 검증 시작: orderId={}, userId={}", verifyDto.getOrderId(), userId);
 
-    log.info("✅ Step 3: DB 조회 완료 - orderId={}, amount={}, paymentKey={}",
-            payment.getOrderId(), payment.getAmount(), payment.getPaymentKey());
+    Payment payment = paymentRepository.findByOrderId(verifyDto.getOrderId())
+            .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
     // 소유권 검증: 본인의 결제만 검증 요청 가능 (Toss 승인 호출 등 어떤 부수효과보다 먼저 수행)
     if (!payment.getUser().getId().equals(userId)) {
@@ -134,31 +121,23 @@ public class PaymentService {
     }
 
     if (payment.getAmount() != verifyDto.getAmount()) {
-      log.error("❌ Step 4: 결제 금액 불일치 - 요청 금액={}, 저장된 금액={}",
-              verifyDto.getAmount(), payment.getAmount());
+      log.warn("결제 금액 불일치: orderId={}, 요청 금액={}, 저장 금액={}",
+          verifyDto.getOrderId(), verifyDto.getAmount(), payment.getAmount());
       throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
     }
 
-    log.info("✅ Step 5: Toss 결제 승인 요청 시작");
     LocalDateTime approvedAt;
     try {
-      ResponseEntity<String> response = tossPaymentClient.requestConfirm(verifyDto);
       // 응답 전문에는 카드 및 구매자 정보가 포함될 수 있어 body를 로깅 x
-      log.info("✅ Step 6: Toss API 응답 수신 - Status={}", response.getStatusCode());
-
+      ResponseEntity<String> response = tossPaymentClient.requestConfirm(verifyDto);
       if (!response.getStatusCode().is2xxSuccessful()) {
-        log.error("❌ Step 7: 결제 승인 실패 - Status={}", response.getStatusCode());
         throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
       }
 
       JsonNode jsonResponse = new ObjectMapper().readTree(response.getBody());
-      String paymentStatus = jsonResponse.get("status").asText();
-      log.info("✅ Step 8: Toss 응답 상태 확인 - paymentKey={}, status={}", verifyDto.getPaymentKey(), paymentStatus);
-
-      if (!"DONE".equals(paymentStatus)) {
-        log.error("❌ Step 9: 결제 상태 검증 실패 - orderId={}, paymentKey={}, status={}",
-                verifyDto.getOrderId(), verifyDto.getPaymentKey(), paymentStatus);
-
+      if (!"DONE".equals(jsonResponse.path("status").asText())) {
+        log.warn("결제 상태가 DONE이 아님: orderId={}, status={}",
+            verifyDto.getOrderId(), jsonResponse.path("status").asText());
         throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
       }
 
@@ -166,18 +145,17 @@ public class PaymentService {
       // confirm 응답 자체가 승인 사실의 신뢰 원천이므로 재조회는 지연만 늘리고 불일치 위험을 키울 수 있음
       int approvedAmount = jsonResponse.path("totalAmount").asInt(-1);
       if (approvedAmount != payment.getAmount()) {
-        log.error("❌ Step 9: 승인 금액 불일치 - orderId={}, 저장 금액={}, Toss 승인 금액={}",
-                verifyDto.getOrderId(), payment.getAmount(), approvedAmount);
+        log.warn("승인 금액 불일치: orderId={}, 저장 금액={}, Toss 승인 금액={}",
+            verifyDto.getOrderId(), payment.getAmount(), approvedAmount);
         throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
       }
 
       // Toss가 확정한 승인 시각을 원장에 기록하기 위해 추출 (없으면 null로 두고 완결 시 서버 시각으로 대체)
       approvedAt = TossPaymentClient.parseTossDateTime(jsonResponse.path("approvedAt").asText(null));
-      log.info("✅ Step 10: 결제 승인 성공 및 상태 확인 완료");
     } catch (BusinessException e) {
       throw e;
     } catch (Exception e) {
-      log.error("❌ Step 11: 결제 승인 중 예외 발생: {}", e.getMessage());
+      log.error("결제 승인 응답 처리 중 오류: orderId={}", verifyDto.getOrderId(), e);
       throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
     }
 
@@ -323,7 +301,13 @@ public class PaymentService {
     User user = userRepository.findById(userId)
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-    PageRequest pageRequest = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+    // page는 1부터 시작
+    // 잘못된 입력으로 PageRequest.of(-1, ...)가 던지는 500을 방지하고,
+    // size는 상한(MAX_PAGE_SIZE)으로 clamp하여 과도한 조회를 막음
+    int safePage = Math.max(1, page) - 1;
+    int safeSize = Math.min(Math.max(1, size), MAX_PAGE_SIZE);
+
+    PageRequest pageRequest = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"));
     Page<PaymentLog> paymentLogs = paymentLogRepository.findByUserWithPayment(user, pageRequest);
 
     return paymentLogs.stream()
