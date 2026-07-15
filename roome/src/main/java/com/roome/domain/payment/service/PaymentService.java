@@ -162,6 +162,16 @@ public class PaymentService {
 
         throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
       }
+
+      // 승인 결과의 원본인 confirm 응답으로 금액 검증
+      // confirm 응답 자체가 승인 사실의 신뢰 원천이므로 재조회는 지연만 늘리고 불일치 위험을 키울 수 있음
+      int approvedAmount = jsonResponse.path("totalAmount").asInt(-1);
+      if (approvedAmount != payment.getAmount()) {
+        log.error("❌ Step 9: 승인 금액 불일치 - orderId={}, 저장 금액={}, Toss 승인 금액={}",
+                verifyDto.getOrderId(), payment.getAmount(), approvedAmount);
+        throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
+      }
+
       // Toss가 확정한 승인 시각을 원장에 기록하기 위해 추출 (없으면 null로 두고 완결 시 서버 시각으로 대체)
       approvedAt = TossPaymentClient.parseTossDateTime(jsonResponse.path("approvedAt").asText(null));
       log.info("✅ Step 10: 결제 승인 성공 및 상태 확인 완료");
@@ -171,22 +181,6 @@ public class PaymentService {
       log.error("❌ Step 11: 결제 승인 중 예외 발생: {}", e.getMessage());
       throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
     }
-
-    log.info("✅ Step 12: 결제 상태 업데이트 및 포인트 지급 시작");
-
-    // 토스 API에서 결제 상태 확인
-    log.info("토스 결제 검증 요청: paymentKey={}, orderId={}, amount={}",
-            verifyDto.getPaymentKey(), verifyDto.getOrderId(), verifyDto.getAmount());
-
-    boolean isVerified = tossPaymentClient.verifyPayment(
-            verifyDto.getPaymentKey(), verifyDto.getOrderId(), verifyDto.getAmount()
-    );
-    if (!isVerified) {
-      log.error("토스 결제 검증 실패: orderId={}, paymentKey={}", verifyDto.getOrderId(),
-          verifyDto.getPaymentKey());
-      throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
-    }
-
 
     // 결제 완결 처리 (상태 변경 + 포인트 지급 + 로그 저장)
     completePayment(payment, verifyDto.getPaymentKey(), approvedAt);

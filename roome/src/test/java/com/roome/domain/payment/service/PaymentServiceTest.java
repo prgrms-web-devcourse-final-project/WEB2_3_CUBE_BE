@@ -30,6 +30,8 @@ import com.roome.global.exception.ErrorCode;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -158,6 +160,49 @@ class PaymentServiceTest {
     // then: 기존 완결 결과를 그대로 반환하고, Toss 승인·포인트 지급은 재실행되지 않는다
     assertThat(response.getStatus()).isEqualTo(PaymentStatus.SUCCESS);
     verify(tossPaymentClient, never()).requestConfirm(any());
+    verify(pointService, never()).earnPoints(any(), any());
+  }
+
+  @Test
+  @DisplayName("결제 검증은 confirm 응답만으로 완결되어야 한다.")
+  void verifyPayment_CompletesFromConfirmResponse() {
+    // given
+    Payment payment = Payment.builder()
+        .user(testUser).orderId("order123").amount(5_000).purchasedPoints(550)
+        .status(PaymentStatus.PENDING).build();
+    when(paymentRepository.findByOrderId("order123")).thenReturn(Optional.of(payment));
+    String confirmBody = "{\"status\":\"DONE\",\"totalAmount\":5000,\"approvedAt\":\"2026-07-15T10:00:00+09:00\"}";
+    when(tossPaymentClient.requestConfirm(any()))
+        .thenReturn(new ResponseEntity<>(confirmBody, HttpStatus.OK));
+
+    // when
+    PaymentResponseDto response =
+        paymentService.verifyPayment(1L, new PaymentVerifyDto("pk123", "order123", 5_000));
+
+    // then: confirm 응답만으로 완결
+    assertThat(response.getStatus()).isEqualTo(PaymentStatus.SUCCESS);
+    verify(tossPaymentClient, org.mockito.Mockito.times(1)).requestConfirm(any());
+    verify(pointService).earnPoints(payment.getUser(), PointReason.POINT_PURCHASE_550);
+  }
+
+  @Test
+  @DisplayName("confirm 응답의 승인 금액이 저장 금액과 다르면 완결하지 않고 예외가 발생해야 한다.")
+  void verifyPayment_ConfirmAmountMismatch_Rejected() {
+    // given: Toss가 승인한 금액(9999)이 저장 금액(5000)과 다름
+    Payment payment = Payment.builder()
+        .user(testUser).orderId("order123").amount(5_000).purchasedPoints(550)
+        .status(PaymentStatus.PENDING).build();
+    when(paymentRepository.findByOrderId("order123")).thenReturn(Optional.of(payment));
+    String confirmBody = "{\"status\":\"DONE\",\"totalAmount\":9999}";
+    when(tossPaymentClient.requestConfirm(any()))
+        .thenReturn(new ResponseEntity<>(confirmBody, HttpStatus.OK));
+
+    // when & then
+    assertThatThrownBy(
+        () -> paymentService.verifyPayment(1L, new PaymentVerifyDto("pk123", "order123", 5_000)))
+        .isInstanceOf(BusinessException.class)
+        .hasMessageContaining(ErrorCode.PAYMENT_AMOUNT_MISMATCH.getMessage());
+    assertThat(payment.getStatus()).isEqualTo(PaymentStatus.PENDING);
     verify(pointService, never()).earnPoints(any(), any());
   }
 
